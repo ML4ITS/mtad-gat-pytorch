@@ -145,16 +145,16 @@ class GRU(nn.Module):
 
 		self.gru = nn.GRU(in_dim, hid_dim, n_layers, batch_first=True, dropout=dropout)
 		self.relu = nn.ReLU()
+		# self.hidden = None
 
 	def forward(self, x, h):
 		out, h = self.gru(x, h)
 		return out, h
 
 	def init_hidden(self, batch_size):
-		weight = next(self.parameters()).data
-		hidden = weight.new(self.n_layers, batch_size, self.hid_dim).zero_().to(self.device)
-		return hidden
-
+		# weight = next(self.parameters()).data
+		# hidden = weight.new(self.n_layers, batch_size, self.hid_dim).zero_().to(self.device)
+		return torch.zeros(self.n_layers, batch_size, self.hid_dim).to(self.device)
 
 class Forecasting_Model(nn.Module):
 	def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout, device='cpu'):

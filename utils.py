@@ -33,13 +33,10 @@ def process_gas_sensor_data(window_size=50, horizon=1, val_size=300, test_size=1
 	"""
 	df = pd.read_csv('datasets/gas_sensor_data.csv', delimiter=',')
 	df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
-	df = df[['S4']]
 
 	n = df.shape[0]
 	values = df.values
 	feature_names = df.columns.tolist()
-
-	# values = (values - np.min(values)) / (np.max(values) - np.min(values))
 
 	# Create forecasting dataset
 	x, y = [], []
@@ -67,8 +64,8 @@ def process_gas_sensor_data(window_size=50, horizon=1, val_size=300, test_size=1
 	print(test_x.min(), test_y.max())
 	print('-'*30)
 
-	train_x_min = train_x.min()
-	train_x_max = train_x.max()
+	train_x_min = train_x.reshape((-1, values.shape[1])).min(0)
+	train_x_max = train_x.reshape((-1, values.shape[1])).max(0)
 
 	# Normalize
 	train_x, val_x, test_x = normalize(train_x, val_x, test_x)

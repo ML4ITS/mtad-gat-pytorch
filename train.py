@@ -11,11 +11,12 @@ from mtad_gat import MTAD_GAT
 
 def evaluate(model, loader, criterion):
 	model.eval()
+	model.set_gru_init_hidden(loader.batch_size)
 	with torch.no_grad():
 		tot_loss = 0
 		for x, y in loader:
-			y_hat = model(x.squeeze(0))
-			loss = torch.sqrt(criterion(y_hat, y.squeeze(0)))
+			y_hat = model(x)
+			loss = torch.sqrt(criterion(y_hat, y.squeeze(1)))
 			tot_loss += loss.item()
 	return tot_loss / len(loader)
 
@@ -23,9 +24,10 @@ def evaluate(model, loader, criterion):
 def predict(model, x, true_y, orig_min, orig_max, plot='all'):
 	preds = []
 	model.eval()
+	model.set_gru_init_hidden(1)
 	with torch.no_grad():
 		for i in range(x.shape[0]):
-			pred = model(x[i])
+			pred = model(x[i].unsqueeze(0))
 			preds.append(pred.detach().cpu().numpy())
 
 		# If using prediction as next value instead of true
@@ -35,9 +37,11 @@ def predict(model, x, true_y, orig_min, orig_max, plot='all'):
 	preds = np.array(preds)
 	true_y = true_y.detach().cpu().numpy()
 
+	mse = mean_squared_error(true_y.squeeze(), preds.squeeze())
+
 	# Denormalize before plot and mse
-	# preds = denormalize(preds, orig_min, orig_max)
-	# true_y = denormalize(true_y, orig_min, orig_max)
+	preds = denormalize(preds, orig_min, orig_max)
+	true_y = denormalize(true_y, orig_min, orig_max)
 
 	# Plot preds and true
 	for i in range(preds.shape[2]):
@@ -47,17 +51,18 @@ def predict(model, x, true_y, orig_min, orig_max, plot='all'):
 		plt.legend()
 		plt.show()
 
-	mse = mean_squared_error(true_y.squeeze(), preds.squeeze())
 	return mse
 
 
 if __name__ == '__main__':
 
-	window_size = 5
+	window_size = 50
 	horizon = 1
 
 	data = process_gas_sensor_data(window_size, horizon)
 	feature_names = data['feature_names']
+
+	print(feature_names)
 
 	train_x = torch.from_numpy(data['train_x']).float()
 	train_y = torch.from_numpy(data['train_y']).float()
@@ -85,15 +90,15 @@ if __name__ == '__main__':
 
 	criterion = nn.MSELoss()
 
-	batch_size = 1
+	batch_size = 16
 	train_data = TensorDataset(train_x, train_y)
-	train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=False)
+	train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True)
 
 	val_data = TensorDataset(val_x, val_y)
-	val_loader = DataLoader(val_data, shuffle=False, batch_size=batch_size, drop_last=False)
+	val_loader = DataLoader(val_data, shuffle=False, batch_size=batch_size, drop_last=True)
 
 	test_data = TensorDataset(test_x, test_y)
-	test_loader = DataLoader(test_data, shuffle=False, batch_size=batch_size, drop_last=False)
+	test_loader = DataLoader(test_data, shuffle=False, batch_size=batch_size, drop_last=True)
 
 	init_train_loss = evaluate(model, train_loader, criterion)
 	print(f'Init train loss: {init_train_loss}')
@@ -105,12 +110,16 @@ if __name__ == '__main__':
 	epoch_losses = []
 	for epoch in range(n_epochs):
 		model.train()
-		model.set_gru_init_hidden(window_size)
+		# model.set_gru_init_hidden(window_size)
 		avg_loss = 0
 		for x, y in train_loader:
+			model.set_gru_init_hidden(batch_size)
 			optimizer.zero_grad()
-			y_hat = model(x.squeeze(0))
-			loss = torch.sqrt(criterion(y_hat, y.squeeze(0)))
+			y_hat = model(x)
+			#print("-"*30)
+			#print(y_hat.shape)
+			#print(y.shape)
+			loss = torch.sqrt(criterion(y_hat, y.squeeze(1)))
 			loss.backward()
 			optimizer.step()
 
