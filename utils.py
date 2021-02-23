@@ -39,7 +39,7 @@ def process_gas_sensor_data(window_size=50, horizon=1, val_size=300, test_size=1
 	values = df.values
 	feature_names = df.columns.tolist()
 
-	values = (values - np.min(values)) / (np.max(values) - np.min(values))
+	# values = (values - np.min(values)) / (np.max(values) - np.min(values))
 
 	# Create forecasting dataset
 	x, y = [], []
@@ -65,14 +65,18 @@ def process_gas_sensor_data(window_size=50, horizon=1, val_size=300, test_size=1
 	print(train_x.min(), train_x.max())
 	print(train_y.min(), train_y.max())
 	print(test_x.min(), test_y.max())
+	print('-'*30)
 
 	train_x_min = train_x.min()
 	train_x_max = train_x.max()
 
 	# Normalize
-	# train_x, val_x, test_x = normalize(train_x, val_x, test_x)
-	# train_y, val_y, test_y = normalize(train_y, val_y, test_y)
+	train_x, val_x, test_x = normalize(train_x, val_x, test_x)
+	train_y, val_y, test_y = normalize(train_y, val_y, test_y)
 
+	print(train_x.min(), train_x.max())
+	print(train_y.min(), train_y.max())
+	print(test_x.min(), test_y.max())
 
 	print("-- Processing done.")
 
