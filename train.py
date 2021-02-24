@@ -21,7 +21,7 @@ def evaluate(model, loader, criterion):
 	return tot_loss / len(loader)
 
 
-def predict(model, x, true_y, orig_min, orig_max, plot='all'):
+def predict(model, x, true_y, scaler):
 	preds = []
 	model.eval()
 	model.set_gru_init_hidden(1)
@@ -34,19 +34,18 @@ def predict(model, x, true_y, orig_min, orig_max, plot='all'):
 		#if i < x.shape[0]-1:
 		#	x[i+1, -1, :] = preds
 
-	preds = np.array(preds)
-	true_y = true_y.detach().cpu().numpy()
+	preds = np.array(preds).squeeze()
+	true_y = true_y.detach().cpu().squeeze().numpy()
 
-	mse = mean_squared_error(true_y.squeeze(), preds.squeeze())
+	mse = mean_squared_error(true_y, preds)
 
-	# Denormalize before plot and mse
-	preds = denormalize(preds, orig_min, orig_max)
-	true_y = denormalize(true_y, orig_min, orig_max)
+	preds = scaler.inverse_transform(preds)
+	true_y = scaler.inverse_transform(true_y)
 
 	# Plot preds and true
-	for i in range(preds.shape[2]):
-		plt.plot([j for j in range(len(preds))], preds[:, 0, i].ravel(), label='Preds')
-		plt.plot([j for j in range(len(true_y))], true_y[:, 0, i].ravel(), label='True')
+	for i in range(preds.shape[1]):
+		plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
+		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
 		plt.title(f'Feature: {i}')
 		plt.legend()
 		plt.show()
@@ -56,13 +55,14 @@ def predict(model, x, true_y, orig_min, orig_max, plot='all'):
 
 if __name__ == '__main__':
 
-	window_size = 50
+	window_size = 100
 	horizon = 1
 
-	data = process_gas_sensor_data(window_size, horizon)
+	data = process_gas_sensor_data(window_size, horizon, test_size=0.2)
 	feature_names = data['feature_names']
-
 	print(feature_names)
+
+	scaler = data['scaler']
 
 	train_x = torch.from_numpy(data['train_x']).float()
 	train_y = torch.from_numpy(data['train_y']).float()
@@ -73,24 +73,22 @@ if __name__ == '__main__':
 	test_x = torch.from_numpy(data['test_x']).float()
 	test_y = torch.from_numpy(data['test_y']).float()
 
-	train_x_min = data['train_x_min']
-	train_x_max = data['train_x_max']
-
-	print(train_x.shape)
-	print(test_x.shape)
+	print(f'train_x shape: {train_x.shape}')
+	print(f'val_x shape: {val_x.shape}')
+	print(f'test_x shape: {test_x.shape}')
 
 	num_nodes = len(feature_names)
 
-	n_epochs = 5
-	model = MTAD_GAT(num_nodes, window_size, horizon, dropout=0.0)
-	optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+	n_epochs = 50
+	model = MTAD_GAT(num_nodes, window_size, horizon, dropout=0.2, forecasting_n_layers=2)
+	optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
 	if torch.cuda.is_available():
 		model.cuda()
 
 	criterion = nn.MSELoss()
 
-	batch_size = 16
+	batch_size = 64
 	train_data = TensorDataset(train_x, train_y)
 	train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True)
 
@@ -107,6 +105,7 @@ if __name__ == '__main__':
 	print(f'Init val loss: {init_val_loss}')
 
 	train_losses = []
+	val_losses = []
 	epoch_losses = []
 	for epoch in range(n_epochs):
 		model.train()
@@ -116,9 +115,6 @@ if __name__ == '__main__':
 			model.set_gru_init_hidden(batch_size)
 			optimizer.zero_grad()
 			y_hat = model(x)
-			#print("-"*30)
-			#print(y_hat.shape)
-			#print(y.shape)
 			loss = torch.sqrt(criterion(y_hat, y.squeeze(1)))
 			loss.backward()
 			optimizer.step()
@@ -131,16 +127,21 @@ if __name__ == '__main__':
 
 		# Evaluate on validation set
 		val_loss = evaluate(model, val_loader, criterion)
+		val_losses.append(val_loss)
 
 		print(f'[Epoch {epoch+1}] Train loss: {avg_loss:.5f}, Val loss: {val_loss:.5f}')
 
-	plt.plot([i for i in range(len(epoch_losses))], epoch_losses)
+	plt.plot(epoch_losses, label='training loss')
+	plt.plot(val_losses, label='validation loss')
+	plt.xlabel("Epoch")
+	plt.ylabel("RMSE")
+	plt.legend()
 	plt.show()
 
 	# Predict
-	mse_train = predict(model, train_x, train_y, train_x_min, train_x_max)
-	mse_val = predict(model, val_x, val_y, train_x_min, train_x_max)
-	mse_test = predict(model, test_x, test_y, train_x_min, train_x_max)
+	mse_train = predict(model, train_x, train_y, scaler)
+	mse_val = predict(model, val_x, val_y, scaler)
+	mse_test = predict(model, test_x, test_y, scaler)
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss: {test_loss:.3f}')

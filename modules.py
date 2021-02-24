@@ -23,7 +23,7 @@ class SpatialAttentionLayer(nn.Module):
 	# self.a = nn.Linear(2 * out_dim, 1, bias=False)
 
 	def forward(self, x):
-		# x has shape (n, k) where n is window size and k is number of nodes
+		# x has shape (b, n, k) where n is window size and k is number of nodes
 		# For spatial attention we represent each node by a sequential vector,
 		# containing all its values within the window
 
@@ -177,43 +177,3 @@ class Forecasting_Model(nn.Module):
 			x = self.relu(self.layers[i](x))
 			x = self.dropout(x)
 		return self.layers[-1](x)
-
-
-# window_size= 10
-# num_nodes = 8
-#
-# att_out_dim = 3 * num_nodes
-#
-# x = torch.ones((window_size, att_out_dim))
-# print(f'x: {x.shape}')
-#
-# in_dim = att_out_dim
-# gru_hid_dim = 16
-# horizon = 1
-#
-# gru = GRU(in_dim, gru_hid_dim, out_dim=horizon, n_layers=3, dropout=0.2)
-#
-# h_init = gru.init_hidden(window_size)
-# out, h = gru(x.unsqueeze(1), h_init)
-#
-# print(f'out: {out.shape}')
-# print(f'h: {h.shape}')
-#
-# fc_hid_dim = 32
-# forecasting_model = Forecasting_Model(in_dim=gru_hid_dim, hid_dim=fc_hid_dim, horizon=horizon, n_layers=3, dropout=0.2)
-#
-# predictions = forecasting_model(out)
-# print(predictions.shape)
-
-
-# spat_gat_layer = SpatialAttentionLayer(num_nodes, window_size, dropout=0.1, alpha=0.2)
-# out1 = spat_gat_layer(x)
-# print(out1.shape)
-#
-# temp_gat_layer = TemporalAttentionLayer(num_nodes, window_size, dropout=0.1, alpha=0.2)
-# out2 = temp_gat_layer(x)
-# print(out2.shape)
-#
-# print('-'*10)
-# out = torch.cat([out1.T, out2], dim=1)
-# print(out.shape)
