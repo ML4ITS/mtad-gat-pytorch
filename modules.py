@@ -93,22 +93,31 @@ class TemporalAttentionLayer(nn.Module):
 		# x has shape (b, n, k) where b is batch size, n is window size and k is number of nodes
 		# For temporal attention each node attend to its previous values,
 
+		# print(f'x: {x.shape}')
+
 		# Creating matrix of concatenations of node features
 		attn_input = self._make_attention_input(x)
 
 		# Attention scores
-		e = self.leakyrelu(torch.matmul(attn_input, self.w).squeeze(2))
+		e = self.leakyrelu(torch.matmul(attn_input, self.w).squeeze(3))
+
+		# print(f'e: {e.shape}')
 
 		# Attention weights
-		attention = torch.softmax(e, dim=1)
+		attention = torch.softmax(e, dim=2)
 		attention = torch.dropout(attention, self.dropout, train=self.training)
+
+		# print(f'attention: {attention.shape}')
 
 		# Computing new node features using the attention
 		h = torch.matmul(attention, x)
+		# print(f'h: {h.shape}')
 
 		return h
 
-	def _make_attention_input(self, x):
+
+
+	def _make_attention_input(self, v):
 		""" Preparing the temporal attention mechanism.
 			Creating matrix with all possible combinations of concatenations of node values:
 				v1_tN || v1_t1,
@@ -124,15 +133,21 @@ class TemporalAttentionLayer(nn.Module):
 				vK_tN || vK_tN,
 		"""
 
-		# x has shape (b, n, k)
-		v=x
+		# v has shape (b, n, k)
+		# print(v[0])
 
 		K = self.window_size
-		Wh_blocks_repeating = v.repeat_interleave(K, dim=0)  # Left-side of the matrix
-		Wh_blocks_alternating = v.repeat(K, 1)  # Right-side of the matrix
+		Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
+		Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
 
-		combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=1)  # Shape (K*K, 2*window_size)
-		return combined.view(K, K, 2 * self.num_nodes)
+		# print(Wh_blocks_repeating.shape)
+		# print(Wh_blocks_alternating.shape)
+
+		combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
+
+		# print(combined.shape)
+
+		return combined.view(v.size(0), K, K, 2 * self.num_nodes)
 
 
 class GRU(nn.Module):

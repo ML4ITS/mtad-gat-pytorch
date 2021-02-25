@@ -31,21 +31,14 @@ class MTAD_GAT(nn.Module):
 		# TODO: 1D convolution
 
 		h_feat = self.feature_gat(x)
-		#h_temp = self.temporal_gat(x)
+		h_temp = self.temporal_gat(x)
 
-		#h_cat = torch.cat([x, h_feat.T, h_temp], dim=1)
-		#gru_out, _ = self.gru(h_cat.unsqueeze(1), self.gru_init_h)
-
-		h_cat = torch.cat([x, h_feat.permute(0, 2, 1)], dim=1)
-		#print(h_cat.shape)
+		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=1)
 		gru_out, _ = self.gru(h_cat, self.gru_init_h)
 
-		#print(f'gru shape: {gru_out.shape}')
 		forecasting_in = gru_out[:, -1, :]  # Extracting output belonging to last timestamp
-		#print(f'forecasting_in shape: {forecasting_in.shape}')
 
 		# Flatten
-		#forecasting_in = gru_out.reshape(x.shape[0], -1)
 		predictions = self.forecasting_model(forecasting_in)
 
 		# TODO: Reconstruction model

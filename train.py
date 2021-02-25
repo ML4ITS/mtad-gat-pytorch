@@ -82,7 +82,11 @@ if __name__ == '__main__':
 	num_nodes = len(feature_names)
 
 	n_epochs = 30
-	model = MTAD_GAT(num_nodes, window_size, horizon, out_dim, dropout=0.1, forecasting_n_layers=1, gru_n_layers=1)
+	model = MTAD_GAT(num_nodes, window_size, horizon, out_dim,
+					 dropout=0.05,
+					 gru_n_layers=1,
+					 gru_hid_dim=3*num_nodes,
+					 forecasting_n_layers=1)
 	optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
 	if torch.cuda.is_available():
