@@ -49,12 +49,14 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 		window_end = i + window_size
 		horizon_end = window_end + horizon
 		x_i = values[i:window_end, :]
-		y_i = values[window_end:horizon_end, :]
-		x.append(x_i)
+
 		if target_col != -1:
-			y.append(y_i[target_col])
+			y_i = values[window_end:horizon_end, target_col]
 		else:
-			y.append(y_i)
+			y_i = values[window_end:horizon_end, :]
+
+		x.append(x_i)
+		y.append(y_i)
 
 	# Splitting in train, val, test
 	test_start = int(n - test_size * n)

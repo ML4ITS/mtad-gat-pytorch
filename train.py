@@ -11,7 +11,7 @@ from mtad_gat import MTAD_GAT
 
 def evaluate(model, loader, criterion):
 	model.eval()
-	model.set_gru_init_hidden(loader.batch_size)
+	# model.set_gru_init_hidden(loader.batch_size)
 	with torch.no_grad():
 		tot_loss = 0
 		for x, y in loader:
@@ -24,7 +24,7 @@ def evaluate(model, loader, criterion):
 def predict(model, x, true_y, scaler):
 	preds = []
 	model.eval()
-	model.set_gru_init_hidden(1)
+	# model.set_gru_init_hidden(1)
 	with torch.no_grad():
 		for i in range(x.shape[0]):
 			pred = model(x[i].unsqueeze(0))
@@ -57,10 +57,12 @@ if __name__ == '__main__':
 
 	window_size = 100
 	horizon = 1
+	target_col = -1  # -1 for forecasting all inputs
 
-	data = process_gas_sensor_data(window_size, horizon, test_size=0.2)
+	data = process_gas_sensor_data(window_size, horizon, test_size=0.2, target_col=target_col)
 	feature_names = data['feature_names']
 	print(feature_names)
+	out_dim = len(feature_names) if target_col == -1 else 1
 
 	scaler = data['scaler']
 
@@ -79,8 +81,8 @@ if __name__ == '__main__':
 
 	num_nodes = len(feature_names)
 
-	n_epochs = 50
-	model = MTAD_GAT(num_nodes, window_size, horizon, dropout=0.2, forecasting_n_layers=2)
+	n_epochs = 30
+	model = MTAD_GAT(num_nodes, window_size, horizon, out_dim, dropout=0.1, forecasting_n_layers=1, gru_n_layers=1)
 	optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
 	if torch.cuda.is_available():
@@ -88,7 +90,7 @@ if __name__ == '__main__':
 
 	criterion = nn.MSELoss()
 
-	batch_size = 64
+	batch_size = 128
 	train_data = TensorDataset(train_x, train_y)
 	train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True)
 
@@ -107,12 +109,13 @@ if __name__ == '__main__':
 	train_losses = []
 	val_losses = []
 	epoch_losses = []
+	print(f'Training model for {n_epochs} epochs..')
 	for epoch in range(n_epochs):
 		model.train()
 		# model.set_gru_init_hidden(window_size)
 		avg_loss = 0
 		for x, y in train_loader:
-			model.set_gru_init_hidden(batch_size)
+			# model.set_gru_init_hidden(batch_size)
 			optimizer.zero_grad()
 			y_hat = model(x)
 			loss = torch.sqrt(criterion(y_hat, y.squeeze(1)))

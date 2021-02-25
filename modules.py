@@ -1,17 +1,16 @@
-from typing import Any
-
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-class SpatialAttentionLayer(nn.Module):
+class FeatureAttentionLayer(nn.Module):
 	"""
-	Single Graph Spatial/Feature Attention Layer
+	Single Graph Feature/Spatial Attention Layer
 	"""
 
 	def __init__(self, num_nodes, window_size, dropout, alpha):
-		super(SpatialAttentionLayer, self).__init__()
+		super(FeatureAttentionLayer, self).__init__()
 		self.num_nodes = num_nodes
 		self.window_size = window_size
 		self.dropout = dropout
@@ -27,17 +26,18 @@ class SpatialAttentionLayer(nn.Module):
 		# For spatial attention we represent each node by a sequential vector,
 		# containing all its values within the window
 
-		v = x.T
-		#Wh = torch.mm(h, self.W)  # Transformation shared across nodes
+		v = x.permute(0, 2, 1)
+
+		#Wh = torch.mm(h, self.W)  # Transformation shared across nodes (not used)
 
 		# Creating matrix of concatenations of node features
 		attn_input = self._make_attention_input(v)
 
 		# Attention scores
-		e = self.leakyrelu(torch.matmul(attn_input, self.w).squeeze(2))
+		e = self.leakyrelu(torch.matmul(attn_input, self.w)).squeeze(3)
 
 		# Attention weights
-		attention = torch.softmax(e, dim=1)
+		attention = torch.softmax(e, dim=2)
 		attention = torch.dropout(attention, self.dropout, train=self.training)
 
 		# Computing new node features using the attention
@@ -46,7 +46,7 @@ class SpatialAttentionLayer(nn.Module):
 		return h
 
 	def _make_attention_input(self, v):
-		""" Preparing the spatial attention mechanism.
+		""" Preparing the feature attention mechanism.
 			Creating matrix with all possible combinations of concatenations of node:
 				v1 || v1,
 				...
@@ -61,12 +61,15 @@ class SpatialAttentionLayer(nn.Module):
 				vK || vK,
 		"""
 
-		K = self.num_nodes
-		Wh_blocks_repeating = v.repeat_interleave(K, dim=0)  # Left-side of the matrix
-		Wh_blocks_alternating = v.repeat(K, 1)  # Right-side of the matrix
+		# print(f'v: {v.shape}')
 
-		combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=1)  # Shape (K*K, 2*window_size)
-		return combined.view(K, K, 2 * self.window_size)
+		K = self.num_nodes
+		Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
+		Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
+
+		combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
+
+		return combined.view(v.size(0), K, K, 2 * self.window_size)
 
 
 class TemporalAttentionLayer(nn.Module):
@@ -148,7 +151,8 @@ class GRU(nn.Module):
 		# self.hidden = None
 
 	def forward(self, x, h):
-		out, h = self.gru(x, h)
+		h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
+		out, h = self.gru(x, h0)
 		return out, h
 
 	def init_hidden(self, batch_size):
