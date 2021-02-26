@@ -52,6 +52,7 @@ def predict(model, loader, scaler, plot_name=''):
 		plt.legend()
 		plt.savefig(f'plots/{plot_name}_feature{i}.png', bbox_inches='tight')
 		plt.show()
+		plt.close()
 
 	return rmse
 
@@ -71,7 +72,7 @@ if __name__ == '__main__':
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
-	parser.add_argument('--epochs', type=int, default=1)
+	parser.add_argument('--epochs', type=int, default=30)
 	parser.add_argument('--bs', type=int, default=64)
 	parser.add_argument('--lr', type=int, default=1e-4)
 	parser.add_argument('--dropout', type=float, default=0.0)
@@ -173,6 +174,7 @@ if __name__ == '__main__':
 	plt.legend()
 	plt.savefig(f'plots/losses.png', bbox_inches='tight')
 	plt.show()
+	plt.close()
 
 	# Predict
 	rmse_train = predict(model, train_loader, scaler, plot_name='train_preds')
