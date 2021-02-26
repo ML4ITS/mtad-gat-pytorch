@@ -40,8 +40,8 @@ def predict(model, loader, scaler, target_col=None, dataset='hpc', plot_name='')
 			preds.extend(y_hat.detach().cpu().numpy().squeeze())
 			true_y.extend(y.detach().cpu().squeeze().numpy())
 
-	# preds = np.array(preds)[-75:]
-	# true_y = np.array(true_y)[-75:]
+	preds = np.array(preds)[-125:]
+	true_y = np.array(true_y)[-125:]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	if target_col is not None:
@@ -193,7 +193,7 @@ if __name__ == '__main__':
 	plt.xlabel("Epoch")
 	plt.ylabel("MSE")
 	plt.legend()
-	plt.savefig(f'plots/losses.png', bbox_inches='tight')
+	plt.savefig(f'plots/{args.dataset}/losses.png', bbox_inches='tight')
 	plt.show()
 	plt.close()
 
