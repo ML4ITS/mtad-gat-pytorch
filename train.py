@@ -78,16 +78,18 @@ if __name__ == '__main__':
 	feature_names = data['feature_names']
 	print(feature_names)
 	out_dim = len(feature_names) if target_col is None else 1
+	cuda = torch.cuda.is_available() and args.use_cuda
+	device = 'cuda' if cuda else 'cpu'
 
 	scaler = data['scaler']
-	train_x = torch.from_numpy(data['train_x']).float()
-	train_y = torch.from_numpy(data['train_y']).float()
+	train_x = torch.from_numpy(data['train_x']).float().to(device)
+	train_y = torch.from_numpy(data['train_y']).float().to(device)
 
-	val_x = torch.from_numpy(data['val_x']).float()
-	val_y = torch.from_numpy(data['val_y']).float()
+	val_x = torch.from_numpy(data['val_x']).float().to(device)
+	val_y = torch.from_numpy(data['val_y']).float().to(device)
 
-	test_x = torch.from_numpy(data['test_x']).float()
-	test_y = torch.from_numpy(data['test_y']).float()
+	test_x = torch.from_numpy(data['test_x']).float().to(device)
+	test_y = torch.from_numpy(data['test_y']).float().to(device)
 
 	print(f'train_x shape: {train_x.shape}')
 	print(f'val_x shape: {val_x.shape}')
@@ -95,7 +97,6 @@ if __name__ == '__main__':
 
 	num_nodes = len(feature_names)
 
-	cuda = torch.cuda.is_available() and args.use_cuda
 	model = MTAD_GAT(num_nodes, window_size, horizon, out_dim,
 					 kernel_size=args.kernel_size,
 					 dropout=args.dropout,
@@ -103,7 +104,7 @@ if __name__ == '__main__':
 					 gru_hid_dim=args.gru_hid_dim,
 					 forecasting_n_layers=args.fc_layers,
 					 forecasting_hid_dim=args.fc_hid_dim,
-					 device='cuda' if cuda else 'cpu')
+					 device=device)
 	if cuda:
 		model.cuda()
 
