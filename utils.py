@@ -22,7 +22,7 @@ def denormalize(normalized_d, min_val, max_val):
 	return normalized_d * (max_val - min_val) + min_val
 
 
-def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col=-1):
+def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col=None):
 	"""
 
 	:param window_size: The number of timestamps to use to forecast
@@ -31,10 +31,13 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 	:param target_col: If having one particular column as target. If -1 then every column is the target
 	:return: dict consisting of feature names, x, and y
 	"""
-	df = pd.read_csv('datasets/gas_sensor_data.csv', delimiter=',')
-	df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
+	# df = pd.read_csv('datasets/gas_sensor_data.csv', delimiter=',')
+	# df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
+	df = pd.read_csv('datasets/household_power_consumption_hourly.csv', delimiter=',')
+	df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
 
 	n = df.shape[0]
+	print(n)
 	values = df.values
 	feature_names = df.columns.tolist()
 
@@ -50,7 +53,7 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 		horizon_end = window_end + horizon
 		x_i = values[i:window_end, :]
 
-		if target_col != -1:
+		if target_col is not None:
 			y_i = values[window_end:horizon_end, target_col]
 		else:
 			y_i = values[window_end:horizon_end, :]
@@ -89,6 +92,7 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 			'scaler': scaler}
 
 
+# process_gas_sensor_data(window_size=168, horizon=1)
 # data = process_gas_sensor_data(window_size=250, horizon=1)
 # feature_names = data['feature_names']
 # train_x = data['train_x']

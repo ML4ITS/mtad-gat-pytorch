@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error
+import argparse
 
 from utils import process_gas_sensor_data, denormalize
 from mtad_gat import MTAD_GAT
@@ -11,34 +12,25 @@ from mtad_gat import MTAD_GAT
 
 def evaluate(model, loader, criterion):
 	model.eval()
-	# model.set_gru_init_hidden(loader.batch_size)
+
+	losses = []
 	with torch.no_grad():
-		tot_loss = 0
 		for x, y in loader:
 			y_hat = model(x)
-			loss = torch.sqrt(criterion(y_hat, y.squeeze(1)))
-			tot_loss += loss.item()
-	return tot_loss / len(loader)
+			loss = criterion(y_hat, y.squeeze(1))
+			losses.append(loss.item())
+
+	return np.sqrt(np.array(losses).mean())
 
 
 def predict(model, x, true_y, scaler):
-	preds = []
 	model.eval()
-	# model.set_gru_init_hidden(1)
+
 	with torch.no_grad():
-		for i in range(x.shape[0]):
-			pred = model(x[i].unsqueeze(0))
-			preds.append(pred.detach().cpu().numpy())
+		preds = model(x).detach().cpu().numpy().squeeze()
 
-		# If using prediction as next value instead of true
-		#if i < x.shape[0]-1:
-		#	x[i+1, -1, :] = preds
-
-	preds = np.array(preds).squeeze()
 	true_y = true_y.detach().cpu().squeeze().numpy()
-
-	mse = mean_squared_error(true_y, preds)
-
+	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	preds = scaler.inverse_transform(preds)
 	true_y = scaler.inverse_transform(true_y)
 
@@ -50,22 +42,44 @@ def predict(model, x, true_y, scaler):
 		plt.legend()
 		plt.show()
 
-	return mse
+	return rmse
 
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser()
 
-	window_size = 100
-	horizon = 1
-	target_col = -1  # -1 for forecasting all inputs
+	# Model params
+	parser.add_argument('--lookback', type=int, default=100)
+	parser.add_argument('--horizon', type=int, default=1)
+	parser.add_argument('--target_col', type=int, default=None)
+	parser.add_argument('--kernel_size', type=int, default=7)
+	parser.add_argument('--gru_layers', type=int, default=1)
+	parser.add_argument('--gru_hid_dim', type=int, default=64)
+	parser.add_argument('--fc_layers', type=int, default=1)
+	parser.add_argument('--fc_hid_dim', type=int, default=32)
 
-	data = process_gas_sensor_data(window_size, horizon, test_size=0.2, target_col=target_col)
+	# Train params
+	parser.add_argument('--test_size', type=float, default=0.2)
+	parser.add_argument('--epochs', type=int, default=30)
+	parser.add_argument('--bs', type=int, default=64)
+	parser.add_argument('--lr', type=int, default=1e-4)
+	parser.add_argument('--dropout', type=float, default=0.0)
+	parser.add_argument('--use_cuda', type=bool, default=True)
+	parser.add_argument('--model_path', type=str, default="./saved_models/")
+
+	args = parser.parse_args()
+	print(args)
+
+	window_size = args.lookback
+	horizon = args.horizon
+	target_col = args.target_col
+
+	data = process_gas_sensor_data(window_size, horizon, test_size=args.test_size, target_col=target_col)
 	feature_names = data['feature_names']
 	print(feature_names)
-	out_dim = len(feature_names) if target_col == -1 else 1
+	out_dim = len(feature_names) if target_col is None else 1
 
 	scaler = data['scaler']
-
 	train_x = torch.from_numpy(data['train_x']).float()
 	train_y = torch.from_numpy(data['train_y']).float()
 
@@ -81,20 +95,22 @@ if __name__ == '__main__':
 
 	num_nodes = len(feature_names)
 
-	n_epochs = 30
+	cuda = torch.cuda.is_available() and args.use_cuda
 	model = MTAD_GAT(num_nodes, window_size, horizon, out_dim,
-					 dropout=0.05,
-					 gru_n_layers=1,
-					 gru_hid_dim=3*num_nodes,
-					 forecasting_n_layers=1)
-	optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-
-	if torch.cuda.is_available():
+					 kernel_size=args.kernel_size,
+					 dropout=args.dropout,
+					 gru_n_layers=args.gru_layers,
+					 gru_hid_dim=args.gru_hid_dim,
+					 forecasting_n_layers=args.fc_layers,
+					 forecasting_hid_dim=args.fc_hid_dim,
+					 device='cuda' if cuda else 'cpu')
+	if cuda:
 		model.cuda()
 
+	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 	criterion = nn.MSELoss()
-
-	batch_size = 128
+	n_epochs = args.epochs
+	batch_size = args.bs
 	train_data = TensorDataset(train_x, train_y)
 	train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True)
 
@@ -112,47 +128,44 @@ if __name__ == '__main__':
 
 	train_losses = []
 	val_losses = []
-	epoch_losses = []
 	print(f'Training model for {n_epochs} epochs..')
 	for epoch in range(n_epochs):
 		model.train()
-		# model.set_gru_init_hidden(window_size)
-		avg_loss = 0
+		batch_losses = []
 		for x, y in train_loader:
-			# model.set_gru_init_hidden(batch_size)
 			optimizer.zero_grad()
 			y_hat = model(x)
 			loss = torch.sqrt(criterion(y_hat, y.squeeze(1)))
 			loss.backward()
 			optimizer.step()
 
-			train_losses.append(loss.item())
-			avg_loss += loss.item()
+			batch_losses.append(loss.item())
 
-		avg_loss /= len(train_loader)
-		epoch_losses.append(avg_loss)
+		epoch_loss = np.array(batch_losses).mean()
+		train_losses.append(epoch_loss)
 
 		# Evaluate on validation set
 		val_loss = evaluate(model, val_loader, criterion)
 		val_losses.append(val_loss)
 
-		print(f'[Epoch {epoch+1}] Train loss: {avg_loss:.5f}, Val loss: {val_loss:.5f}')
+		print(f'[Epoch {epoch+1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}')
 
-	plt.plot(epoch_losses, label='training loss')
+	plt.plot(train_losses, label='training loss')
 	plt.plot(val_losses, label='validation loss')
 	plt.xlabel("Epoch")
-	plt.ylabel("RMSE")
+	plt.ylabel("MSE")
 	plt.legend()
 	plt.show()
 
 	# Predict
-	mse_train = predict(model, train_x, train_y, scaler)
-	mse_val = predict(model, val_x, val_y, scaler)
-	mse_test = predict(model, test_x, test_y, scaler)
+	rmse_train = predict(model, train_x, train_y, scaler)
+	rmse_val = predict(model, val_x, val_y, scaler)
+	rmse_test = predict(model, test_x, test_y, scaler)
+
+	print(rmse_test)
 
 	test_loss = evaluate(model, test_loader, criterion)
-	print(f'Test loss: {test_loss:.3f}')
-	print(f'Test mse: {mse_test:.3f}')
+	print(f'Test loss (RMSE): {test_loss:.3f}')
 
 
 

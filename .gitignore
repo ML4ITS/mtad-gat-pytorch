@@ -1,2 +1,5 @@
 __pycache__/
 .idea/
+.DS_Store
+datasets/
+eda/.ipynb_checkpoints/

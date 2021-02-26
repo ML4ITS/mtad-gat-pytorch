@@ -4,12 +4,30 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class ConvLayer(nn.Module):
+	"""
+	1-D Convolution layer to extract high-level features of each time-series input
+	"""
+
+	def __init__(self, num_nodes, window_size, kernel_size=7, device='cpu'):
+		super(ConvLayer, self).__init__()
+		self.padding = nn.ConstantPad1d((kernel_size - 1) // 2, 0.0)
+		self.conv = nn.Conv1d(in_channels=num_nodes, out_channels=num_nodes, kernel_size=kernel_size)
+		self.relu = nn.ReLU()
+
+	def forward(self, x):
+		x = x.permute(0, 2, 1)  # To get the features/nodes as channel and timesteps as the spatial dimension
+		x = self.padding(x)
+		x = self.relu(self.conv(x))
+		return x.permute(0, 2, 1)  # Permute back
+
+
 class FeatureAttentionLayer(nn.Module):
 	"""
 	Single Graph Feature/Spatial Attention Layer
 	"""
 
-	def __init__(self, num_nodes, window_size, dropout, alpha):
+	def __init__(self, num_nodes, window_size, dropout, alpha, device='cpu'):
 		super(FeatureAttentionLayer, self).__init__()
 		self.num_nodes = num_nodes
 		self.window_size = window_size
@@ -77,7 +95,7 @@ class TemporalAttentionLayer(nn.Module):
 	Single Graph Temporal Attention Layer
 	"""
 
-	def __init__(self, num_nodes, window_size, dropout, alpha):
+	def __init__(self, num_nodes, window_size, dropout, alpha, device='cpu'):
 		super(TemporalAttentionLayer, self).__init__()
 		self.num_nodes = num_nodes
 		self.window_size = window_size
