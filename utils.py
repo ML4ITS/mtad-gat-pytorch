@@ -44,6 +44,7 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 
 	print(values.min(0), values.max(0))
 	scaler = MinMaxScaler()
+	# target_scaler = MinMaxScaler()
 	values = scaler.fit_transform(values)
 	print(values.min(0), values.max(0))
 
@@ -56,6 +57,7 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 
 		if target_col is not None:
 			y_i = values[window_end:horizon_end, target_col]
+
 		else:
 			y_i = values[window_end:horizon_end, :]
 
