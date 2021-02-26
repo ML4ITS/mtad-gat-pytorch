@@ -24,18 +24,25 @@ def evaluate(model, loader, criterion):
 	return np.sqrt(np.array(losses).mean())
 
 
-def predict(model, x, true_y, scaler, plot_name=''):
+def predict(model, loader, scaler, plot_name=''):
 	model.eval()
 
+	preds = []
+	true_y = []
 	with torch.no_grad():
-		preds = model(x).detach().cpu().numpy().squeeze()
+		for x, y in loader:
+			y_hat = model(x)
+			preds.extend(y_hat.detach().cpu().numpy().squeeze())
+			true_y.extend(y.detach().cpu().squeeze().numpy())
 
-	true_y = true_y.detach().cpu().squeeze().numpy()
+	preds = np.array(preds)
+	true_y = np.array(true_y)
+	#with torch.no_grad():
+	#	preds = model(x).detach().cpu().numpy().squeeze()
+
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	preds = scaler.inverse_transform(preds)
 	true_y = scaler.inverse_transform(true_y)
-
-
 
 	# Plot preds and true
 	for i in range(preds.shape[1]):
@@ -64,7 +71,7 @@ if __name__ == '__main__':
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
-	parser.add_argument('--epochs', type=int, default=30)
+	parser.add_argument('--epochs', type=int, default=1)
 	parser.add_argument('--bs', type=int, default=64)
 	parser.add_argument('--lr', type=int, default=1e-4)
 	parser.add_argument('--dropout', type=float, default=0.0)
@@ -168,9 +175,9 @@ if __name__ == '__main__':
 	plt.show()
 
 	# Predict
-	rmse_train = predict(model, train_x, train_y, scaler, plot_name='train_preds')
-	rmse_val = predict(model, val_x, val_y, scaler, plot_name='val_preds')
-	rmse_test = predict(model, test_x, test_y, scaler, plot_name='test_preds')
+	rmse_train = predict(model, train_loader, scaler, plot_name='train_preds')
+	rmse_val = predict(model, val_loader, scaler, plot_name='val_preds')
+	rmse_test = predict(model, test_loader, scaler, plot_name='test_preds')
 
 	print(rmse_test)
 
