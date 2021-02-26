@@ -42,11 +42,8 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 	values = df.values
 	feature_names = df.columns.tolist()
 
-	print(values.min(0), values.max(0))
 	scaler = MinMaxScaler()
-	# target_scaler = MinMaxScaler()
 	values = scaler.fit_transform(values)
-	print(values.min(0), values.max(0))
 
 	# Create forecasting dataset
 	x, y = [], []
@@ -63,6 +60,8 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 
 		x.append(x_i)
 		y.append(y_i)
+
+	# if target_col is not None:
 
 	# Splitting in train, val, test
 	test_start = int(n - test_size * n)
@@ -125,4 +124,3 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 #
 # plt.plot([i for i in range(len(s1_s2))], s1_s2)
 # plt.show()
-

@@ -18,9 +18,9 @@ def evaluate(model, loader, criterion):
 	with torch.no_grad():
 		for x, y in loader:
 			y_hat = model(x)
-			if y_hat.ndim == 2:
+			if y_hat.ndim == 3:
 				y_hat = y_hat.squeeze(1)
-			if y.ndim == 2:
+			if y.ndim == 3:
 				y = y.squeeze(1)
 
 			loss = criterion(y_hat, y)
@@ -29,7 +29,7 @@ def evaluate(model, loader, criterion):
 	return np.sqrt(np.array(losses).mean())
 
 
-def predict(model, loader, scaler, plot_name=''):
+def predict(model, loader, scaler, target_col=None, plot_name=''):
 	model.eval()
 
 	preds = []
@@ -46,12 +46,15 @@ def predict(model, loader, scaler, plot_name=''):
 	#	preds = model(x).detach().cpu().numpy().squeeze()
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
-	if preds.shape[1] == 1:
-		scaler_input = np.zeros((x.shape[0], x.shape[2]))
-		scaler_input[:, 0] = preds
-		preds = scaler.inverse_transform(scaler_input)[:, [0]]
-		scaler_input[:, 0] = true_y
-		true_y = scaler.inverse_transform(scaler_input)[:, 0]
+	if target_col is not None:
+		scaler_input = np.zeros((preds.shape[0], x.shape[2]))
+		scaler_input[:, target_col] = preds
+		preds = scaler.inverse_transform(scaler_input)[:, target_col]
+		scaler_input[:, target_col] = true_y
+		true_y = scaler.inverse_transform(scaler_input)[:, target_col]
+
+		preds = np.expand_dims(preds, 1)
+		true_y = np.expand_dims(true_y, 1)
 	else:
 		preds = scaler.inverse_transform(preds)
 		true_y = scaler.inverse_transform(true_y)
@@ -60,7 +63,7 @@ def predict(model, loader, scaler, plot_name=''):
 	for i in range(preds.shape[1]):
 		plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
 		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
-		plt.title(f'Feature: {i}')
+		plt.title(f'{plot_name} | Feature: {i}')
 		plt.legend()
 		plt.savefig(f'plots/{plot_name}_feature{i}.png', bbox_inches='tight')
 		plt.show()
@@ -164,9 +167,9 @@ if __name__ == '__main__':
 		for x, y in train_loader:
 			optimizer.zero_grad()
 			y_hat = model(x)
-			if y_hat.ndim == 2:
+			if y_hat.ndim == 3:
 				y_hat = y_hat.squeeze(1)
-			if y.ndim == 2:
+			if y.ndim == 3:
 				y = y.squeeze(1)
 			loss = torch.sqrt(criterion(y_hat, y))
 			loss.backward()
@@ -193,9 +196,11 @@ if __name__ == '__main__':
 	plt.close()
 
 	# Predict
-	rmse_train = predict(model, train_loader, scaler, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, scaler, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, scaler, plot_name='test_preds')
+	# Make train loader with no shuffle
+	train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
+	rmse_train = predict(model, train_loader, scaler, target_col, plot_name='train_preds')
+	rmse_val = predict(model, val_loader, scaler, target_col, plot_name='val_preds')
+	rmse_test = predict(model, test_loader, scaler, target_col, plot_name='test_preds')
 
 	print(rmse_test)
 
