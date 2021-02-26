@@ -1,5 +1,6 @@
 __pycache__/
 .idea/
 .DS_Store
-datasets/
+datasets/household_power_consumption.csv
+datasets/ecg_data.txt
 eda/.ipynb_checkpoints/
