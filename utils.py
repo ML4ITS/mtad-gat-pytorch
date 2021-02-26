@@ -22,7 +22,7 @@ def denormalize(normalized_d, min_val, max_val):
 	return normalized_d * (max_val - min_val) + min_val
 
 
-def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col=None):
+def process_data(dataset_name, window_size=50, horizon=1, test_size=0.2, target_col=None):
 	"""
 
 	:param window_size: The number of timestamps to use to forecast
@@ -31,10 +31,18 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 	:param target_col: If having one particular column as target. If -1 then every column is the target
 	:return: dict consisting of feature names, x, and y
 	"""
-	# df = pd.read_csv('datasets/gas_sensor_data.csv', delimiter=',')
-	# df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
-	df = pd.read_csv('datasets/household_power_consumption_hourly.csv', delimiter=',')
-	df.drop(['Date', 'Hour', 'Datetime'], axis=1, inplace=True)
+	path = '/datasets'
+	df = None
+	if dataset_name == 'hpc':
+		df = pd.read_csv(f'{path}/household_power_consumption_hourly.csv', delimiter=',')
+		# df.drop(['Date', 'Hour', 'Datetime'], axis=1, inplace=True)
+		df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
+	elif dataset_name == 'gsd':
+		df = pd.read_csv('datasets/gas_sensor_data.csv', delimiter=',')
+		df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
+
+	#df = pd.read_csv('datasets/household_power_consumption_hourly.csv', delimiter=',')
+	#df.drop(['Date', 'Hour', 'Datetime'], axis=1, inplace=True)
 	# df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
 
 	n = df.shape[0]

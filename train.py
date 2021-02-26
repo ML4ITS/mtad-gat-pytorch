@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 import argparse
 
-from utils import process_gas_sensor_data, denormalize
+from utils import process_data, denormalize
 from mtad_gat import MTAD_GAT
 
 
@@ -75,10 +75,14 @@ def predict(model, loader, scaler, target_col=None, plot_name=''):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
-	# Model params
+	# Data params
+	parser.add_argument('--dataset', type=str, default='hpc', choices=['hpc', 'gsd'],
+						help='hpc: hourly household power consumption data /n gsd: gas sensor data')
 	parser.add_argument('--lookback', type=int, default=100)
 	parser.add_argument('--horizon', type=int, default=1)
 	parser.add_argument('--target_col', type=int, default=None)
+
+	# Model params
 	parser.add_argument('--kernel_size', type=int, default=7)
 	parser.add_argument('--gru_layers', type=int, default=1)
 	parser.add_argument('--gru_hid_dim', type=int, default=64)
@@ -104,7 +108,7 @@ if __name__ == '__main__':
 	horizon = args.horizon
 	target_col = args.target_col
 
-	data = process_gas_sensor_data(window_size, horizon, test_size=args.test_size, target_col=target_col)
+	data = process_data(args.dataset, window_size, horizon, test_size=args.test_size, target_col=target_col)
 	feature_names = data['feature_names']
 	print(feature_names)
 	out_dim = len(feature_names) if target_col is None else 1
