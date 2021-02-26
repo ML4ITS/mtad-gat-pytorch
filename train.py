@@ -35,8 +35,8 @@ def predict(model, loader, scaler, plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy().squeeze())
 			true_y.extend(y.detach().cpu().squeeze().numpy())
 
-	preds = np.array(preds)[-120:]
-	true_y = np.array(true_y)[-120:]
+	preds = np.array(preds)[-75:]
+	true_y = np.array(true_y)[-75:]
 	#with torch.no_grad():
 	#	preds = model(x).detach().cpu().numpy().squeeze()
 
