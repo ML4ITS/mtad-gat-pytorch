@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
@@ -23,7 +24,7 @@ def evaluate(model, loader, criterion):
 	return np.sqrt(np.array(losses).mean())
 
 
-def predict(model, x, true_y, scaler):
+def predict(model, x, true_y, scaler, plot_name=''):
 	model.eval()
 
 	with torch.no_grad():
@@ -34,12 +35,15 @@ def predict(model, x, true_y, scaler):
 	preds = scaler.inverse_transform(preds)
 	true_y = scaler.inverse_transform(true_y)
 
+
+
 	# Plot preds and true
 	for i in range(preds.shape[1]):
 		plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
 		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
 		plt.title(f'Feature: {i}')
 		plt.legend()
+		plt.savefig(f'plots/{plot_name}_feature{i}.png', bbox_inches='tight')
 		plt.show()
 
 	return rmse
@@ -69,6 +73,9 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 	print(args)
+
+	if not os.path.exists('plots'):
+		os.makedirs('plots')
 
 	window_size = args.lookback
 	horizon = args.horizon
@@ -107,6 +114,7 @@ if __name__ == '__main__':
 					 device=device)
 	if cuda:
 		model.cuda()
+		print(f'Device: {device}')
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 	criterion = nn.MSELoss()
@@ -156,12 +164,13 @@ if __name__ == '__main__':
 	plt.xlabel("Epoch")
 	plt.ylabel("MSE")
 	plt.legend()
+	plt.savefig(f'plots/losses.png', bbox_inches='tight')
 	plt.show()
 
 	# Predict
-	rmse_train = predict(model, train_x, train_y, scaler)
-	rmse_val = predict(model, val_x, val_y, scaler)
-	rmse_test = predict(model, test_x, test_y, scaler)
+	rmse_train = predict(model, train_x, train_y, scaler, plot_name='train_preds')
+	rmse_val = predict(model, val_x, val_y, scaler, plot_name='val_preds')
+	rmse_test = predict(model, test_x, test_y, scaler, plot_name='test_preds')
 
 	print(rmse_test)
 
