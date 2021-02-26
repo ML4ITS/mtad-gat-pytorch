@@ -34,7 +34,8 @@ def process_gas_sensor_data(window_size=50, horizon=1, test_size=0.2, target_col
 	# df = pd.read_csv('datasets/gas_sensor_data.csv', delimiter=',')
 	# df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
 	df = pd.read_csv('datasets/household_power_consumption_hourly.csv', delimiter=',')
-	df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
+	df.drop(['Date', 'Hour', 'Datetime'], axis=1, inplace=True)
+	# df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
 
 	n = df.shape[0]
 	print(n)
