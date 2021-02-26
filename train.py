@@ -29,7 +29,7 @@ def evaluate(model, loader, criterion):
 	return np.sqrt(np.array(losses).mean())
 
 
-def predict(model, loader, scaler, target_col=None, plot_name=''):
+def predict(model, loader, scaler, target_col=None, dataset='hpc', plot_name=''):
 	model.eval()
 
 	preds = []
@@ -40,10 +40,8 @@ def predict(model, loader, scaler, target_col=None, plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy().squeeze())
 			true_y.extend(y.detach().cpu().squeeze().numpy())
 
-	preds = np.array(preds)[-75:]
-	true_y = np.array(true_y)[-75:]
-	#with torch.no_grad():
-	#	preds = model(x).detach().cpu().numpy().squeeze()
+	# preds = np.array(preds)[-75:]
+	# true_y = np.array(true_y)[-75:]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	if target_col is not None:
@@ -65,7 +63,7 @@ def predict(model, loader, scaler, target_col=None, plot_name=''):
 		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
 		plt.title(f'{plot_name} | Feature: {i}')
 		plt.legend()
-		plt.savefig(f'plots/{plot_name}_feature{i}.png', bbox_inches='tight')
+		plt.savefig(f'plots/{dataset}/{plot_name}_feature{i}.png', bbox_inches='tight')
 		plt.show()
 		plt.close()
 
@@ -101,8 +99,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	print(args)
 
-	if not os.path.exists('plots'):
-		os.makedirs('plots')
+	if not os.path.exists(f'plots/{args.dataset}'):
+		os.makedirs(f'plots/{args.dataset}')
 
 	window_size = args.lookback
 	horizon = args.horizon
@@ -202,9 +200,9 @@ if __name__ == '__main__':
 	# Predict
 	# Make train loader with no shuffle
 	train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
-	rmse_train = predict(model, train_loader, scaler, target_col, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, scaler, target_col, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, scaler, target_col, plot_name='test_preds')
+	rmse_train = predict(model, train_loader, scaler, target_col, dataset=args.dataset, plot_name='train_preds')
+	rmse_val = predict(model, val_loader, scaler, target_col, dataset=args.dataset, plot_name='val_preds')
+	rmse_test = predict(model, test_loader, scaler, target_col, dataset=args.dataset, plot_name='test_preds')
 
 	print(rmse_test)
 
