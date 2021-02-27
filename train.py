@@ -113,6 +113,7 @@ if __name__ == '__main__':
 	cuda = torch.cuda.is_available() and args.use_cuda
 	device = 'cuda' if cuda else 'cpu'
 
+
 	scaler = data['scaler']
 	train_x = torch.from_numpy(data['train_x']).float().to(device)
 	train_y = torch.from_numpy(data['train_y']).float().to(device)
