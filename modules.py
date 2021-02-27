@@ -56,7 +56,7 @@ class FeatureAttentionLayer(nn.Module):
 
 		# Attention weights
 		attention = torch.softmax(e, dim=2)
-		attention = torch.dropout(attention, self.dropout, train=self.training)
+		# attention = torch.dropout(attention, self.dropout, train=self.training)
 
 		# Computing new node features using the attention
 		h = torch.matmul(attention, v)
@@ -123,7 +123,7 @@ class TemporalAttentionLayer(nn.Module):
 
 		# Attention weights
 		attention = torch.softmax(e, dim=2)
-		attention = torch.dropout(attention, self.dropout, train=self.training)
+		# attention = torch.dropout(attention, self.dropout, train=self.training)
 
 		# print(f'attention: {attention.shape}')
 
