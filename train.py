@@ -23,7 +23,8 @@ def evaluate(model, loader, criterion):
 			if y.ndim == 3:
 				y = y.squeeze(1)
 
-			loss = criterion(y_hat, y)
+			# loss = criterion(y_hat, y)
+			loss = criterion(x, recons)
 			losses.append(loss.item())
 
 	return np.sqrt(np.array(losses).mean())
@@ -137,9 +138,10 @@ if __name__ == '__main__':
 					 forecasting_n_layers=args.fc_layers,
 					 forecasting_hid_dim=args.fc_hid_dim,
 					 device=device)
+
+	print(f'Device: {device}')
 	if cuda:
 		model.cuda()
-		print(f'Device: {device}')
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 	criterion = nn.MSELoss()

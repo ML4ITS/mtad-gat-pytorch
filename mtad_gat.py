@@ -20,7 +20,7 @@ class MTAD_GAT(nn.Module):
 		self.temporal_gat = TemporalAttentionLayer(num_nodes, window_size, dropout, alpha, device)
 		self.gru = GRU(num_nodes, gru_hid_dim, gru_n_layers, dropout, device)
 		self.forecasting_model = Forecasting_Model(gru_hid_dim, forecasting_hid_dim, out_dim*horizon, forecasting_n_layers, dropout, device)
-		self.recon_model = Reconstruction_Model(num_nodes, 32, 32, num_nodes, dropout)
+		self.recon_model = Reconstruction_Model(num_nodes, 32, 32, num_nodes, dropout, device)
 
 	def forward(self, x):
 		# x shape (b, n, k): b - batch size, n - window size, k - number of nodes/features
