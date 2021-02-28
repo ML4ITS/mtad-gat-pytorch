@@ -24,7 +24,7 @@ def evaluate(model, loader, criterion):
 				y = y.squeeze(1)
 
 			# loss = criterion(y_hat, y)
-			loss = criterion(x, recons)
+			loss = criterion(recons, x)
 			losses.append(loss.item())
 
 	return np.sqrt(np.array(losses).mean())
