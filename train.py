@@ -24,7 +24,7 @@ def evaluate(model, loader, criterion):
 				y = y.squeeze(1)
 
 			# loss = criterion(y_hat, y)
-			loss = criterion(recons, x)
+			loss = criterion(y, y_hat)
 			losses.append(loss.item())
 
 	return np.sqrt(np.array(losses).mean())
@@ -175,7 +175,7 @@ if __name__ == '__main__':
 				preds = preds.squeeze(1)
 			if y.ndim == 3:
 				y = y.squeeze(1)
-			loss = torch.sqrt(criterion(recons, x))
+			loss = torch.sqrt(criterion(y, preds))
 			loss.backward()
 			optimizer.step()
 

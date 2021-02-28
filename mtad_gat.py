@@ -39,7 +39,8 @@ class MTAD_GAT(nn.Module):
 		predictions = self.forecasting_model(forecasting_in)
 
 		# TODO: Reconstruction model
-		recons = self.recon_model(x)
+		recons = None
+		# recons = self.recon_model(x)
 
 		return predictions, recons
 
