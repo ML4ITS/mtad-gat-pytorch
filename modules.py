@@ -183,7 +183,7 @@ class GRU(nn.Module):
 		self.relu = nn.ReLU()
 		# self.hidden = None
 
-	def forward(self, x, h):
+	def forward(self, x):
 		h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
 		out, h = self.gru(x, h0)
 		return out, h
@@ -193,7 +193,48 @@ class GRU(nn.Module):
 		# hidden = weight.new(self.n_layers, batch_size, self.hid_dim).zero_().to(self.device)
 		return torch.zeros(self.n_layers, batch_size, self.hid_dim).to(self.device)
 
+
+class Reconstruction_Model(nn.Module):
+	"""
+	Reconstruction Model using a GRU-based Encoder-Decoder
+	"""
+
+	def __init__(self, in_dim, enc_hid_dim, dec_hid_dim, out_dim, dropout, device='cpu'):
+		super(Reconstruction_Model, self).__init__()
+		self.dropout = dropout
+		self.device = device
+		self.enc_hid_dim = enc_hid_dim
+
+		self.encoder = nn.GRU(in_dim, enc_hid_dim, batch_first=True, dropout=dropout)
+		self.decoder = nn.GRU(in_dim, dec_hid_dim, batch_first=True, dropout=dropout)
+		self.fc = nn.Linear(dec_hid_dim, out_dim)
+		self.relu = nn.ReLU()
+		# self.hidden = None
+
+	def forward(self, x):
+		# x shape: (b, n, k)
+		h0 = torch.zeros(1, x.shape[0], self.enc_hid_dim).to(self.device)
+		_, enc_last_hid = self.encoder(x, h0)  # last hidden state, will be used as initial hidden state for decoder
+
+		if self.training:
+			# Reconstruct in reverse order
+			x_flip = torch.flip(x, [1])
+			dec_out, _ = self.decoder(x_flip, enc_last_hid)
+			x_flip_recon = self.fc(dec_out)
+
+		else:
+			x_flip_recon = torch.zeros_like(x)
+			for i in range(x.shape[1]):
+				dec_out, _ = self.decoder(x_flip_recon, enc_last_hid)
+				x_flip_recon[:, i, :] = self.fc(dec_out[:, i, :])
+
+		x_recon = torch.flip(x_flip_recon, [1])
+		return x_recon
+
 class Forecasting_Model(nn.Module):
+	"""
+	Forecasting model (fully-connected network)
+	"""
 	def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout, device='cpu'):
 		super(Forecasting_Model, self).__init__()
 

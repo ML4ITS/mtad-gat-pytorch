@@ -17,7 +17,7 @@ def evaluate(model, loader, criterion):
 	losses = []
 	with torch.no_grad():
 		for x, y in loader:
-			y_hat = model(x)
+			y_hat, recons = model(x)
 			if y_hat.ndim == 3:
 				y_hat = y_hat.squeeze(1)
 			if y.ndim == 3:
@@ -36,7 +36,7 @@ def predict(model, loader, scaler, target_col=None, dataset='hpc', plot_name='')
 	true_y = []
 	with torch.no_grad():
 		for x, y in loader:
-			y_hat = model(x)
+			y_hat, recons = model(x)
 			preds.extend(y_hat.detach().cpu().numpy().squeeze())
 			true_y.extend(y.detach().cpu().squeeze().numpy())
 
@@ -83,16 +83,16 @@ if __name__ == '__main__':
 	# Model params
 	parser.add_argument('--kernel_size', type=int, default=7)
 	parser.add_argument('--gru_layers', type=int, default=1)
-	parser.add_argument('--gru_hid_dim', type=int, default=64)
+	parser.add_argument('--gru_hid_dim', type=int, default=8)
 	parser.add_argument('--fc_layers', type=int, default=1)
-	parser.add_argument('--fc_hid_dim', type=int, default=32)
+	parser.add_argument('--fc_hid_dim', type=int, default=8)
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
 	parser.add_argument('--epochs', type=int, default=30)
 	parser.add_argument('--bs', type=int, default=64)
 	parser.add_argument('--lr', type=int, default=1e-4)
-	parser.add_argument('--dropout', type=float, default=0.0)
+	parser.add_argument('--dropout', type=float, default=0.3)
 	parser.add_argument('--use_cuda', type=bool, default=True)
 	parser.add_argument('--model_path', type=str, default="./saved_models/")
 
@@ -168,12 +168,12 @@ if __name__ == '__main__':
 		batch_losses = []
 		for x, y in train_loader:
 			optimizer.zero_grad()
-			y_hat = model(x)
-			if y_hat.ndim == 3:
-				y_hat = y_hat.squeeze(1)
+			preds, recons = model(x)
+			if preds.ndim == 3:
+				preds = preds.squeeze(1)
 			if y.ndim == 3:
 				y = y.squeeze(1)
-			loss = torch.sqrt(criterion(y_hat, y))
+			loss = torch.sqrt(criterion(recons, x))
 			loss.backward()
 			optimizer.step()
 

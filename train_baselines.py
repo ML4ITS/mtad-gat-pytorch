@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 from baselines import create_lstm, create_cnn
-from utils import process_gas_sensor_data, denormalize
+from utils import process_data, denormalize
 
 
 def predict(model, x, true_y, scaler):
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 	parser.add_argument('--model', type=str, default='lstm', choices=['lstm', 'cnn'])
 	args = parser.parse_args()
 
-	data = process_gas_sensor_data(window_size, horizon)
+	data = process_data(window_size, horizon)
 	feature_names = data['feature_names']
 
 	print(feature_names)
