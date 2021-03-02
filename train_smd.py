@@ -45,8 +45,8 @@ def predict(model, loader, dataset='hpc', plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
 
-	preds = np.array(preds)[:200]
-	true_y = np.array(true_y)[:200]
+	preds = np.array(preds)[1500:1750]
+	true_y = np.array(true_y)[:1500:1750]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 
