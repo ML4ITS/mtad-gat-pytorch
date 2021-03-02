@@ -69,6 +69,8 @@ if __name__ == '__main__':
 	# Data params
 	parser.add_argument('--dataset', type=str, default='smd', choices=['hpc', 'gsd'],
 						help='hpc: hourly household power consumption data /n gsd: gas sensor data')
+	parser.add_argument('--group', type=str, default="1-1",
+						help='<group_index>-<index>')
 	parser.add_argument('--lookback', type=int, default=100)
 	parser.add_argument('--horizon', type=int, default=1)
 	parser.add_argument('--target_col', type=int, default=None)
@@ -103,8 +105,10 @@ if __name__ == '__main__':
 	target_col = args.target_col
 	n_epochs = args.epochs
 	batch_size = args.bs
+	group_index = args.group[0]
+	index = args.group[2]
 
-	(x_train, _), (x_test, y_test) = get_data('machine-1-1')
+	(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
 
 	cuda = torch.cuda.is_available() and args.use_cuda
 	device = 'cuda' if cuda else 'cpu'
