@@ -110,6 +110,8 @@ if __name__ == '__main__':
 	device = 'cuda' if cuda else 'cpu'
 
 	x_train = torch.from_numpy(x_train).float().to(device)
+	x_train = x_train[:-3000]
+	x_val = x_train[-3000:]
 	x_test = torch.from_numpy(x_test).float().to(device)
 
 	x_dim = x_train.shape[1]
@@ -117,8 +119,13 @@ if __name__ == '__main__':
 	train_dataset = SMDDataset(x_train, window=window_size)
 	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=True)
 
+	val_dataset = SMDDataset(x_val, window=window_size)
+	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+
 	test_dataset = SMDDataset(x_test, window=window_size)
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+
+	plt.plot(x_train)
 
 	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
 					 kernel_size=args.kernel_size,
@@ -166,7 +173,7 @@ if __name__ == '__main__':
 
 		# Evaluate on validation set
 		# val_loss = 0
-		val_loss = evaluate(model, test_loader, criterion)
+		val_loss = evaluate(model, val_loader, criterion)
 		val_losses.append(val_loss)
 
 		print(f'[Epoch {epoch + 1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}')
