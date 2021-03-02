@@ -160,7 +160,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 		test_label = None
 	if do_preprocess:
 		train_data, scaler = preprocess(train_data)
-		test_data = preprocess(test_data, scaler)
+		test_data, _ = preprocess(test_data, scaler)
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
 	print("test set label shape: ", test_label.shape)
