@@ -150,8 +150,8 @@ if __name__ == '__main__':
 	init_train_loss = evaluate(model, train_loader, criterion)
 	print(f'Init train loss: {init_train_loss}')
 
-	# init_val_loss = evaluate(model, val_loader, criterion)
-	# print(f'Init val loss: {init_val_loss}')
+	init_val_loss = evaluate(model, val_loader, criterion)
+	print(f'Init val loss: {init_val_loss}')
 
 	train_losses = []
 	val_losses = []
@@ -176,8 +176,9 @@ if __name__ == '__main__':
 		epoch_loss = np.sqrt((batch_losses**2).mean())
 		train_losses.append(epoch_loss)
 
+		print(evaluate(model, train_loader, criterion))
+
 		# Evaluate on validation set
-		# val_loss = 0
 		val_loss = evaluate(model, val_loader, criterion)
 		val_losses.append(val_loss)
 
