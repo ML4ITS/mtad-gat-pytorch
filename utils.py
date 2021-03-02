@@ -9,7 +9,7 @@ from torch.utils.data import Dataset, DataLoader
 prefix = "ServerMachineDataset/processed"
 
 
-def preprocess(df, scaler=None):
+def preprocess(df):
 	"""returns normalized and standardized data.
 	"""
 
@@ -23,14 +23,11 @@ def preprocess(df, scaler=None):
 		df = np.nan_to_num()
 
 	# normalize data
-	if scaler is None:
-		scaler = MinMaxScaler()
-		scaler.fit(df)
 
-	df = scaler.transform(df)
+	df = MinMaxScaler.fit_transform(df)
 	print('Data normalized')
 
-	return df, scaler
+	return df
 
 
 def process_data(dataset_name, window_size=50, horizon=1, test_size=0.2, target_col=None):
@@ -159,8 +156,8 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 	except (KeyError, FileNotFoundError):
 		test_label = None
 	if do_preprocess:
-		train_data, scaler = preprocess(train_data)
-		test_data, _ = preprocess(test_data, scaler)
+		train_data = preprocess(train_data)
+		test_data = preprocess(test_data)
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
 	print("test set label shape: ", test_label.shape)
