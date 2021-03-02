@@ -12,7 +12,7 @@ from mtad_gat import MTAD_GAT
 
 
 def evaluate(model, loader, criterion):
-	model.train()
+	model.eval()
 
 	losses = []
 	with torch.no_grad():
@@ -49,6 +49,7 @@ def predict(model, loader, dataset='smd', plot_name=''):
 	true_y = np.array(true_y)[1500:1700]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
+	print(rmse)
 
 	# Plot preds and true
 	for i in range(preds.shape[1]):
@@ -176,8 +177,6 @@ if __name__ == '__main__':
 		epoch_loss = np.sqrt((batch_losses**2).mean())
 		train_losses.append(epoch_loss)
 
-		print(evaluate(model, train_loader, criterion))
-
 		# Evaluate on validation set
 		val_loss = evaluate(model, val_loader, criterion)
 		val_losses.append(val_loss)
@@ -199,8 +198,6 @@ if __name__ == '__main__':
 	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
 	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
 	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
-
-	print(rmse_test)
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
