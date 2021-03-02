@@ -23,10 +23,11 @@ def evaluate(model, loader, criterion):
 			if y.ndim == 3:
 				y = y.squeeze(1)
 
-			loss = criterion(y, y_hat)
+			loss = np.sqrt(criterion(y, y_hat))
 			losses.append(loss.item())
 
-	return np.sqrt(np.array(losses).mean())
+	losses = np.array(losses)
+	return np.sqrt((losses**2).mean())
 
 
 def predict(model, loader, dataset='smd', plot_name=''):
@@ -44,8 +45,8 @@ def predict(model, loader, dataset='smd', plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
 
-	preds = np.array(preds)#[1500:1750]
-	true_y = np.array(true_y)#[1500:1750]
+	preds = np.array(preds)[1500:1700]
+	true_y = np.array(true_y)[1500:1700]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 
@@ -201,7 +202,7 @@ if __name__ == '__main__':
 	print(rmse_test)
 
 	test_loss = evaluate(model, test_loader, criterion)
-	print(f'Test loss (RMSE): {test_loss:.3f}')
+	print(f'Test loss (RMSE): {test_loss:.5f}')
 
 
 
