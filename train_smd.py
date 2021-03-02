@@ -23,7 +23,6 @@ def evaluate(model, loader, criterion):
 			if y.ndim == 3:
 				y = y.squeeze(1)
 
-			# loss = criterion(y_hat, y)
 			loss = criterion(y, y_hat)
 			losses.append(loss.item())
 
@@ -45,8 +44,8 @@ def predict(model, loader, dataset='smd', plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
 
-	preds = np.array(preds)[1500:1750]
-	true_y = np.array(true_y)[1500:1750]
+	preds = np.array(preds)#[1500:1750]
+	true_y = np.array(true_y)#[1500:1750]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 
