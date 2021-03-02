@@ -12,7 +12,7 @@ from mtad_gat import MTAD_GAT
 
 
 def evaluate(model, loader, criterion):
-	model.eval()
+	model.train()
 
 	losses = []
 	with torch.no_grad():
