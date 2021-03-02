@@ -24,7 +24,7 @@ def preprocess(df):
 
 	# normalize data
 
-	df = MinMaxScaler.fit_transform(df)
+	df = MinMaxScaler().fit_transform(df)
 	print('Data normalized')
 
 	return df
