@@ -38,11 +38,15 @@ def predict(model, loader, dataset='hpc', plot_name=''):
 	with torch.no_grad():
 		for x, y in loader:
 			y_hat, recons = model(x)
-			preds.extend(y_hat.detach().cpu().numpy().squeeze())
-			true_y.extend(y.detach().cpu().squeeze().numpy())
+			if y_hat.ndim == 3:
+				y_hat = y_hat.squeeze(1)
+			if y.ndim == 3:
+				y = y.squeeze(1)
+			preds.extend(y_hat.detach().cpu().numpy())
+			true_y.extend(y.detach().cpu().numpy())
 
-	preds = np.array(preds)[:100]
-	true_y = np.array(true_y)[:100]
+	preds = np.array(preds)[:200]
+	true_y = np.array(true_y)[:200]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 
