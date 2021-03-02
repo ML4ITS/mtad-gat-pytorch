@@ -2,7 +2,7 @@ import os
 from pickle import dump
 import numpy as np
 
-output_folder = 'processed'
+output_folder = 'ServerMachineDataset/processed'
 os.makedirs(output_folder, exist_ok=True)
 
 

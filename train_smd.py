@@ -41,8 +41,8 @@ def predict(model, loader, dataset='hpc', plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy().squeeze())
 			true_y.extend(y.detach().cpu().squeeze().numpy())
 
-	preds = np.array(preds)
-	true_y = np.array(true_y)
+	preds = np.array(preds)[:100]
+	true_y = np.array(true_y)[:100]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 
@@ -90,6 +90,9 @@ if __name__ == '__main__':
 
 	if not os.path.exists(f'plots/{args.dataset}'):
 		os.makedirs(f'plots/{args.dataset}')
+
+	#if not os.path.exists(f'ServerMachineDataset/processed'):
+		#process_data()
 
 	window_size = args.lookback
 	horizon = args.horizon
