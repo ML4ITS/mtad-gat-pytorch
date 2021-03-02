@@ -125,7 +125,7 @@ if __name__ == '__main__':
 	test_dataset = SMDDataset(x_test, window=window_size)
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
 
-	plt.plot(x_train)
+	# plt.plot(x_train)
 
 	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
 					 kernel_size=args.kernel_size,
