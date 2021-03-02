@@ -23,7 +23,7 @@ def evaluate(model, loader, criterion):
 			if y.ndim == 3:
 				y = y.squeeze(1)
 
-			loss = np.sqrt(criterion(y, y_hat))
+			loss = torch.sqrt(criterion(y, y_hat))
 			losses.append(loss.item())
 
 	losses = np.array(losses)
