@@ -30,7 +30,7 @@ def evaluate(model, loader, criterion):
 	return np.sqrt(np.array(losses).mean())
 
 
-def predict(model, loader, dataset='hpc', plot_name=''):
+def predict(model, loader, dataset='smd', plot_name=''):
 	model.eval()
 
 	preds = []
@@ -172,7 +172,8 @@ if __name__ == '__main__':
 
 			batch_losses.append(loss.item())
 
-		epoch_loss = np.array(batch_losses).mean()
+		batch_losses = np.array(batch_losses)
+		epoch_loss = np.sqrt((batch_losses**2).mean())
 		train_losses.append(epoch_loss)
 
 		# Evaluate on validation set
@@ -195,7 +196,7 @@ if __name__ == '__main__':
 	# Make train loader with no shuffle
 	# train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
 	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
-	# rmse_val = predict(model, val_loader, scaler, target_col, dataset=args.dataset, plot_name='val_preds')
+	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
 	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
 
 	print(rmse_test)
