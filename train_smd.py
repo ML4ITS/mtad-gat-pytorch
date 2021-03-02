@@ -46,7 +46,7 @@ def predict(model, loader, dataset='hpc', plot_name=''):
 			true_y.extend(y.detach().cpu().numpy())
 
 	preds = np.array(preds)[1500:1750]
-	true_y = np.array(true_y)[:1500:1750]
+	true_y = np.array(true_y)[1500:1750]
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 
@@ -165,9 +165,9 @@ if __name__ == '__main__':
 		train_losses.append(epoch_loss)
 
 		# Evaluate on validation set
-		val_loss = 0
-		# val_loss = evaluate(model, val_loader, criterion)
-		# val_losses.append(val_loss)
+		# val_loss = 0
+		val_loss = evaluate(model, test_loader, criterion)
+		val_losses.append(val_loss)
 
 		print(f'[Epoch {epoch + 1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}')
 
