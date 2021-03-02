@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 import argparse
 
-from utils import process_data, denormalize
+from utils import *
 from mtad_gat import MTAD_GAT
 
 
