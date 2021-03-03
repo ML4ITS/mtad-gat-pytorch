@@ -30,8 +30,17 @@ def evaluate(model, loader, criterion):
 	return np.sqrt((losses**2).mean())
 
 
-def detect_anomalies(model, loader, dataset='smd'):
+def detect_anomalies(model, loader, dataset='smd', true_anomalies=None):
+	""" Making a dataframe that contains, for each timestamp:
+		- prediction for each feature
+		- true value for each feature
+		- RSE between predicted andn true value
+		- if timestamp is predicted anomaly (0 or 1)
+		- whether the timestamp was an anomaly (if provided)
+	"""
+
 	model.eval()
+
 	preds = []
 	true_y = []
 	with torch.no_grad():
@@ -47,12 +56,18 @@ def detect_anomalies(model, loader, dataset='smd'):
 	preds = np.array(preds)
 	true_y = np.array(true_y)
 
-	print(preds.shape)
-	print(true_y.shape)
+	df = pd.DataFrame()
+	for i in range(preds.shape[1]):
+		df[f'Pred_{i}'] = preds[:, i]
+		df[f'True_{i}'] = true_y[:, i]
+		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
 
-	rse = np.mean(np.sqrt((true_y - preds) ** 2), 1)
+	df['Pred_Anomaly'] = -1  # TODO: Implement threshold for anomaly
+	df['True_Anomaly'] = true_anomalies
 
-	print(rse.shape)
+	df.to_csv(f'plots/{dataset}/output.csv')
+
+	rse = np.sqrt((preds - true_y) ** 2)
 	plt.plot(rse)
 	plt.title("RSE for each prediction")
 	plt.xlabel("Timestamp")
