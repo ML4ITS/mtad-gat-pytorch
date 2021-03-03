@@ -81,7 +81,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	# plt.close()
 
 
-def predict(model, loader, dataset='smd', plot_name=''):
+def predict(model, loader, dataset='smd', plot_name='', plot=False):
 	model.eval()
 
 	preds = []
@@ -103,14 +103,15 @@ def predict(model, loader, dataset='smd', plot_name=''):
 	print(rmse)
 
 	# Plot preds and true
-	for i in range(preds.shape[1]):
-		plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
-		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
-		plt.title(f'{plot_name} | Feature: {i}')
-		plt.legend()
-		plt.savefig(f'plots/{dataset}/{plot_name}_feature{i}.png', bbox_inches='tight')
-		plt.show()
-		plt.close()
+	if plot:
+		for i in range(preds.shape[1]):
+			plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
+			plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
+			plt.title(f'{plot_name} | Feature: {i}')
+			plt.legend()
+			plt.savefig(f'plots/{dataset}/{plot_name}_feature{i}.png', bbox_inches='tight')
+			plt.show()
+			plt.close()
 
 	return rmse
 
