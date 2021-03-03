@@ -30,6 +30,33 @@ def evaluate(model, loader, criterion):
 	return np.sqrt((losses**2).mean())
 
 
+def detect_anomalies(model, loader, dataset='smd'):
+	model.eval()
+	preds = []
+	true_y = []
+	with torch.no_grad():
+		for x, y in loader:
+			y_hat, recons = model(x)
+			if y_hat.ndim == 3:
+				y_hat = y_hat.squeeze(1)
+			if y.ndim == 3:
+				y = y.squeeze(1)
+			preds.extend(y_hat.detach().cpu().numpy())
+			true_y.extend(y.detach().cpu().numpy())
+
+	preds = np.array(preds)
+	true_y = np.array(true_y)
+
+	rse = np.sqrt((true_y - preds) ** 2)
+	plt.plot(rse)
+	plt.title("RSE for each prediction")
+	plt.xlabel("Timestamp")
+	plt.ylabel("Root Squared Error")
+	plt.savefig(f'plots/{dataset}/RSE.png', bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+
 def predict(model, loader, dataset='smd', plot_name=''):
 	model.eval()
 
@@ -201,6 +228,8 @@ if __name__ == '__main__':
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
+
+	detect_anomalies(model, test_loader, dataset=args.dataset)
 
 
 
