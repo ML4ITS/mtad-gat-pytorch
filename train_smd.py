@@ -245,13 +245,14 @@ if __name__ == '__main__':
 	plt.show()
 	plt.close()
 
-	# Predict
+	# Evaluate and Predict
 	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
 
+	predict(model, train_loader, plot=True, plot_name='train_preds')
 	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
 	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test', true_anomalies=y_test)
 
