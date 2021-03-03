@@ -50,10 +50,10 @@ def detect_anomalies(model, loader, dataset='smd'):
 	print(preds.shape)
 	print(true_y.shape)
 
-	se = (true_y - preds) ** 2
+	se = np.sum((true_y - preds) ** 2, 0)
 	print(se.shape)
 
-	rse = np.sqrt((true_y - preds) ** 2)
+	rse = np.sqrt(se)
 	print(rse.shape)
 	plt.plot(rse)
 	plt.title("RSE for each prediction")
