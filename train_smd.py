@@ -63,8 +63,9 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 		df[f'True_{i}'] = true_y[:, i]
 		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
 
+	window_size = x.shape[1]
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold for anomaly
-	df['True_Anomaly'] = true_anomalies
+	df['True_Anomaly'] = true_anomalies[window_size+1:]
 
 	print(f'Saving output to {save_path}')
 	df.to_csv(f'{save_path}.csv', index=False)
