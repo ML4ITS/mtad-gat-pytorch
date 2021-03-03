@@ -74,15 +74,6 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	df.to_csv(f'{save_path}.csv', index=False)
 	print('Done.')
 
-	# rse = np.sqrt((preds - true_y) ** 2)
-	# plt.plot(rse)
-	# plt.title("RSE for each prediction")
-	# plt.xlabel("Timestamp")
-	# plt.ylabel("Root Squared Error")
-	# plt.savefig(f'plots/{dataset}/RSE.png', bbox_inches='tight')
-	# plt.show()
-	# plt.close()
-
 
 def predict(model, loader, dataset='smd', plot_name='', plot=False):
 	model.eval()
