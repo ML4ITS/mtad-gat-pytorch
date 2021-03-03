@@ -171,13 +171,13 @@ if __name__ == '__main__':
 	x_dim = x_train.shape[1]
 
 	train_dataset = SMDDataset(x_train, window=window_size)
-	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=False)
+	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=True)
 
 	val_dataset = SMDDataset(x_val, window=window_size)
-	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
+	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
 
 	test_dataset = SMDDataset(x_test, window=window_size)
-	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
+	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
 
 	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
 					 kernel_size=args.kernel_size,
@@ -240,16 +240,14 @@ if __name__ == '__main__':
 	plt.close()
 
 	# Predict
-	# Make train loader with no shuffle
-	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
-	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
+	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
+	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
 
-	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}', true_anomalies=y_test)
+	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', true_anomalies=y_test)
+	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test')
 
 
 

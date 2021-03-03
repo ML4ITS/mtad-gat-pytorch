@@ -6,3 +6,4 @@ datasets/ecg_data.txt
 eda/.ipynb_checkpoints/
 ServerMachineDataset/processed/
 plots/
+output/
