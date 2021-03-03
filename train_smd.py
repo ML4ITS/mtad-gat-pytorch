@@ -57,6 +57,9 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	preds = np.array(preds)
 	true_y = np.array(true_y)
 
+	rmse = np.sqrt(mean_squared_error(true_y, preds))
+	print(rmse)
+
 	df = pd.DataFrame()
 	for i in range(preds.shape[1]):
 		df[f'Pred_{i}'] = preds[:, i]
