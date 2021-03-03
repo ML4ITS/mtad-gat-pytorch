@@ -168,13 +168,13 @@ if __name__ == '__main__':
 	x_dim = x_train.shape[1]
 
 	train_dataset = SMDDataset(x_train, window=window_size)
-	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=True)
+	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=False)
 
 	val_dataset = SMDDataset(x_val, window=window_size)
-	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	test_dataset = SMDDataset(x_test, window=window_size)
-	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
 					 kernel_size=args.kernel_size,

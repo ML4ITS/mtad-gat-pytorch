@@ -26,12 +26,12 @@ class MTAD_GAT(nn.Module):
 		# x shape (b, n, k): b - batch size, n - window size, k - number of nodes/features
 		x = self.conv(x)
 
-		#h_feat = self.feature_gat(x)
-		#h_temp = self.temporal_gat(x)
+		h_feat = self.feature_gat(x)
+		h_temp = self.temporal_gat(x)
 
-		h_cat = x
+		#h_cat = x
 		#h_cat = torch.cat([x, h_temp], dim=2)
-		#h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)
+		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)
 
 		gru_out, last_hidden = self.gru(h_cat)
 
