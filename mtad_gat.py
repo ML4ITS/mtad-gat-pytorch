@@ -25,19 +25,13 @@ class MTAD_GAT(nn.Module):
 	def forward(self, x):
 		# x shape (b, n, k): b - batch size, n - window size, k - number of nodes/features
 		x = self.conv(x)
-		# print(x.shape)
 
 		h_feat = self.feature_gat(x)
 		h_temp = self.temporal_gat(x)
 
-		print(x.shape)
-		print(h_feat.shape)
-		print(h_temp.shape)
-
-		#h_cat = torch.cat([x, h_temp], dim=1)
+		#h_cat = torch.cat([x, h_temp], dim=2)
 		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)
-		
-		print(h_cat.shape)
+
 		gru_out, _ = self.gru(h_cat)
 
 		forecasting_in = gru_out[:, -1, :]  # Extracting output belonging to last timestamp

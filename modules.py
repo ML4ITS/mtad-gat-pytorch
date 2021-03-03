@@ -46,21 +46,26 @@ class FeatureAttentionLayer(nn.Module):
 
 		v = x.permute(0, 2, 1)
 
+		#print(f'v: {v.shape}')
 		#Wh = torch.mm(h, self.W)  # Transformation shared across nodes (not used)
 
 		# Creating matrix of concatenations of node features
 		attn_input = self._make_attention_input(v)
 
+		#print(f'attn input: {attn_input.shape}')
 		# Attention scores
 		e = self.leakyrelu(torch.matmul(attn_input, self.w)).squeeze(3)
 
+		#print(f'e: {e.shape}')
 		# Attention weights
 		attention = torch.softmax(e, dim=2)
 		attention = torch.dropout(attention, self.dropout, train=self.training)
 
+		#print(f'attention: {attention.shape}')
 		# Computing new node features using the attention
 		h = torch.matmul(attention, v)
 
+		#print(f'h: {h.shape}')
 		return h
 
 	def _make_attention_input(self, v):
@@ -111,25 +116,18 @@ class TemporalAttentionLayer(nn.Module):
 		# x has shape (b, n, k) where b is batch size, n is window size and k is number of nodes
 		# For temporal attention each node attend to its previous values,
 
-		# print(f'x: {x.shape}')
-
 		# Creating matrix of concatenations of node features
 		attn_input = self._make_attention_input(x)
 
 		# Attention scores
 		e = self.leakyrelu(torch.matmul(attn_input, self.w).squeeze(3))
 
-		# print(f'e: {e.shape}')
-
 		# Attention weights
 		attention = torch.softmax(e, dim=2)
 		attention = torch.dropout(attention, self.dropout, train=self.training)
 
-		# print(f'attention: {attention.shape}')
-
 		# Computing new node features using the attention
 		h = torch.matmul(attention, x)
-		# print(f'h: {h.shape}')
 
 		return h
 
