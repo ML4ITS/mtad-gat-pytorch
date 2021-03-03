@@ -30,15 +30,16 @@ def evaluate(model, loader, criterion):
 	return np.sqrt((losses**2).mean())
 
 
-def detect_anomalies(model, loader, dataset='smd', true_anomalies=None):
+def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	""" Making a dataframe that contains, for each timestamp:
-		- prediction for each feature
+		- predicted value for each feature
 		- true value for each feature
-		- RSE between predicted andn true value
+		- RSE between predicted and true value
 		- if timestamp is predicted anomaly (0 or 1)
 		- whether the timestamp was an anomaly (if provided)
 	"""
 
+	print(f'Detecting anomalies..')
 	model.eval()
 
 	preds = []
@@ -65,16 +66,18 @@ def detect_anomalies(model, loader, dataset='smd', true_anomalies=None):
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold for anomaly
 	df['True_Anomaly'] = true_anomalies
 
-	df.to_csv(f'plots/{dataset}/output.csv')
+	print(f'Saving output to {save_path}')
+	df.to_csv(f'{save_path}.csv', index=False)
+	print('Done.')
 
-	rse = np.sqrt((preds - true_y) ** 2)
-	plt.plot(rse)
-	plt.title("RSE for each prediction")
-	plt.xlabel("Timestamp")
-	plt.ylabel("Root Squared Error")
-	plt.savefig(f'plots/{dataset}/RSE.png', bbox_inches='tight')
-	plt.show()
-	plt.close()
+	# rse = np.sqrt((preds - true_y) ** 2)
+	# plt.plot(rse)
+	# plt.title("RSE for each prediction")
+	# plt.xlabel("Timestamp")
+	# plt.ylabel("Root Squared Error")
+	# plt.savefig(f'plots/{dataset}/RSE.png', bbox_inches='tight')
+	# plt.show()
+	# plt.close()
 
 
 def predict(model, loader, dataset='smd', plot_name=''):
@@ -145,9 +148,6 @@ if __name__ == '__main__':
 	if not os.path.exists(f'plots/{args.dataset}'):
 		os.makedirs(f'plots/{args.dataset}')
 
-	#if not os.path.exists(f'ServerMachineDataset/processed'):
-		#process_data()
-
 	window_size = args.lookback
 	horizon = args.horizon
 	target_col = args.target_col
@@ -177,8 +177,6 @@ if __name__ == '__main__':
 	test_dataset = SMDDataset(x_test, window=window_size)
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
 
-	# plt.plot(x_train)
-
 	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
 					 kernel_size=args.kernel_size,
 					 dropout=args.dropout,
@@ -195,11 +193,11 @@ if __name__ == '__main__':
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 	criterion = nn.MSELoss()
 
-	#init_train_loss = evaluate(model, train_loader, criterion)
-	#print(f'Init train loss: {init_train_loss}')
+	init_train_loss = evaluate(model, train_loader, criterion)
+	print(f'Init train loss: {init_train_loss}')
 
-	#init_val_loss = evaluate(model, val_loader, criterion)
-	#print(f'Init val loss: {init_val_loss}')
+	init_val_loss = evaluate(model, val_loader, criterion)
+	print(f'Init val loss: {init_val_loss}')
 
 	train_losses = []
 	val_losses = []
@@ -241,15 +239,15 @@ if __name__ == '__main__':
 
 	# Predict
 	# Make train loader with no shuffle
-	# train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
-	#rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
-	#rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
-	#rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
+	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
+	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
+	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
 
-	#test_loss = evaluate(model, test_loader, criterion)
-	#print(f'Test loss (RMSE): {test_loss:.5f}')
+	test_loss = evaluate(model, test_loader, criterion)
+	print(f'Test loss (RMSE): {test_loss:.5f}')
 
-	detect_anomalies(model, test_loader, dataset=args.dataset)
+	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}', true_anomalies=y_test)
 
 
 
