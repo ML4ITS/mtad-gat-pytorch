@@ -30,7 +30,7 @@ class MTAD_GAT(nn.Module):
 		h_temp = self.temporal_gat(x)
 
 		#h_cat = torch.cat([x, h_temp], dim=2)
-		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)
+		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=1)
 
 		gru_out, _ = self.gru(h_cat)
 
