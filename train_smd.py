@@ -47,7 +47,14 @@ def detect_anomalies(model, loader, dataset='smd'):
 	preds = np.array(preds)
 	true_y = np.array(true_y)
 
+	print(preds.shape)
+	print(true_y.shape)
+
+	se = (true_y - preds) ** 2
+	print(se.shape)
+
 	rse = np.sqrt((true_y - preds) ** 2)
+	print(rse.shape)
 	plt.plot(rse)
 	plt.title("RSE for each prediction")
 	plt.xlabel("Timestamp")
@@ -175,11 +182,11 @@ if __name__ == '__main__':
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 	criterion = nn.MSELoss()
 
-	init_train_loss = evaluate(model, train_loader, criterion)
-	print(f'Init train loss: {init_train_loss}')
+	#init_train_loss = evaluate(model, train_loader, criterion)
+	#print(f'Init train loss: {init_train_loss}')
 
-	init_val_loss = evaluate(model, val_loader, criterion)
-	print(f'Init val loss: {init_val_loss}')
+	#init_val_loss = evaluate(model, val_loader, criterion)
+	#print(f'Init val loss: {init_val_loss}')
 
 	train_losses = []
 	val_losses = []
@@ -222,12 +229,12 @@ if __name__ == '__main__':
 	# Predict
 	# Make train loader with no shuffle
 	# train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
-	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
+	#rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
+	#rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
+	#rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
 
-	test_loss = evaluate(model, test_loader, criterion)
-	print(f'Test loss (RMSE): {test_loss:.5f}')
+	#test_loss = evaluate(model, test_loader, criterion)
+	#print(f'Test loss (RMSE): {test_loss:.5f}')
 
 	detect_anomalies(model, test_loader, dataset=args.dataset)
 
