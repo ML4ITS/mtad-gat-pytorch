@@ -159,10 +159,10 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 		f.close()
 	except (KeyError, FileNotFoundError):
 		test_label = None
-	if do_preprocess:
-		scaler = MinMaxScaler()
-		train_data = preprocess(train_data, scaler)
-		test_data = preprocess(test_data, scaler, fit=False)
+	#if do_preprocess:
+	#	scaler = MinMaxScaler()
+	#	train_data = preprocess(train_data, scaler)
+	#	test_data = preprocess(test_data, scaler, fit=False)
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
 	print("test set label shape: ", test_label.shape)
