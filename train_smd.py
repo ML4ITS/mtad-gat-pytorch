@@ -150,6 +150,9 @@ if __name__ == '__main__':
 	if not os.path.exists(f'plots/{args.dataset}'):
 		os.makedirs(f'plots/{args.dataset}')
 
+	if not os.path.exists(f'output/{args.dataset}'):
+		os.makedirs(f'output/{args.dataset}')
+
 	window_size = args.lookback
 	horizon = args.horizon
 	target_col = args.target_col
@@ -241,10 +244,10 @@ if __name__ == '__main__':
 
 	# Predict
 	# Make train loader with no shuffle
-	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
-	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
+	# train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+	# rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
+	# rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
+	# rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
