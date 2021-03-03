@@ -150,6 +150,9 @@ if __name__ == '__main__':
 	if not os.path.exists(f'plots/{args.dataset}'):
 		os.makedirs(f'plots/{args.dataset}')
 
+	if not os.path.exists(f'output/{args.dataset}'):
+		os.makedirs(f'output/{args.dataset}')
+
 	window_size = args.lookback
 	horizon = args.horizon
 	target_col = args.target_col
@@ -246,8 +249,8 @@ if __name__ == '__main__':
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
 
-	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', true_anomalies=y_test)
-	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test')
+	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
+	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test', true_anomalies=y_test)
 
 
 
