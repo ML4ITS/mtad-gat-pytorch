@@ -79,14 +79,14 @@ if __name__ == '__main__':
 	# Model params
 	parser.add_argument('--kernel_size', type=int, default=7)
 	parser.add_argument('--gru_layers', type=int, default=1)
-	parser.add_argument('--gru_hid_dim', type=int, default=8)
-	parser.add_argument('--fc_layers', type=int, default=1)
-	parser.add_argument('--fc_hid_dim', type=int, default=8)
+	parser.add_argument('--gru_hid_dim', type=int, default=150)
+	parser.add_argument('--fc_layers', type=int, default=3)
+	parser.add_argument('--fc_hid_dim', type=int, default=150)
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
 	parser.add_argument('--epochs', type=int, default=30)
-	parser.add_argument('--bs', type=int, default=64)
+	parser.add_argument('--bs', type=int, default=256)
 	parser.add_argument('--lr', type=float, default=1e-4)
 	parser.add_argument('--dropout', type=float, default=0.3)
 	parser.add_argument('--use_cuda', type=bool, default=True)
