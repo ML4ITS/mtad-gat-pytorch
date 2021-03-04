@@ -46,26 +46,21 @@ class FeatureAttentionLayer(nn.Module):
 
 		v = x.permute(0, 2, 1)
 
-		#print(f'v: {v.shape}')
 		#Wh = torch.mm(h, self.W)  # Transformation shared across nodes (not used)
 
 		# Creating matrix of concatenations of node features
 		attn_input = self._make_attention_input(v)
 
-		#print(f'attn input: {attn_input.shape}')
 		# Attention scores
 		e = self.leakyrelu(torch.matmul(attn_input, self.w)).squeeze(3)
 
-		#print(f'e: {e.shape}')
 		# Attention weights
 		attention = torch.softmax(e, dim=2)
 		attention = torch.dropout(attention, self.dropout, train=self.training)
 
-		#print(f'attention: {attention.shape}')
 		# Computing new node features using the attention
 		h = torch.matmul(attention, v)
 
-		#print(f'h: {h.shape}')
 		return h
 
 	def _make_attention_input(self, v):
@@ -83,8 +78,6 @@ class FeatureAttentionLayer(nn.Module):
 				...
 				vK || vK,
 		"""
-
-		# print(f'v: {v.shape}')
 
 		K = self.num_nodes
 		Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
@@ -150,19 +143,12 @@ class TemporalAttentionLayer(nn.Module):
 		"""
 
 		# v has shape (b, n, k)
-		# print(v[0])
 
 		K = self.window_size
 		Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
 		Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
 
-		# print(Wh_blocks_repeating.shape)
-		# print(Wh_blocks_alternating.shape)
-
 		combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
-
-		# print(combined.shape)
-
 		return combined.view(v.size(0), K, K, 2 * self.num_nodes)
 
 
@@ -194,7 +180,8 @@ class GRU(nn.Module):
 
 class Reconstruction_Model(nn.Module):
 	"""
-	Reconstruction Model using a GRU-based Encoder-Decoder
+	Reconstruction Model using a GRU-based Encoder-Decoder.
+	TODO
 	"""
 
 	def __init__(self, in_dim, enc_hid_dim, dec_hid_dim, out_dim, dropout, device='cpu'):
