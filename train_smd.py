@@ -30,7 +30,16 @@ def evaluate(model, loader, criterion):
 	return np.sqrt((losses**2).mean())
 
 
-def predict(model, loader, dataset='smd', plot_name=''):
+def detect_anomalies(model, loader, save_path, true_anomalies=None):
+	""" Making a dataframe that contains, for each timestamp:
+		- predicted value for each feature
+		- true value for each feature
+		- RSE between predicted and true value
+		- if timestamp is predicted anomaly (0 or 1)
+		- whether the timestamp was an anomaly (if provided)
+	"""
+
+	print(f'Detecting anomalies..')
 	model.eval()
 
 	preds = []
@@ -45,22 +54,25 @@ def predict(model, loader, dataset='smd', plot_name=''):
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
 
-	preds = np.array(preds)[1500:1700]
-	true_y = np.array(true_y)[1500:1700]
+	preds = np.array(preds)
+	true_y = np.array(true_y)
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
+	print(rmse)
 
-	# Plot preds and true
+	df = pd.DataFrame()
 	for i in range(preds.shape[1]):
-		plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
-		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
-		plt.title(f'{plot_name} | Feature: {i}')
-		plt.legend()
-		plt.savefig(f'plots/{dataset}/{plot_name}_feature{i}.png', bbox_inches='tight')
-		plt.show()
-		plt.close()
+		df[f'Pred_{i}'] = preds[:, i]
+		df[f'True_{i}'] = true_y[:, i]
+		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
 
-	return rmse
+	window_size = x.shape[1]
+	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
+	df['True_Anomaly'] = true_anomalies[window_size+1:] if true_anomalies is not None else 0
+
+	print(f'Saving output to {save_path}')
+	df.to_csv(f'{save_path}.csv', index=False)
+	print('Done.')
 
 
 if __name__ == '__main__':
@@ -78,14 +90,14 @@ if __name__ == '__main__':
 	# Model params
 	parser.add_argument('--kernel_size', type=int, default=7)
 	parser.add_argument('--gru_layers', type=int, default=1)
-	parser.add_argument('--gru_hid_dim', type=int, default=8)
-	parser.add_argument('--fc_layers', type=int, default=1)
-	parser.add_argument('--fc_hid_dim', type=int, default=8)
+	parser.add_argument('--gru_hid_dim', type=int, default=150)
+	parser.add_argument('--fc_layers', type=int, default=3)
+	parser.add_argument('--fc_hid_dim', type=int, default=150)
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
 	parser.add_argument('--epochs', type=int, default=30)
-	parser.add_argument('--bs', type=int, default=64)
+	parser.add_argument('--bs', type=int, default=256)
 	parser.add_argument('--lr', type=float, default=1e-4)
 	parser.add_argument('--dropout', type=float, default=0.3)
 	parser.add_argument('--use_cuda', type=bool, default=True)
@@ -97,8 +109,8 @@ if __name__ == '__main__':
 	if not os.path.exists(f'plots/{args.dataset}'):
 		os.makedirs(f'plots/{args.dataset}')
 
-	#if not os.path.exists(f'ServerMachineDataset/processed'):
-		#process_data()
+	if not os.path.exists(f'output/{args.dataset}'):
+		os.makedirs(f'output/{args.dataset}')
 
 	window_size = args.lookback
 	horizon = args.horizon
@@ -121,15 +133,13 @@ if __name__ == '__main__':
 	x_dim = x_train.shape[1]
 
 	train_dataset = SMDDataset(x_train, window=window_size)
-	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=True)
+	train_loader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size, drop_last=False)
 
 	val_dataset = SMDDataset(x_val, window=window_size)
-	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
+	val_loader = DataLoader(val_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	test_dataset = SMDDataset(x_test, window=window_size)
-	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=True)
-
-	# plt.plot(x_train)
+	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
 					 kernel_size=args.kernel_size,
@@ -176,8 +186,6 @@ if __name__ == '__main__':
 		epoch_loss = np.sqrt((batch_losses**2).mean())
 		train_losses.append(epoch_loss)
 
-		print(evaluate(model, train_loader, criterion))
-
 		# Evaluate on validation set
 		val_loss = evaluate(model, val_loader, criterion)
 		val_losses.append(val_loss)
@@ -193,17 +201,15 @@ if __name__ == '__main__':
 	plt.show()
 	plt.close()
 
-	# Predict
-	# Make train loader with no shuffle
-	# train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
-	rmse_train = predict(model, train_loader, dataset=args.dataset, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, dataset=args.dataset, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, dataset=args.dataset, plot_name='test_preds')
-
-	print(rmse_test)
+	# Evaluate and Predict
+	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
+	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
+
+	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
+	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test', true_anomalies=y_test)
 
 
 

@@ -5,3 +5,5 @@ datasets/household_power_consumption.csv
 datasets/ecg_data.txt
 eda/.ipynb_checkpoints/
 ServerMachineDataset/processed/
+plots/
+output/

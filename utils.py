@@ -23,8 +23,7 @@ def preprocess(df):
 		df = np.nan_to_num()
 
 	# normalize data
-
-	df = MinMaxScaler().fit_transform(df)
+	# df = MinMaxScaler().fit_transform(df)
 	print('Data normalized')
 
 	return df
