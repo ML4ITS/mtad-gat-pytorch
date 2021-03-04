@@ -75,41 +75,6 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	print('Done.')
 
 
-def predict(model, loader, dataset='smd', plot_name='', plot=False):
-	model.eval()
-
-	preds = []
-	true_y = []
-	with torch.no_grad():
-		for x, y in loader:
-			y_hat, recons = model(x)
-			if y_hat.ndim == 3:
-				y_hat = y_hat.squeeze(1)
-			if y.ndim == 3:
-				y = y.squeeze(1)
-			preds.extend(y_hat.detach().cpu().numpy())
-			true_y.extend(y.detach().cpu().numpy())
-
-	preds = np.array(preds)[1500:1700]
-	true_y = np.array(true_y)[1500:1700]
-
-	rmse = np.sqrt(mean_squared_error(true_y, preds))
-	print(rmse)
-
-	# Plot preds and true
-	if plot:
-		for i in range(preds.shape[1]):
-			plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
-			plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
-			plt.title(f'{plot_name} | Feature: {i}')
-			plt.legend()
-			plt.savefig(f'plots/{dataset}/{plot_name}_feature{i}.png', bbox_inches='tight')
-			plt.show()
-			plt.close()
-
-	return rmse
-
-
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
@@ -243,7 +208,6 @@ if __name__ == '__main__':
 	test_loss = evaluate(model, test_loader, criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
 
-	predict(model, train_loader, plot=True, plot_name='train_preds')
 	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
 	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test', true_anomalies=y_test)
 
