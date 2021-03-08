@@ -127,7 +127,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 
 	print(preds.shape)
 	print(true_y.shape)
-	print(recon.shape)
+	print(recons.shape)
 	print(recons_true.shape)
 
 	df = pd.DataFrame()
