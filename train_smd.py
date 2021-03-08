@@ -11,10 +11,40 @@ from utils import *
 from mtad_gat import MTAD_GAT
 
 
-def evaluate(model, loader, criterion):
+def plot_losses(losses, save_path=''):
+	"""
+
+	:param losses: dict with losses
+	:param save_path: path where plots get saved
+	"""
+
+	plt.plot(losses['train_forecast'], label='Forecast loss')
+	plt.plot(losses['train_recon'], label='Recon loss')
+	plt.plot(losses['train_total'], label='Total loss')
+	plt.title('Training losses during training')
+	plt.xlabel("Epoch")
+	plt.legend()
+	plt.savefig(f'{save_path}/train_losses.png', bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+	plt.plot(losses['val_forecast'], label='Forecast loss')
+	plt.plot(losses['val_recon'], label='Recon loss')
+	plt.plot(losses['val_total'], label='Total loss')
+	plt.title('Validation losses during training')
+	plt.xlabel("Epoch")
+	plt.legend()
+	plt.savefig(f'{save_path}/validation_losses.png', bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+
+def evaluate(model, loader, forecast_criterion, recon_criterion):
 	model.eval()
 
-	losses = []
+	forecast_losses = []
+	recon_losses = []
+
 	with torch.no_grad():
 		for x, y in loader:
 			y_hat, recons = model(x)
@@ -23,11 +53,20 @@ def evaluate(model, loader, criterion):
 			if y.ndim == 3:
 				y = y.squeeze(1)
 
-			loss = torch.sqrt(criterion(y, y_hat))
-			losses.append(loss.item())
+			forecast_loss = torch.sqrt(forecast_criterion(y, y_hat))
+			recon_loss = recon_criterion(x, recons)
 
-	losses = np.array(losses)
-	return np.sqrt((losses**2).mean())
+			forecast_losses.append(forecast_loss.item())
+			recon_losses.append(recon_loss.item())
+
+	forecast_losses = np.array(forecast_losses)
+	recon_losses = np.array(recon_losses)
+
+	forecast_loss = np.sqrt((forecast_losses ** 2).mean())
+	recon_loss = recon_losses.mean()
+	total_loss = forecast_loss + recon_loss
+
+	return forecast_loss, recon_loss, total_loss
 
 
 def detect_anomalies(model, loader, save_path, true_anomalies=None):
@@ -210,13 +249,20 @@ if __name__ == '__main__':
 	init_val_loss = evaluate(model, val_loader, forecast_criterion)
 	print(f'Init val loss: {init_val_loss}')
 
-	train_losses = []
-	val_losses = []
+	losses = {
+		'train_total': [],
+		'train_forecast': [],
+		'train_recon': [],
+		'val_total': [],
+		'val_forecast': [],
+		'val_recon': [],
+	}
+
 	print(f'Training model for {n_epochs} epochs..')
 	for epoch in range(n_epochs):
 		model.train()
-		batch_losses = []
-		recon_losses = []
+		forecast_b_losses = []
+		recon_b_losses = []
 		for x, y in train_loader:
 			optimizer.zero_grad()
 			preds, recons = model(x)
@@ -232,30 +278,37 @@ if __name__ == '__main__':
 			loss.backward()
 			optimizer.step()
 
-			batch_losses.append(loss.item())
-			recon_losses.append(recon_loss.item())
+			forecast_b_losses.append(forecast_loss.item())
+			recon_b_losses.append(recon_loss.item())
 
-		batch_losses = np.array(batch_losses)
-		epoch_loss = np.sqrt((batch_losses**2).mean())
-		train_losses.append(epoch_loss)
+		forecast_b_losses = np.array(forecast_b_losses)
+		recon_b_losses = np.array(recon_b_losses)
 
-		recon_losses = np.array(recon_losses)
-		epoch_recon_loss = recon_losses.mean()
+		forecast_epoch_loss = np.sqrt((forecast_b_losses**2).mean())
+		recon_epoch_loss = recon_b_losses.mean()
+		total_epoch_loss = forecast_epoch_loss + recon_epoch_loss
+
+		losses['train_forecast'].append(forecast_epoch_loss)
+		losses['train_recon'].append(recon_epoch_loss)
+		losses['train_total'].append(total_epoch_loss)
 
 		# Evaluate on validation set
-		val_loss = evaluate(model, val_loader, forecast_criterion)
-		val_losses.append(val_loss)
+		forecast_val_loss, recon_val_loss, total_val_loss = evaluate(model, val_loader, forecast_criterion, recon_criterion)
+		losses['val_forecast'].append(forecast_val_loss)
+		losses['val_recon'].append(recon_val_loss)
+		losses['val_total'].append(total_val_loss)
 
-		print(f'[Epoch {epoch + 1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}, Recon loss: {epoch_recon_loss:.5f}')
+		print(f'[Epoch {epoch + 1}] '
+			  f'Forecast loss: {forecast_epoch_loss:.5f}, '
+			  f'Recon loss: {recon_epoch_loss:.5f}, '
+			  f'Total loss: {total_epoch_loss:.5f} ...... '
+			  
+			  f'Val Forecast loss: {forecast_val_loss:.5f}, '
+			  f'Val Recon loss: {recon_val_loss:.5f}, '
+			  f'Val Total loss: {total_val_loss:.5f}')
 
-	plt.plot(train_losses, label='training loss')
-	plt.plot(val_losses, label='validation loss')
-	plt.xlabel("Epoch")
-	plt.ylabel("MSE")
-	plt.legend()
-	plt.savefig(f'plots/{args.dataset}/losses.png', bbox_inches='tight')
-	plt.show()
-	plt.close()
+	# Plot Losses
+	plot_losses(losses, save_path=f'output/{args.dataset}')
 
 	# Evaluate and Predict
 	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
