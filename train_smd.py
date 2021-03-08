@@ -112,7 +112,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	recons = np.array(recons)
 	recons_true = np.array(recons_true)
 
-	last_recons = recons[-1, -(recons.shape[0] % window_size):, :]
+	last_recons = recons[-1, -(recons.shape[0] % window_size)+1:, :]
 	last_true_recons = recons_true[-1, -(recons.shape[0] % window_size):, :]
 
 	recons = recons[window_size::window_size].reshape((-1, n_features))
@@ -134,7 +134,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 		df[f'Loss_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + np.abs(recons[:, i] - recons_true[:, i])
 
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
-	df['True_Anomaly'] = true_anomalies[window_size+1:] if true_anomalies is not None else 0
+	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
 
 	print(f'Saving output to {save_path}')
 	df.to_pickle(f'{save_path}.pkl')
