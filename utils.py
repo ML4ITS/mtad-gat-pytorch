@@ -175,7 +175,7 @@ class SMDDataset(Dataset):
 		return x, y
 
 	def __len__(self):
-		return len(self.data) - self.window  # - self.horizon
+		return len(self.data) - self.window - self.horizon
 
 
 def minibatch_slices_iterator(length, batch_size,
