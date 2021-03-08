@@ -76,26 +76,26 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	last_recons = recons[-1, -(recons.shape[0] % window_size):, :]
 	last_true_recons = recons_true[-1, -(recons.shape[0] % window_size):, :]
 
-	recons = recons[::window_size].reshape((-1, n_features))
+	recons = recons[window_size::window_size].reshape((-1, n_features))
 	recons = np.append(recons, last_recons, axis=0)
 
-	recons_true = np.array(recons_true)[::window_size].reshape((-1, n_features))
+	recons_true = recons_true[window_size::window_size].reshape((-1, n_features))
 	recons_true = np.append(recons_true, last_true_recons, axis=0)
 
-	preds = np.insert(preds, 0, np.zeros((window_size, n_features)), axis=0)
-	true_y = np.insert(true_y, 0, np.zeros((window_size, n_features)), axis=0)
+	# preds = np.insert(preds, 0, np.zeros((window_size, n_features)), axis=0)
+	# true_y = np.insert(true_y, 0, np.zeros((window_size, n_features)), axis=0)
 
 	print(preds.shape)
 	print(recons.shape)
 	print(recons_true.shape)
-
-	plt.plot(recons, label='Reconstructed')
-	plt.plot(recons_true, label='Actual')
-	plt.title('Reconstructions')
-	plt.legend()
-	plt.savefig(f'{save_path}_recons', bbox_inches="tight")
-	plt.show()
-	plt.close()
+	#
+	# plt.plot(recons, label='Reconstructed')
+	# plt.plot(recons_true, label='Actual')
+	# plt.title('Reconstructions')
+	# plt.legend()
+	# plt.savefig(f'{save_path}_recons', bbox_inches="tight")
+	# plt.show()
+	# plt.close()
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	print(rmse)
@@ -108,14 +108,13 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 		df[f'True_Recon_{i}'] = recons_true[:, i]
 		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
 
-	window_size = x.shape[1]
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
-	df['True_Anomaly'] = true_anomalies if true_anomalies is not None else 0
+	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
 
 	print(f'Saving output to {save_path}')
 	df.to_pickle(f'{save_path}.pkl')
 	# df.to_csv(f'{save_path}.csv', index=False)
-	print('Done.')
+	print('-- Done.')
 
 
 if __name__ == '__main__':
