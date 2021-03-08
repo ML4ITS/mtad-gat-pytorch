@@ -54,7 +54,9 @@ def evaluate(model, loader, forecast_criterion, recon_criterion):
 				y = y.squeeze(1)
 
 			forecast_loss = torch.sqrt(forecast_criterion(y, y_hat))
-			recon_loss = recon_criterion(x, recons)
+			# recon_loss = recon_criterion(x, recons)
+			recon_loss = torch.sqrt(recon_criterion(x, recons))
+
 
 			forecast_losses.append(forecast_loss.item())
 			recon_losses.append(recon_loss.item())
@@ -63,7 +65,9 @@ def evaluate(model, loader, forecast_criterion, recon_criterion):
 	recon_losses = np.array(recon_losses)
 
 	forecast_loss = np.sqrt((forecast_losses ** 2).mean())
-	recon_loss = recon_losses.mean()
+	forecast_loss = np.sqrt((recon_losses ** 2).mean())
+
+	#recon_loss = recon_losses.mean()
 	total_loss = forecast_loss + recon_loss
 
 	return forecast_loss, recon_loss, total_loss
@@ -123,17 +127,18 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	# recons_true = np.append(recons_true, last_true_recons, axis=0)
 	# recons_true = np.append(recons_true, [true_y[-1, :]], axis=0)
 
-	rmse = np.sqrt(mean_squared_error(true_y, preds))
-	l1 = np.abs(recons-true_y).mean()
-	print(rmse+l1)
+	rmse = np.sqrt(mean_squared_error(true_y, preds)) + np.sqrt(mean_squared_error(true_y, recons))
+	#l1 = np.abs(recons-true_y).mean()
+	print(rmse.mean())
 
 	df = pd.DataFrame()
 	for i in range(n_features):
 		df[f'Pred_{i}'] = preds[:, i]
 		df[f'True_{i}'] = true_y[:, i]
 		df[f'Recon_{i}'] = recons[:, i]
-		# df[f'True_Recon_{i}'] = recons_true[:, i]
-		df[f'Loss_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + np.abs(recons[:, i] - recons_true[:, i])
+		df[f'F_Loss{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
+		df[f'R_Loss{i}'] = np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
+		# df[f'R_Loss_{i}'] = np.abs(recons[:, i] - recons_true[:, i])
 
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
 	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
@@ -233,7 +238,8 @@ if __name__ == '__main__':
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 	forecast_criterion = nn.MSELoss()
-	recon_criterion = nn.L1Loss()
+	recon_criterion = nn.MSELoss()
+	# recon_criterion = nn.L1Loss()
 
 	init_train_loss = evaluate(model, train_loader, forecast_criterion, recon_criterion)
 	print(f'Init total train loss: {init_train_loss[2]}')
@@ -264,7 +270,8 @@ if __name__ == '__main__':
 				y = y.squeeze(1)
 
 			forecast_loss = torch.sqrt(forecast_criterion(y, preds))
-			recon_loss = recon_criterion(x, recons)
+			recon_loss = torch.sqrt(recon_criterion(y, recons))
+			# recon_loss = recon_criterion(x, recons)
 			loss = forecast_loss + recon_loss
 
 			loss.backward()
@@ -277,7 +284,9 @@ if __name__ == '__main__':
 		recon_b_losses = np.array(recon_b_losses)
 
 		forecast_epoch_loss = np.sqrt((forecast_b_losses**2).mean())
-		recon_epoch_loss = recon_b_losses.mean()
+		recon_epoch_loss = np.sqrt((recon_b_losses ** 2).mean())
+
+		# recon_epoch_loss = recon_b_losses.mean()
 		total_epoch_loss = forecast_epoch_loss + recon_epoch_loss
 
 		losses['train_forecast'].append(forecast_epoch_loss)
