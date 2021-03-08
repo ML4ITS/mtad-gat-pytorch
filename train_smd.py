@@ -135,8 +135,8 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	df = pd.DataFrame()
 	for i in range(n_features):
 		df[f'Pred_{i}'] = preds[:, i]
-		df[f'True_{i}'] = true_y[:, i]
 		df[f'Recon_{i}'] = recons[:, i]
+		df[f'True_{i}'] = true_y[:, i]
 		df[f'A_Score_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + gamma * np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
 		# df[f'F_Loss_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
 		# df[f'R_Loss_{i}'] = np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
