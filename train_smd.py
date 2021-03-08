@@ -31,39 +31,81 @@ def evaluate(model, loader, criterion):
 
 
 def detect_anomalies(model, loader, save_path, true_anomalies=None):
-	""" Making a dataframe that contains, for each timestamp:
-		- predicted value for each feature
-		- true value for each feature
-		- RSE between predicted and true value
-		- if timestamp is predicted anomaly (0 or 1)
-		- whether the timestamp was an anomaly (if provided)
+	""" Method that forecasts next value and reconstructs input using given model.
+		Saves dataframe that, for each timestamp, contains:
+			- predicted value for each feature
+			- reconstructed value for each feature 
+			- true value for each feature
+			- RSE between predicted and true value
+			- if timestamp is predicted anomaly (0 or 1)
+			- whether the timestamp was an anomaly (if provided)
+			
+		:param model: Model (pre-trained) used to forecast and reconstruct
+		:param loader: Pytorch dataloader
+		:param save_path: Path to save output
+		:param true_anomalies: boolean array indicating if timestamp is anomaly (0 or 1)
 	"""
-
 	print(f'Detecting anomalies..')
 	model.eval()
 
 	preds = []
 	true_y = []
+	recons = []
+	recons_true = []
 	with torch.no_grad():
 		for x, y in loader:
-			y_hat, recons = model(x)
+			y_hat, window_recons = model(x)
 			if y_hat.ndim == 3:
 				y_hat = y_hat.squeeze(1)
 			if y.ndim == 3:
 				y = y.squeeze(1)
+			print(x.shape)
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
+			recons.extend(window_recons.detach().cpu().numpy())
+			recons_true.extend(x.detach().cpu().numpy())
+
+	window_size = x.shape[1]
+	n_features = x.shape[2]
 
 	preds = np.array(preds)
 	true_y = np.array(true_y)
+	recons = np.array(recons)
+	recons_true = np.array(recons_true)
+
+	last_recons = recons[-1, :, :]
+	last_true_recons = recons_true[-1, :, :]
+
+	recons = recons[::window_size].reshape((-1, n_features))
+	recons = np.append(recons, last_recons, axis=0)
+
+	recons_true = np.array(recons_true)[::window_size].reshape((-1, n_features))
+	recons_true = np.append(recons_true, last_true_recons, axis=0)
+
+	preds = np.insert(preds, 0, np.zeros((window_size, n_features)), axis=0)
+	true_y = np.insert(true_y, 0, np.zeros((window_size, n_features)), axis=0)
+
+	print(preds.shape)
+	print(recons.shape)
+	print(recons_true.shape)
+
+	plt.plot(recons, label='Reconstructed')
+	plt.plot(recons_true, label='Actual')
+	plt.title('Reconstructions')
+	plt.legend()
+	plt.savefig(f'{save_path}_recons', bbox_inches="tight")
+	plt.show()
+	plt.close()
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	print(rmse)
 
 	df = pd.DataFrame()
-	for i in range(preds.shape[1]):
+	for i in range(n_features):
 		df[f'Pred_{i}'] = preds[:, i]
 		df[f'True_{i}'] = true_y[:, i]
+		df[f'Recon_{i}'] = recons[:, i]
+		df[f'True_Recon_{i}'] = recons_true[:, i]
 		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
 
 	window_size = x.shape[1]
