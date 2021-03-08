@@ -9,6 +9,8 @@ class MTAD_GAT(nn.Module):
 				 kernel_size=7,
 				 gru_n_layers=3,
 				 gru_hid_dim=64,
+				 autoencoder_n_layers=1,
+				 autoencoder_hid_dim=128,
 				 forecasting_n_layers=3,
 				 forecasting_hid_dim=32,
 				 dropout=0.2,
@@ -20,7 +22,7 @@ class MTAD_GAT(nn.Module):
 		self.temporal_gat = TemporalAttentionLayer(num_nodes, window_size, dropout, alpha, device)
 		self.gru = GRU(3*num_nodes, gru_hid_dim, gru_n_layers, dropout, device)
 		self.forecasting_model = Forecasting_Model(gru_hid_dim, forecasting_hid_dim, out_dim*horizon, forecasting_n_layers, dropout, device)
-		self.recon_model = RNNAutoencoder(window_size, num_nodes, 1, 30, num_nodes, dropout, device)
+		self.recon_model = RNNAutoencoder(window_size, num_nodes, autoencoder_n_layers, autoencoder_hid_dim, num_nodes, dropout, device)
 
 	def forward(self, x):
 		# x shape (b, n, k): b - batch size, n - window size, k - number of nodes/features

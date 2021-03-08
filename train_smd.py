@@ -121,21 +121,6 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	recons_true = recons_true[window_size::window_size].reshape((-1, n_features))
 	recons_true = np.append(recons_true, last_true_recons, axis=0)
 
-	# preds = np.insert(preds, 0, np.zeros((window_size, n_features)), axis=0)
-	# true_y = np.insert(true_y, 0, np.zeros((window_size, n_features)), axis=0)
-
-	print(preds.shape)
-	print(recons.shape)
-	print(recons_true.shape)
-	#
-	# plt.plot(recons, label='Reconstructed')
-	# plt.plot(recons_true, label='Actual')
-	# plt.title('Reconstructions')
-	# plt.legend()
-	# plt.savefig(f'{save_path}_recons', bbox_inches="tight")
-	# plt.show()
-	# plt.close()
-
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	print(rmse)
 
@@ -145,7 +130,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 		df[f'True_{i}'] = true_y[:, i]
 		df[f'Recon_{i}'] = recons[:, i]
 		df[f'True_Recon_{i}'] = recons_true[:, i]
-		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
+		df[f'RSE_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + np.abs(recons[:, i] - recons_true[:, i])
 
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
 	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
@@ -172,6 +157,8 @@ if __name__ == '__main__':
 	parser.add_argument('--kernel_size', type=int, default=7)
 	parser.add_argument('--gru_layers', type=int, default=1)
 	parser.add_argument('--gru_hid_dim', type=int, default=150)
+	parser.add_argument('--autoenc_layers', type=int, default=1)
+	parser.add_argument('--autoenc_hid_dim', type=int, default=128)
 	parser.add_argument('--fc_layers', type=int, default=3)
 	parser.add_argument('--fc_hid_dim', type=int, default=150)
 
@@ -231,6 +218,8 @@ if __name__ == '__main__':
 					 dropout=args.dropout,
 					 gru_n_layers=args.gru_layers,
 					 gru_hid_dim=args.gru_hid_dim,
+					 autoencoder_n_layers=args.autoenc_layers,
+					 autoencoder_hid_dim=args.autoenc_hid_dim,
 					 forecasting_n_layers=args.fc_layers,
 					 forecasting_hid_dim=args.fc_hid_dim,
 					 device=device)

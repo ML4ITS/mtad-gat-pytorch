@@ -188,7 +188,7 @@ class RNNEncoder(nn.Module):
 		self.n_layers = n_layers
 		self.hid_dim = hid_dim
 
-		self.rnn = nn.GRU(input_size=in_dim, hidden_size=hid_dim, num_layers=1, batch_first=True, dropout=dropout)
+		self.rnn = nn.GRU(input_size=in_dim, hidden_size=hid_dim, num_layers=n_layers, batch_first=True, dropout=dropout)
 		#self.rnn2 = nn.GRU(self.hid_dim, self.embed_dim, n_layers, batch_first=True, dropout=dropout)
 
 	def forward(self, x):
