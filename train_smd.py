@@ -244,10 +244,10 @@ if __name__ == '__main__':
 	recon_criterion = nn.L1Loss()
 
 	init_train_loss = evaluate(model, train_loader, forecast_criterion, recon_criterion)
-	print(f'Init train loss: {init_train_loss}')
+	print(f'Init total train loss: {init_train_loss[2]}')
 
 	init_val_loss = evaluate(model, val_loader, forecast_criterion, recon_criterion)
-	print(f'Init val loss: {init_val_loss}')
+	print(f'Init total val loss: {init_val_loss[2]}')
 
 	losses = {
 		'train_total': [],
@@ -315,7 +315,9 @@ if __name__ == '__main__':
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
 	test_loss = evaluate(model, test_loader, forecast_criterion, recon_criterion)
-	print(f'Test loss (RMSE): {test_loss:.5f}')
+	print(f'Test forecast loss: {test_loss[0]:.5f}')
+	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
+	print(f'Test total loss: {test_loss[2]:.5f}')
 
 	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
 	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test', true_anomalies=y_test)
