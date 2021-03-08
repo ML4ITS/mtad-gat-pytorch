@@ -73,7 +73,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	recons = np.array(recons)
 	recons_true = np.array(recons_true)
 
-	last_recons = recons[-1, -(recons.shape[0] % window_size - 1):, :]
+	last_recons = recons[-1, -(recons.shape[0] % window_size):, :]
 	last_true_recons = recons_true[-1, -(recons.shape[0] % window_size):, :]
 
 	recons = recons[::window_size].reshape((-1, n_features))
