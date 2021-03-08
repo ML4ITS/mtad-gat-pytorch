@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 
-from modules import ConvLayer, FeatureAttentionLayer, TemporalAttentionLayer, GRU, Forecasting_Model, Reconstruction_Model
+from modules import ConvLayer, FeatureAttentionLayer, TemporalAttentionLayer, GRU, Forecasting_Model, RNNAutoencoder
 
 
 class MTAD_GAT(nn.Module):
-	def __init__(self,  num_nodes, window_size, horizon, out_dim,
+	def __init__(self,  num_nodes, window_size, horizon, out_dim, batch_size,
 				 kernel_size=7,
 				 gru_n_layers=3,
 				 gru_hid_dim=64,
@@ -20,7 +20,7 @@ class MTAD_GAT(nn.Module):
 		self.temporal_gat = TemporalAttentionLayer(num_nodes, window_size, dropout, alpha, device)
 		self.gru = GRU(3*num_nodes, gru_hid_dim, gru_n_layers, dropout, device)
 		self.forecasting_model = Forecasting_Model(gru_hid_dim, forecasting_hid_dim, out_dim*horizon, forecasting_n_layers, dropout, device)
-		self.recon_model = Reconstruction_Model(num_nodes, 32, 32, num_nodes, dropout, device)
+		self.recon_model = RNNAutoencoder(window_size, num_nodes, 1, 30, num_nodes, dropout, device)
 
 	def forward(self, x):
 		# x shape (b, n, k): b - batch size, n - window size, k - number of nodes/features
@@ -31,7 +31,7 @@ class MTAD_GAT(nn.Module):
 
 		#h_cat = x
 		#h_cat = torch.cat([x, h_temp], dim=2)
-		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)
+		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2) # (b, n, 3k)
 
 		gru_out, last_hidden = self.gru(h_cat)
 
@@ -41,8 +41,8 @@ class MTAD_GAT(nn.Module):
 		predictions = self.forecasting_model(forecasting_in)
 
 		# TODO: Reconstruction model
-		recons = None
-		# recons = self.recon_model(x)
+		#recons = None
+		recons = self.recon_model(h_cat)
 
 		return predictions, recons
 

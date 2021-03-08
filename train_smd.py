@@ -141,7 +141,7 @@ if __name__ == '__main__':
 	test_dataset = SMDDataset(x_test, window=window_size)
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
-	model = MTAD_GAT(x_dim, window_size, horizon, x_dim,
+	model = MTAD_GAT(x_dim, window_size, horizon, x_dim, batch_size,
 					 kernel_size=args.kernel_size,
 					 dropout=args.dropout,
 					 gru_n_layers=args.gru_layers,
@@ -155,12 +155,13 @@ if __name__ == '__main__':
 		model.cuda()
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-	criterion = nn.MSELoss()
+	forecast_criterion = nn.MSELoss()
+	recon_criterion = nn.L1Loss()
 
-	init_train_loss = evaluate(model, train_loader, criterion)
+	init_train_loss = evaluate(model, train_loader, forecast_criterion)
 	print(f'Init train loss: {init_train_loss}')
 
-	init_val_loss = evaluate(model, val_loader, criterion)
+	init_val_loss = evaluate(model, val_loader, forecast_criterion)
 	print(f'Init val loss: {init_val_loss}')
 
 	train_losses = []
@@ -169,6 +170,7 @@ if __name__ == '__main__':
 	for epoch in range(n_epochs):
 		model.train()
 		batch_losses = []
+		recon_losses = []
 		for x, y in train_loader:
 			optimizer.zero_grad()
 			preds, recons = model(x)
@@ -176,21 +178,29 @@ if __name__ == '__main__':
 				preds = preds.squeeze(1)
 			if y.ndim == 3:
 				y = y.squeeze(1)
-			loss = torch.sqrt(criterion(y, preds))
+
+			forecast_loss = torch.sqrt(forecast_criterion(y, preds))
+			recon_loss = recon_criterion(x, recons)
+			loss = forecast_loss + recon_loss
+
 			loss.backward()
 			optimizer.step()
 
 			batch_losses.append(loss.item())
+			recon_losses.append(recon_loss.item())
 
 		batch_losses = np.array(batch_losses)
 		epoch_loss = np.sqrt((batch_losses**2).mean())
 		train_losses.append(epoch_loss)
 
+		recon_losses = np.array(recon_losses)
+		epoch_recon_loss = recon_losses.mean()
+
 		# Evaluate on validation set
-		val_loss = evaluate(model, val_loader, criterion)
+		val_loss = evaluate(model, val_loader, forecast_criterion)
 		val_losses.append(val_loss)
 
-		print(f'[Epoch {epoch + 1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}')
+		print(f'[Epoch {epoch + 1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}, Recon loss: {epoch_recon_loss:.5f}')
 
 	plt.plot(train_losses, label='training loss')
 	plt.plot(val_losses, label='validation loss')
@@ -205,7 +215,7 @@ if __name__ == '__main__':
 	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 	test_loader = DataLoader(test_dataset, shuffle=False, batch_size=batch_size, drop_last=False)
 
-	test_loss = evaluate(model, test_loader, criterion)
+	test_loss = evaluate(model, test_loader, forecast_criterion)
 	print(f'Test loss (RMSE): {test_loss:.5f}')
 
 	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
