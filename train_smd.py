@@ -270,7 +270,7 @@ if __name__ == '__main__':
 				y = y.squeeze(1)
 
 			forecast_loss = torch.sqrt(forecast_criterion(y, preds))
-			recon_loss = torch.sqrt(recon_criterion(y, recons))
+			recon_loss = torch.sqrt(recon_criterion(x, recons))
 			# recon_loss = recon_criterion(x, recons)
 			loss = forecast_loss + recon_loss
 
