@@ -122,7 +122,8 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	recons_true = np.append(recons_true, last_true_recons, axis=0)
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
-	print(rmse)
+	l1 = np.abs(recons-recons_true).mean()
+	print(rmse+l1)
 
 	df = pd.DataFrame()
 	for i in range(n_features):
