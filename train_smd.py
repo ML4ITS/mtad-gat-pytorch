@@ -123,7 +123,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 
 	print(recons.shape)
 	print(true_y.shape)
-	recons = np.append(recons, true_y[-1], axis=0)
+	recons = np.append(recons, true_y[-1, :], axis=0)
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
 	l1 = np.abs(recons-recons_true).mean()
