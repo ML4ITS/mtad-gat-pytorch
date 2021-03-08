@@ -125,6 +125,11 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	l1 = np.abs(recons-recons_true).mean()
 	print(rmse+l1)
 
+	print(preds.shape)
+	print(true_y.shape)
+	print(recon.shape)
+	print(recons_true.shape)
+
 	df = pd.DataFrame()
 	for i in range(n_features):
 		df[f'Pred_{i}'] = preds[:, i]
