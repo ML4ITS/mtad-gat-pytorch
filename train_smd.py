@@ -90,7 +90,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	preds = []
 	true_y = []
 	recons = []
-	recons_true = []
+	# recons_true = []
 	with torch.no_grad():
 		for x, y in loader:
 			y_hat, window_recons = model(x)
@@ -102,7 +102,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
 			recons.extend(window_recons.detach().cpu().numpy())
-			recons_true.extend(x.detach().cpu().numpy())
+			# recons_true.extend(x.detach().cpu().numpy())
 
 	window_size = x.shape[1]
 	n_features = x.shape[2]
@@ -110,34 +110,29 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	preds = np.array(preds)
 	true_y = np.array(true_y)
 	recons = np.array(recons)
-	recons_true = np.array(recons_true)
+	# recons_true = np.array(recons_true)
 
 	last_recons = recons[-1, -(recons.shape[0] % window_size)+1:, :]
-	last_true_recons = recons_true[-1, -(recons.shape[0] % window_size)+1:, :]
+	# last_true_recons = recons_true[-1, -(recons.shape[0] % window_size)+1:, :]
 
 	recons = recons[window_size::window_size].reshape((-1, n_features))
 	recons = np.append(recons, last_recons, axis=0)
 	recons = np.append(recons, [true_y[-1, :]], axis=0)
 
-	recons_true = recons_true[window_size::window_size].reshape((-1, n_features))
-	recons_true = np.append(recons_true, last_true_recons, axis=0)
-	recons_true = np.append(recons_true, [true_y[-1, :]], axis=0)
+	# recons_true = recons_true[window_size::window_size].reshape((-1, n_features))
+	# recons_true = np.append(recons_true, last_true_recons, axis=0)
+	# recons_true = np.append(recons_true, [true_y[-1, :]], axis=0)
 
 	rmse = np.sqrt(mean_squared_error(true_y, preds))
-	l1 = np.abs(recons-recons_true).mean()
+	l1 = np.abs(recons-true_y).mean()
 	print(rmse+l1)
-
-	print(preds.shape)
-	print(true_y.shape)
-	print(recons.shape)
-	print(recons_true.shape)
 
 	df = pd.DataFrame()
 	for i in range(n_features):
 		df[f'Pred_{i}'] = preds[:, i]
 		df[f'True_{i}'] = true_y[:, i]
 		df[f'Recon_{i}'] = recons[:, i]
-		df[f'True_Recon_{i}'] = recons_true[:, i]
+		# df[f'True_Recon_{i}'] = recons_true[:, i]
 		df[f'Loss_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + np.abs(recons[:, i] - recons_true[:, i])
 
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
