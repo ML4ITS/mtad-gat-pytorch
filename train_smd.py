@@ -110,7 +110,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 
 	window_size = x.shape[1]
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
-	df['True_Anomaly'] = true_anomalies[window_size+1:] if true_anomalies is not None else 0
+	df['True_Anomaly'] = true_anomalies if true_anomalies is not None else 0
 
 	print(f'Saving output to {save_path}')
 	df.to_pickle(f'{save_path}.pkl')
