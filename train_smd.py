@@ -59,7 +59,7 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 				y_hat = y_hat.squeeze(1)
 			if y.ndim == 3:
 				y = y.squeeze(1)
-			print(x.shape)
+
 			preds.extend(y_hat.detach().cpu().numpy())
 			true_y.extend(y.detach().cpu().numpy())
 			recons.extend(window_recons.detach().cpu().numpy())
@@ -113,7 +113,8 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	df['True_Anomaly'] = true_anomalies[window_size+1:] if true_anomalies is not None else 0
 
 	print(f'Saving output to {save_path}')
-	df.to_csv(f'{save_path}.csv', index=False)
+	df.to_pickle(f'{save_path}.pkl')
+	# df.to_csv(f'{save_path}.csv', index=False)
 	print('Done.')
 
 
@@ -171,6 +172,10 @@ if __name__ == '__main__':
 	x_train = x_train[:-3000]
 	x_val = x_train[-3000:]
 	x_test = torch.from_numpy(x_test).float().to(device)
+
+	print(f'x_train shape: {x_train.shape}')
+	print(f'x_val shape: {x_val.shape}')
+	print(f'x_test shape: {x_test.shape}')
 
 	x_dim = x_train.shape[1]
 
