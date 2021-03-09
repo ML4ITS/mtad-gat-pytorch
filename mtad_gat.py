@@ -48,7 +48,9 @@ class MTAD_GAT(nn.Module):
 		forecasting_in = h_end.view(x.shape[0], -1) #gru_out[:, -1, :]  # Hidden state for to last timestamp
 
 		predictions = self.forecasting_model(forecasting_in)
-		recons = self.recon_model(gru_out)
+		# recons = self.recon_model(gru_out)
+		recons = self.recon_model(h_end)
+
 
 		return predictions, recons
 

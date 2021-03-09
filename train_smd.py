@@ -102,7 +102,7 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
 		train_sampler = SubsetRandomSampler(train_indices)
 		valid_sampler = SubsetRandomSampler(val_indices)
 
-		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
 												   sampler=train_sampler)
 		val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
 												 sampler=valid_sampler)

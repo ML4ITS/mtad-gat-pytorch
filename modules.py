@@ -255,8 +255,9 @@ class RNNAutoencoder(nn.Module):
 
 	def forward(self, x):
 		# x shape: (b, n, k)
-
-		h_end = self.encoder(x).squeeze(0).unsqueeze(2)
+		
+		h_end = x
+		#h_end = self.encoder(x).squeeze(0).unsqueeze(2)
 
 		# print(f'h_end: {h_end.shape}')
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
