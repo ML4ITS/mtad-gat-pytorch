@@ -2,6 +2,7 @@ import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from datetime import datetime
 
 
 class ConvLayer(nn.Module):
@@ -233,12 +234,11 @@ class RNNDecoder(nn.Module):
 class RNNAutoencoder(nn.Module):
 	"""
 	Reconstruction Model using a GRU-based Encoder-Decoder.
-	TODO
 	"""
 
 	def __init__(self,
 				 window_size,
-				 n_features,
+				 in_dim,
 				 n_layers,
 				 hid_dim,
 				 out_dim,
@@ -250,7 +250,7 @@ class RNNAutoencoder(nn.Module):
 		self.dropout = dropout
 		self.device = device
 
-		self.encoder = RNNEncoder(3*n_features, n_layers, hid_dim, dropout=dropout, device=device)
+		self.encoder = RNNEncoder(in_dim, n_layers, hid_dim, dropout=dropout, device=device)
 		self.decoder = RNNDecoder(hid_dim, n_layers, hid_dim, out_dim, dropout=dropout, device=device)
 
 	def forward(self, x):
