@@ -12,7 +12,7 @@ from mtad_gat import MTAD_GAT
 from training import Trainer
 
 
-def detect_anomalies(model, loader, save_path, true_anomalies=None):
+def detect_anomalies(model, loader, save_path, true_anomalies=None, use_cuda=True):
 	""" Method that forecasts next value and reconstructs input using given model.
 		Saves dataframe that, for each timestamp, contains:
 			- predicted value for each feature
@@ -34,8 +34,12 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None):
 	true_y = []
 	recons = []
 
+	device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
 	with torch.no_grad():
 		for x, y in loader:
+			x = x.to(device)
+			y = y.to(device)
+
 			y_hat, window_recons = model(x)
 			if y_hat.ndim == 3:
 				y_hat = y_hat.squeeze(1)
@@ -213,8 +217,8 @@ if __name__ == '__main__':
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
-	detect_anomalies(model, train_loader, save_path=f'{output_path}/train_out', )
-	detect_anomalies(model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test)
+	detect_anomalies(model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
+	detect_anomalies(model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
 
 
 
