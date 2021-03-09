@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
 	trainer.fit(train_loader, val_loader)
 
-	plot_losses(losses, save_path=f'output/{args.dataset}')
+	plot_losses(losses, save_path=output_path)
 
 	# Creating non-shuffled train loader
 	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size)
@@ -213,8 +213,8 @@ if __name__ == '__main__':
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
-	detect_anomalies(model, train_loader, save_path=f'output/{args.dataset}/machine-{args.group}_train', )
-	detect_anomalies(model, test_loader, save_path=f'output/{args.dataset}/machine-{args.group}_test', true_anomalies=y_test)
+	detect_anomalies(model, train_loader, save_path=f'{output_path}/train_out', )
+	detect_anomalies(model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test)
 
 
 
