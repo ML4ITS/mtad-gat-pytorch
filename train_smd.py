@@ -224,8 +224,9 @@ if __name__ == '__main__':
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
-	detect_anomalies(model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
-	detect_anomalies(model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
+	best_model = model.load(f'{model_path}/{model.datetime}-best_model')
+	detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
+	detect_anomalies(best_model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
 
 
 

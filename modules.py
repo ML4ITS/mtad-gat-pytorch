@@ -6,14 +6,17 @@ from datetime import datetime
 
 
 class ConvLayer(nn.Module):
-	"""
-	1-D Convolution layer to extract high-level features of each time-series input
+	""" 1-D Convolution layer to extract high-level features of each time-series input
+		:param num_nodes: Number of input features/nodes
+		:param window_size: length of the input sequence
+		:param: kernel_size: size of kernel to use in the convolution operation
+		:param device: which device to use (cpu or cuda)
 	"""
 
-	def __init__(self, num_nodes, window_size, kernel_size=7, device='cpu'):
+	def __init__(self, n_features, window_size, kernel_size=7, device='cpu'):
 		super(ConvLayer, self).__init__()
 		self.padding = nn.ConstantPad1d((kernel_size - 1) // 2, 0.0)
-		self.conv = nn.Conv1d(in_channels=num_nodes, out_channels=num_nodes, kernel_size=kernel_size)
+		self.conv = nn.Conv1d(in_channels=n_features, out_channels=n_features, kernel_size=kernel_size)
 		self.relu = nn.ReLU()
 
 	def forward(self, x):
@@ -24,10 +27,14 @@ class ConvLayer(nn.Module):
 
 
 class FeatureAttentionLayer(nn.Module):
-	"""
-	Single Graph Feature/Spatial Attention Layer
-	"""
+	""" Single Graph Feature/Spatial Attention Layer
+		:param num_nodes: Number of input features/nodes
+		:param window_size: length of the input sequence
+	 	:param dropout: percentage of nodes to dropout
+	 	:param alpha: negative slope used in the leaky rely activation function
+		:param device: which device to use (cpu or cuda)
 
+	"""
 	def __init__(self, num_nodes, window_size, dropout, alpha, device='cpu'):
 		super(FeatureAttentionLayer, self).__init__()
 		self.num_nodes = num_nodes
@@ -38,7 +45,7 @@ class FeatureAttentionLayer(nn.Module):
 		self.w = nn.Parameter(torch.empty((2 * window_size, 1)))
 		nn.init.xavier_uniform_(self.w.data, gain=1.414)
 
-	# self.a = nn.Linear(2 * out_dim, 1, bias=False)
+		self.sigmoid = nn.Sigmoid()
 
 	def forward(self, x):
 		# x has shape (b, n, k) where n is window size and k is number of nodes
@@ -60,7 +67,7 @@ class FeatureAttentionLayer(nn.Module):
 		attention = torch.dropout(attention, self.dropout, train=self.training)
 
 		# Computing new node features using the attention
-		h = torch.matmul(attention, v)
+		h = self.sigmoid(torch.matmul(attention, v))
 
 		return h
 
@@ -91,8 +98,13 @@ class FeatureAttentionLayer(nn.Module):
 
 
 class TemporalAttentionLayer(nn.Module):
-	"""
-	Single Graph Temporal Attention Layer
+	""" Single Graph Temporal Attention Layer
+		:param num_nodes: Number of input features/nodes
+		:param window_size: length of the input sequence
+	 	:param dropout: percentage of nodes to dropout
+	 	:param alpha: negative slope used in the leaky rely activation function
+		:param device: which device to use (cpu or cuda)
+
 	"""
 
 	def __init__(self, num_nodes, window_size, dropout, alpha, device='cpu'):
@@ -104,6 +116,8 @@ class TemporalAttentionLayer(nn.Module):
 
 		self.w = nn.Parameter(torch.empty((2 * num_nodes, 1)))
 		nn.init.xavier_uniform_(self.w.data, gain=1.414)
+
+		self.sigmoid = nn.Sigmoid()
 
 	# self.a = nn.Linear(2 * out_dim, 1, bias=False)
 
@@ -122,11 +136,9 @@ class TemporalAttentionLayer(nn.Module):
 		attention = torch.dropout(attention, self.dropout, train=self.training)
 
 		# Computing new node features using the attention
-		h = torch.matmul(attention, x)
+		h = self.sigmoid(torch.matmul(attention, x))
 
 		return h
-
-
 
 	def _make_attention_input(self, v):
 		""" Preparing the temporal attention mechanism.
@@ -153,8 +165,12 @@ class TemporalAttentionLayer(nn.Module):
 
 
 class GRU(nn.Module):
-	"""
-	Gated Recurrent Unit (GRU)
+	""" Gated Recurrent Unit (GRU)
+		:param in_dim: number of input features
+		:param hid_dim: hidden size of the GRU
+		:param n_layers: number of layers in GRU
+		:param dropout: dropout rate
+		:param device: which device to use (cpu or cuda)
 	"""
 
 	def __init__(self, in_dim, hid_dim, n_layers, dropout, device='cpu'):
@@ -173,12 +189,11 @@ class GRU(nn.Module):
 
 
 class RNNEncoder(nn.Module):
-	"""
-	    Encoder network containing enrolled GRU
+	""" Encoder network containing enrolled GRU
 	    :param in_dim: number of input features
 	    :param hid_dim: hidden size of the RNN
 	    :param n_layers: number of layers in RNN
-	    :param dropout: percentage of nodes to dropout
+	    :param dropout: dropout rate
 	    :param device: which device to use (cpu or cuda)
 	"""
 
@@ -202,17 +217,14 @@ class RNNEncoder(nn.Module):
 		return h_end
 
 class RNNDecoder(nn.Module):
+	""" GRU-based Decoder network that converts latent vector into output
+		:param in_dim: number of input features
+		:param n_layers: number of layers in RNN
+		:param hid_dim: hidden size of the RNN
+		:param dropout: dropout rate
+		:param device: which device to use (cpu or cuda)
 	"""
-		    Decoder network converts latent vector into output
-		    :param window_size: length of the input sequence
-		    :param batch_size: batch size of the input sequence
-		    :param in_dim: number of input features
-		    :param n_layers: number of layers in RNN
-		    :param hid_dim: hidden size of the RNN
-		    :param batch_size: batch size
-		    :param dropout: percentage of nodes to dropout
-		    :param device: which device to use (cpu or cuda)
-		"""
+
 	def __init__(self, in_dim, n_layers, hid_dim, out_dim, dropout=0.0, device='cpu'):
 		super(RNNDecoder, self).__init__()
 
@@ -232,8 +244,14 @@ class RNNDecoder(nn.Module):
 		return out
 
 class RNNAutoencoder(nn.Module):
-	"""
-	Reconstruction Model using a GRU-based Encoder-Decoder.
+	""" Reconstruction Model using a GRU-based Encoder-Decoder.
+		:param window_size: length of the input sequence
+		:param in_dim: number of input features
+		:param n_layers: number of layers in RNN
+		:param hid_dim: hidden size of the RNN
+		:param in_dim: number of output features
+		:param dropout: dropout rate
+		:param device: which device to use (cpu or cuda)
 	"""
 
 	def __init__(self,
@@ -257,19 +275,22 @@ class RNNAutoencoder(nn.Module):
 		# x shape: (b, n, k)
 
 		# h_end = self.encoder(x).squeeze(0).unsqueeze(2)
+		# Use output from gru as the encoding
 		h_end = x
-		# print(f'h_end: {h_end.shape}')
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
-
-		# print(h_end_rep.shape)
 
 		out = self.decoder(h_end_rep)
 		# print(f'out: {out.shape}')
 		return out
 
 class Forecasting_Model(nn.Module):
-	"""
-	Forecasting model (fully-connected network)
+	""" Forecasting model (fully-connected network)
+		:param in_dim: number of input features
+		:param hid_dim: hidden size of the FC network
+		:param out_dim: number of output features
+		:param n_layers: number of FC layers
+		:param dropout: dropout rate
+		:param device: which device to use (cpu or cuda)
 	"""
 	def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout, device='cpu'):
 		super(Forecasting_Model, self).__init__()
