@@ -111,7 +111,7 @@ if __name__ == '__main__':
 	# Data params
 	parser.add_argument('--dataset', type=str, default='smd')
 	parser.add_argument('--group', type=str, default="1-1",
-						help='<group_index>-<index>')
+						help='Needed for smd dataset. <group_index>-<index>')
 	parser.add_argument('--lookback', type=int, default=100)
 	parser.add_argument('--horizon', type=int, default=1)
 	parser.add_argument('--target_col', type=int, default=None)
@@ -140,8 +140,18 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	print(args)
 
-	if not os.path.exists(f'output/{args.dataset}'):
-		os.makedirs(f'output/{args.dataset}')
+	if args.dataset == 'smd':
+		output_path = f'output/smd/{args.group}'
+	else:
+		output_path = f'output/{args.dataset}'
+
+	log_dir = f'{output_path}/logs'
+
+	if not os.path.exists(output_path):
+		os.makedirs(output_path)
+
+	if not os.path.exists(log_dir):
+		os.makedirs(log_dir)
 
 	if not os.path.exists(args.model_path):
 		os.makedirs(args.model_path)
@@ -162,7 +172,7 @@ if __name__ == '__main__':
 
 	(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
 
-	x_train = torch.from_numpy(x_train).float()[:1000]
+	x_train = torch.from_numpy(x_train).float()
 	x_test = torch.from_numpy(x_test).float()
 	n_features = x_train.shape[1]
 
@@ -188,7 +198,8 @@ if __name__ == '__main__':
 	recon_criterion = nn.MSELoss()
 
 	trainer = Trainer(model, optimizer, window_size, n_features, n_epochs, batch_size,
-					  init_lr, forecast_criterion, recon_criterion, use_cuda, model_path, print_every)
+					  init_lr, forecast_criterion, recon_criterion, use_cuda,
+					  model_path, log_dir, print_every)
 
 	trainer.fit(train_loader, val_loader)
 

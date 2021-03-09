@@ -12,22 +12,23 @@ class Trainer:
 	""" Trainer class for MTAD-GAT model.
 
 	    :param model: MTAD-GAT model
-	    :param optimizer: optimizer used to minimize the loss function
-	    :param window_size: length of the input sequence
-	    :param n_features: number of input features
+	    :param optimizer: Optimizer used to minimize the loss function
+	    :param window_size: Length of the input sequence
+	    :param n_features: Number of input features
 		:param n_epochs: Number of iterations/epochs
-	    :param batch_size: number of windows in a single batch
-	    :param lr: the learning rate of the module
+	    :param batch_size: Number of windows in a single batch
+	    :param init_lr: Initial learning rate of the module
 	    :param forecast_criterion: Loss to be used for forecasting.
 	    :param recon_criterion: Loss to be used for reconstruction.
-	    :param boolean cuda: to be run on GPU or not
+	    :param boolean use_cuda: To be run on GPU or not
 	    :param dload: Download directory where models are to be dumped
+	    :param log_dir: Directory where SummaryWriter logs are written to
 	    """
 	def __init__(self, model, optimizer, window_size, n_features,
 				 n_epochs=200, batch_size=256, init_lr=0.001,
 				 forecast_criterion=nn.MSELoss(),
 				 recon_criterion=nn.MSELoss(),
-				 use_cuda=True, dload='models/', print_every=1):
+				 use_cuda=True, dload='models/', log_dir='output/', print_every=1):
 
 		self.model = model
 		self.optimizer = optimizer
@@ -40,6 +41,7 @@ class Trainer:
 		self.recon_criterion = recon_criterion
 		self.device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
 		self.dload = dload
+		self.log_dir = log_dir
 		self.print_every = print_every
 
 		self.losses = {
@@ -56,6 +58,8 @@ class Trainer:
 			self.model.cuda()
 
 		self.datetime = datetime.now().strftime("%d%m%Y_%H%M%S")
+
+		self.writer = SummaryWriter(f'{log_dir}/{self.datetime}')
 
 	def __repr__(self):
 		return f'model={repr(self.model)}, w_size={self.window_size}, init_lr={self.init_lr}'
@@ -124,6 +128,8 @@ class Trainer:
 				self.losses['val_forecast'].append(forecast_val_loss)
 				self.losses['val_recon'].append(recon_val_loss)
 				self.losses['val_total'].append(total_val_loss)
+
+			self.write_loss(epoch)
 
 			if total_val_loss <= self.losses['val_total'][-1]:
 				self.save(f"{self.datetime}-best_model")
@@ -204,3 +210,8 @@ class Trainer:
 		"""
 
 		self.model.load_state_dict(torch.load(PATH))
+
+
+	def write_loss(self, epoch):
+		for key, value in self.losses.items():
+			self.writer.add_scalar(key, value[-1], epoch)
