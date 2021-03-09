@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
 	trainer.fit(train_loader, val_loader)
 
-	plot_losses(losses, save_path=output_path)
+	plot_losses(trainer.losses, save_path=output_path)
 
 	# Creating non-shuffled train loader
 	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size)
