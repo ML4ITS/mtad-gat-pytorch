@@ -185,6 +185,7 @@ class GRU(nn.Module):
 	def forward(self, x):
 		h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
 		out, h = self.gru(x, h0)
+		out, h =  out[-1, :, :], h[-1, :, :]  # Extracting from last layer
 		return out, h
 
 
@@ -275,7 +276,7 @@ class RNNAutoencoder(nn.Module):
 		# x shape: (b, n, k)
 
 		# h_end = self.encoder(x).squeeze(0).unsqueeze(2)
-		# Use output from gru as the encoding
+		# Use last hidden state from GRU module as the encoding
 		h_end = x
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 

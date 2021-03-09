@@ -74,9 +74,6 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None, use_cuda=Tru
 		df[f'Recon_{i}'] = recons[:, i]
 		df[f'True_{i}'] = true_y[:, i]
 		df[f'A_Score_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + gamma * np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
-		# df[f'F_Loss_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2)
-		# df[f'R_Loss_{i}'] = np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
-		# df[f'R_Loss_{i}'] = np.abs(recons[:, i] - recons_true[:, i])
 
 	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
 	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
