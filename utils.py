@@ -25,7 +25,7 @@ def preprocess(df, scaler=None):
 
 	# normalize data
 	if scaler is None:
-		scaler = MinMaxScaler.fit(df)
+		scaler = MinMaxScaler().fit(df)
 
 	df = scaler.transform(df)
 	# df = MinMaxScaler().fit_transform(df)
