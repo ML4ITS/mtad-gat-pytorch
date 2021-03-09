@@ -14,7 +14,7 @@ def preprocess(df, scaler=None):
 	"""returns normalized and standardized data.
 	"""
 
-	df = np.asarray(df, dtype=np.float32)
+	# df = np.asarray(df, dtype=np.float32)
 
 	if len(df.shape) == 1:
 		raise ValueError('Data must be a 2-D array')
