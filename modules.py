@@ -261,7 +261,7 @@ class RNNAutoencoder(nn.Module):
 		# print(f'h_end: {h_end.shape}')
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 
-		print(h_end_rep.shape)
+		# print(h_end_rep.shape)
 
 		out = self.decoder(h_end_rep)
 		# print(f'out: {out.shape}')
