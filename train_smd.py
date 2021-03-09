@@ -86,10 +86,10 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None, use_cuda=Tru
 	print('-- Done.')
 
 def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, val_dataset=None, test_dataset=None):
-	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, )
+	train_loader, val_loader, test_loader = None, None, None
 	if val_split == 0.0:
+		print(f'train_size: {len(train_dataset)}')
 		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
-
 	else:
 		dataset_size = len(train_dataset)
 		indices = list(range(dataset_size))
@@ -106,6 +106,13 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
 												   sampler=train_sampler)
 		val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
 												 sampler=valid_sampler)
+
+		print(f'train_size: {len(train_indices)}')
+		print(f'validation_size: {len(val_indices)}')
+
+	if test_dataset is not None:
+		test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+		print(f'test_size: {len(val_indices)}')
 
 	return train_loader, val_loader, test_loader
 
