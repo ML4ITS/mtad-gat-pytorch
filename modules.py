@@ -250,18 +250,18 @@ class RNNAutoencoder(nn.Module):
 		self.dropout = dropout
 		self.device = device
 
-		self.encoder = RNNEncoder(in_dim, n_layers, hid_dim, dropout=dropout, device=device)
-		self.decoder = RNNDecoder(hid_dim, n_layers, hid_dim, out_dim, dropout=dropout, device=device)
+		# self.encoder = RNNEncoder(in_dim, n_layers, hid_dim, dropout=dropout, device=device)
+		self.decoder = RNNDecoder(in_dim, n_layers, hid_dim, out_dim, dropout=dropout, device=device)
 
 	def forward(self, x):
 		# x shape: (b, n, k)
-		
-		h_end = x
-		#h_end = self.encoder(x).squeeze(0).unsqueeze(2)
 
+		# h_end = self.encoder(x).squeeze(0).unsqueeze(2)
+		h_end = x
 		# print(f'h_end: {h_end.shape}')
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
-		# print(h_end_rep.shape)
+
+		print(h_end_rep.shape)
 
 		out = self.decoder(h_end_rep)
 		# print(f'out: {out.shape}')
