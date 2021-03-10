@@ -29,7 +29,7 @@ class Trainer:
 				 forecast_criterion=nn.MSELoss(),
 				 recon_criterion=nn.MSELoss(),
 				 use_cuda=True, dload='models/', log_dir='output/', print_every=1,
-				 comment=" "):
+				 args_summary=""):
 
 		self.model = model
 		self.optimizer = optimizer
@@ -61,7 +61,7 @@ class Trainer:
 		self.dload = dload + self.id
 
 		self.writer = SummaryWriter(f'{log_dir}/{self.id}')
-		self.writer.add_text('comment', comment)
+		self.writer.add_text('args_summary', args_summary)
 
 
 	def __repr__(self):

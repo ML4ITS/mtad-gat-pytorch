@@ -180,7 +180,7 @@ if __name__ == '__main__':
 	print_every = args.print_every
 	group_index = args.group[0]
 	index = args.group[2]
-	comment = args.comment
+	args_summary = str(args.__dict__)
 
 	(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
 
@@ -211,7 +211,7 @@ if __name__ == '__main__':
 
 	trainer = Trainer(model, optimizer, window_size, n_features, n_epochs, batch_size,
 					  init_lr, forecast_criterion, recon_criterion, use_cuda,
-					  model_path, log_dir, print_every, comment)
+					  model_path, log_dir, print_every, args_summary)
 
 	trainer.fit(train_loader, val_loader)
 
