@@ -143,13 +143,13 @@ if __name__ == '__main__':
 	parser.add_argument('--shuffle_dataset', type=bool, default=True)
 	parser.add_argument('--dropout', type=float, default=0.3)
 	parser.add_argument('--use_cuda', type=bool, default=True)
-	parser.add_argument('--model_path', type=str, default="models/")
+	parser.add_argument('--model_path', type=str, default="models")
 	parser.add_argument('--print_every', type=int, default=1)
 
 	# Other
 	parser.add_argument('--comment', type=str, default="")
-
 	args = parser.parse_args()
+	print(args)
 
 	if args.dataset == 'smd':
 		output_path = f'output/smd/{args.group}'
@@ -225,7 +225,7 @@ if __name__ == '__main__':
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
-	trainer.load(f'{model_path}/{trainer.id}_model')
+	trainer.load(f'{model_path}/{trainer.id}_model.pt')
 	best_model = trainer.model
 	detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
 	detect_anomalies(best_model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)

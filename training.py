@@ -58,7 +58,7 @@ class Trainer:
 			self.model.cuda()
 
 		self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
-		self.dload = dload + self.id
+		self.dload = f'{dload}/{self.id}'
 
 		self.writer = SummaryWriter(f'{log_dir}/{self.id}')
 		self.writer.add_text('args_summary', args_summary)
@@ -154,7 +154,7 @@ class Trainer:
 
 		# self.save(f"{self.id}-last_model")
 		train_time = int(time.time()-train_start)
-		self.writer.add_text(f'total_train_time: {train_time}')
+		self.writer.add_text('total_train_time', train_time)
 		print(f'-- Training done in {train_time}s.')
 
 	def evaluate(self, data_loader):
@@ -213,7 +213,6 @@ class Trainer:
 		Loads the model's parameters from the path mentioned
 		:param PATH: Should contain pickle file
 		"""
-
 		self.model.load_state_dict(torch.load(PATH))
 
 	def write_loss(self, epoch):
