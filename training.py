@@ -41,7 +41,6 @@ class Trainer:
 		self.forecast_criterion = forecast_criterion
 		self.recon_criterion = recon_criterion
 		self.device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
-		self.dload = dload
 		self.log_dir = log_dir
 		self.print_every = print_every
 
@@ -59,6 +58,7 @@ class Trainer:
 			self.model.cuda()
 
 		self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
+		self.dload = dload + self.id
 
 		self.writer = SummaryWriter(f'{log_dir}/{self.id}')
 		self.writer.add_text('comment', comment)
@@ -135,7 +135,7 @@ class Trainer:
 			self.write_loss(epoch)
 
 			if total_val_loss <= self.losses['val_total'][-1]:
-				self.save(f"{self.id}/{self.id}_model.pt")
+				self.save(f"{self.id}_model.pt")
 
 			epoch_time = time.time() - epoch_start
 			self.epoch_times.append(epoch_time)
