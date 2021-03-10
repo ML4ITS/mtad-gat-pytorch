@@ -154,7 +154,7 @@ class Trainer:
 
 		# self.save(f"{self.id}-last_model")
 		train_time = int(time.time()-train_start)
-		self.writer.add_text('total_train_time', train_time)
+		self.writer.add_text('total_train_time', str(train_time))
 		print(f'-- Training done in {train_time}s.')
 
 	def evaluate(self, data_loader):
