@@ -28,7 +28,8 @@ class Trainer:
 				 n_epochs=200, batch_size=256, init_lr=0.001,
 				 forecast_criterion=nn.MSELoss(),
 				 recon_criterion=nn.MSELoss(),
-				 use_cuda=True, dload='models/', log_dir='output/', print_every=1):
+				 use_cuda=True, dload='models/', log_dir='output/', print_every=1,
+				 comment=" "):
 
 		self.model = model
 		self.optimizer = optimizer
@@ -57,9 +58,11 @@ class Trainer:
 		if self.device == 'cuda':
 			self.model.cuda()
 
-		self.datetime = datetime.now().strftime("%d%m%Y_%H%M%S")
+		self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
 
-		self.writer = SummaryWriter(f'{log_dir}/{self.datetime}')
+		self.writer = SummaryWriter(f'{log_dir}/{self.id}')
+		self.writer.add_text('comment', comment)
+
 
 	def __repr__(self):
 		return f'model={repr(self.model)}, w_size={self.window_size}, init_lr={self.init_lr}'
@@ -132,7 +135,7 @@ class Trainer:
 			self.write_loss(epoch)
 
 			if total_val_loss <= self.losses['val_total'][-1]:
-				self.save(f"{self.datetime}-best_model")
+				self.save(f"{self.id}/{self.id}_model.pt")
 
 			epoch_time = time.time() - epoch_start
 			self.epoch_times.append(epoch_time)
@@ -149,8 +152,10 @@ class Trainer:
 					  
 					  f'[{epoch_time:.1f}s]')
 
-		self.save(f"{self.datetime}-last_model")
-		print(f'-- Training done in {int(time.time()-train_start)}s.')
+		# self.save(f"{self.id}-last_model")
+		train_time = int(time.time()-train_start)
+		self.writer.add_text(f'total_train_time: {train_time}')
+		print(f'-- Training done in {train_time}s.')
 
 	def evaluate(self, data_loader):
 		""" Evaluate model
@@ -211,7 +216,7 @@ class Trainer:
 
 		self.model.load_state_dict(torch.load(PATH))
 
-
 	def write_loss(self, epoch):
 		for key, value in self.losses.items():
 			self.writer.add_scalar(key, value[-1], epoch)
+

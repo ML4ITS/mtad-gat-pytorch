@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error
 import argparse
+import json
 
 from utils import *
 from mtad_gat import MTAD_GAT
@@ -109,7 +110,7 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
 
 	if test_dataset is not None:
 		test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-		print(f'test_size: {len(val_indices)}')
+		print(f'test_size: {len(test_dataset)}')
 
 	return train_loader, val_loader, test_loader
 
@@ -119,7 +120,7 @@ if __name__ == '__main__':
 	# Data params
 	parser.add_argument('--dataset', type=str, default='smd')
 	parser.add_argument('--group', type=str, default="1-1",
-						help='Needed for smd dataset. <group_index>-<index>')
+						help='Required for smd dataset. <group_index>-<index>')
 	parser.add_argument('--lookback', type=int, default=100)
 	parser.add_argument('--horizon', type=int, default=1)
 	parser.add_argument('--target_col', type=int, default=None)
@@ -135,7 +136,7 @@ if __name__ == '__main__':
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
-	parser.add_argument('--epochs', type=int, default=30)
+	parser.add_argument('--epochs', type=int, default=100)
 	parser.add_argument('--bs', type=int, default=256)
 	parser.add_argument('--init_lr', type=float, default=1e-3)
 	parser.add_argument('--val_split', type=float, default=0.1)
@@ -145,8 +146,10 @@ if __name__ == '__main__':
 	parser.add_argument('--model_path', type=str, default="models/")
 	parser.add_argument('--print_every', type=int, default=1)
 
+	# Other
+	parser.add_argument('--comment', type=str, default="")
+
 	args = parser.parse_args()
-	print(args)
 
 	if args.dataset == 'smd':
 		output_path = f'output/smd/{args.group}'
@@ -177,6 +180,7 @@ if __name__ == '__main__':
 	print_every = args.print_every
 	group_index = args.group[0]
 	index = args.group[2]
+	comment = args.comment
 
 	(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
 
@@ -207,7 +211,7 @@ if __name__ == '__main__':
 
 	trainer = Trainer(model, optimizer, window_size, n_features, n_epochs, batch_size,
 					  init_lr, forecast_criterion, recon_criterion, use_cuda,
-					  model_path, log_dir, print_every)
+					  model_path, log_dir, print_every, comment)
 
 	trainer.fit(train_loader, val_loader)
 
@@ -221,11 +225,23 @@ if __name__ == '__main__':
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
-	trainer.load(f'{model_path}/{trainer.datetime}-best_model')
+	trainer.load(f'{model_path}/{trainer.id}_model')
 	best_model = trainer.model
 	detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
 	detect_anomalies(best_model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
 
+	# Save config
+	args_path = f'{model_path}/{trainer.id}/{trainer.id}_config.txt'
+	with open(args_path, 'w') as f:
+		json.dump(args.__dict__, f, indent=2)
+
+	# To load config
+	# parser = argparse.ArgumentParser()
+	# args, unknown = parser.parse_known_args()
+	#
+	# with open(args_path, 'r') as f:
+	# 	args.__dict__ = json.load(f)
+	# print(args)
 
 
 

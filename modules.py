@@ -281,7 +281,7 @@ class RNNAutoencoder(nn.Module):
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 
 		out = self.decoder(h_end_rep)
-		
+
 		return out
 
 class Forecasting_Model(nn.Module):
