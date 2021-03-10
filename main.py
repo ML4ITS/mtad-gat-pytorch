@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
 	trainer.load(f'{model_path}/{trainer.id}/{trainer.id}_model.pt')
 	best_model = trainer.model
-	detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
+	# detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
 	detect_anomalies(best_model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
 
 	# Save config
