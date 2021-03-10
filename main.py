@@ -225,7 +225,7 @@ if __name__ == '__main__':
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
-	trainer.load(f'{model_path}/{trainer.id}_model.pt')
+	trainer.load(f'{model_path}/{trainer.id}/{trainer.id}_model.pt')
 	best_model = trainer.model
 	detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
 	detect_anomalies(best_model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
