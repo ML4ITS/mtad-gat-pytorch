@@ -23,7 +23,7 @@ class MTAD_GAT(nn.Module):
 		self.conv = ConvLayer(n_features, window_size, kernel_size, device)
 		self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, device)
 		self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, device)
-		self.gru = GRU(n_features, gru_hid_dim, gru_n_layers, dropout, device)
+		self.gru = GRU(3*n_features, gru_hid_dim, gru_n_layers, dropout, device)
 		self.forecasting_model = Forecasting_Model(gru_hid_dim, forecast_hid_dim, out_dim*horizon, forecast_n_layers, dropout, device)
 		self.recon_model = RNNAutoencoder(window_size, gru_hid_dim, autoenc_n_layers, autoenc_hid_dim, n_features, dropout, device)
 
