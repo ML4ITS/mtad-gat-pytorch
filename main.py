@@ -205,14 +205,6 @@ if __name__ == '__main__':
 	with open(args_path, 'w') as f:
 		json.dump(args.__dict__, f, indent=2)
 
-	# To load config
-	# parser = argparse.ArgumentParser()
-	# args, unknown = parser.parse_known_args()
-	#
-	# with open(args_path, 'r') as f:
-	# 	args.__dict__ = json.load(f)
-	# print(args)
-
 
 
 
