@@ -83,36 +83,6 @@ def detect_anomalies(model, loader, save_path, true_anomalies=None, use_cuda=Tru
 	df.to_pickle(f'{save_path}.pkl')
 	print('-- Done.')
 
-def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, val_dataset=None, test_dataset=None):
-	train_loader, val_loader, test_loader = None, None, None
-	if val_split == 0.0:
-		print(f'train_size: {len(train_dataset)}')
-		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
-	else:
-		dataset_size = len(train_dataset)
-		indices = list(range(dataset_size))
-		split = int(np.floor(val_split * dataset_size))
-		if shuffle:
-			# np.random.seed(random_seed)
-			np.random.shuffle(indices)
-		train_indices, val_indices = indices[split:], indices[:split]
-
-		train_sampler = SubsetRandomSampler(train_indices)
-		valid_sampler = SubsetRandomSampler(val_indices)
-
-		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-												   sampler=train_sampler)
-		val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-												 sampler=valid_sampler)
-
-		print(f'train_size: {len(train_indices)}')
-		print(f'validation_size: {len(val_indices)}')
-
-	if test_dataset is not None:
-		test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-		print(f'test_size: {len(test_dataset)}')
-
-	return train_loader, val_loader, test_loader
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
