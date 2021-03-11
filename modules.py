@@ -180,11 +180,10 @@ class GRU(nn.Module):
 		self.device = device
 
 		self.gru = nn.GRU(in_dim, hid_dim, num_layers=n_layers, batch_first=True, dropout=dropout)
-		# self.hidden = None
 
 	def forward(self, x):
-		h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
-		out, h = self.gru(x, h0)
+		# h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
+		out, h = self.gru(x)
 		out, h =  out[-1, :, :], h[-1, :, :]  # Extracting from last layer
 		return out, h
 
@@ -281,7 +280,7 @@ class RNNAutoencoder(nn.Module):
 		h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 
 		out = self.decoder(h_end_rep)
-		# print(f'out: {out.shape}')
+
 		return out
 
 class Forecasting_Model(nn.Module):

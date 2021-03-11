@@ -28,7 +28,8 @@ class Trainer:
 				 n_epochs=200, batch_size=256, init_lr=0.001,
 				 forecast_criterion=nn.MSELoss(),
 				 recon_criterion=nn.MSELoss(),
-				 use_cuda=True, dload='models/', log_dir='output/', print_every=1):
+				 use_cuda=True, dload='models/', log_dir='output/', print_every=1,
+				 args_summary=""):
 
 		self.model = model
 		self.optimizer = optimizer
@@ -40,7 +41,6 @@ class Trainer:
 		self.forecast_criterion = forecast_criterion
 		self.recon_criterion = recon_criterion
 		self.device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
-		self.dload = dload
 		self.log_dir = log_dir
 		self.print_every = print_every
 
@@ -57,9 +57,12 @@ class Trainer:
 		if self.device == 'cuda':
 			self.model.cuda()
 
-		self.datetime = datetime.now().strftime("%d%m%Y_%H%M%S")
+		self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
+		self.dload = f'{dload}/{self.id}'
 
-		self.writer = SummaryWriter(f'{log_dir}/{self.datetime}')
+		self.writer = SummaryWriter(f'{log_dir}/{self.id}')
+		self.writer.add_text('args_summary', args_summary)
+
 
 	def __repr__(self):
 		return f'model={repr(self.model)}, w_size={self.window_size}, init_lr={self.init_lr}'
@@ -132,7 +135,7 @@ class Trainer:
 			self.write_loss(epoch)
 
 			if total_val_loss <= self.losses['val_total'][-1]:
-				self.save(f"{self.datetime}-best_model")
+				self.save(f"{self.id}_model.pt")
 
 			epoch_time = time.time() - epoch_start
 			self.epoch_times.append(epoch_time)
@@ -149,8 +152,10 @@ class Trainer:
 					  
 					  f'[{epoch_time:.1f}s]')
 
-		self.save(f"{self.datetime}-last_model")
-		print(f'-- Training done in {int(time.time()-train_start)}s.')
+		# self.save(f"{self.id}-last_model")
+		train_time = int(time.time()-train_start)
+		self.writer.add_text('total_train_time', str(train_time))
+		print(f'-- Training done in {train_time}s.')
 
 	def evaluate(self, data_loader):
 		""" Evaluate model
@@ -208,10 +213,9 @@ class Trainer:
 		Loads the model's parameters from the path mentioned
 		:param PATH: Should contain pickle file
 		"""
-
 		self.model.load_state_dict(torch.load(PATH))
-
 
 	def write_loss(self, epoch):
 		for key, value in self.losses.items():
 			self.writer.add_scalar(key, value[-1], epoch)
+

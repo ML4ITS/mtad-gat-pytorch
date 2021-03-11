@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import pickle
 from sklearn.preprocessing import MinMaxScaler
-from torch.utils.data import Dataset, DataLoader
+import torch
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import matplotlib.pyplot as plt
 
 
@@ -35,86 +36,6 @@ def preprocess(df, scaler=None):
 	return df, scaler
 
 
-def process_data(dataset_name, window_size=50, horizon=1, test_size=0.2, target_col=None):
-	"""
-
-	:param window_size: The number of timestamps to use to forecast
-	:param horizon: The number of timestamps to forecast following each window
-	:param test_size: Number of timestamps used for test
-	:param target_col: If having one particular column as target. If -1 then every column is the target
-	:return: dict consisting of feature names, x, and y
-	"""
-	path = 'datasets'
-	df = None
-	if dataset_name == 'hpc':
-		df = pd.read_csv(f'{path}/household_power_consumption_hourly.csv', delimiter=',')
-		# df.drop(['Date', 'Hour', 'Datetime'], axis=1, inplace=True)
-		df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
-	elif dataset_name == 'gsd':
-		df = pd.read_csv(f'{path}/gas_sensor_data.csv', delimiter=',')
-		df.drop(['Time', 'Temperature', 'Rel_Humidity'], axis=1, inplace=True)
-
-	#df = pd.read_csv('datasets/household_power_consumption_hourly.csv', delimiter=',')
-	#df.drop(['Date', 'Hour', 'Datetime'], axis=1, inplace=True)
-	# df.drop(['Date', 'Hour', 'Datetime', 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3'], axis=1, inplace=True)
-
-	n = df.shape[0]
-	print(n)
-	values = df.values
-	feature_names = df.columns.tolist()
-
-	scaler = MinMaxScaler()
-	values = scaler.fit_transform(values)
-
-	# Create forecasting dataset
-	x, y = [], []
-	for i in range(n - window_size - horizon):
-		window_end = i + window_size
-		horizon_end = window_end + horizon
-		x_i = values[i:window_end, :]
-
-		if target_col is not None:
-			y_i = values[window_end:horizon_end, target_col]
-
-		else:
-			y_i = values[window_end:horizon_end, :]
-
-		x.append(x_i)
-		y.append(y_i)
-
-	# if target_col is not None:
-
-	# Splitting in train, val, test
-	test_start = int(n - test_size * n)
-	val_start = int(test_start - 0.1 * test_start)  # Validation size: 10% of training data
-
-	# train_end = len(x) - val_size - test_size
-	train_x = np.array(x[:val_start])
-	train_y = np.array(y[:val_start])
-
-	val_x = np.array(x[val_start:test_start])
-	val_y = np.array(y[val_start:test_start])
-
-	test_x = np.array(x[test_start:])
-	test_y = np.array(y[test_start:])
-
-	print(f'Total samples: {len(x)}')
-	print(f'# of training sampels: {len(train_x)}')
-	print(f'# of validation sampels: {len(val_x)}')
-	print(f'# of test sampels: {len(test_x)}')
-
-	print("-- Processing done.")
-
-	return {'feature_names': feature_names,
-			'train_x': train_x,
-			'train_y': train_y,
-			'val_x': val_x,
-			'val_y': val_y,
-			'test_x': test_x,
-			'test_y': test_y,
-			'scaler': scaler}
-
-
 def get_data_dim(dataset):
 	if dataset == 'SMAP':
 		return 25
@@ -129,7 +50,7 @@ def get_data_dim(dataset):
 def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, do_preprocess=True, train_start=0,
 			 test_start=0):
 	"""
-	get data from pkl files
+	Get data from pkl files
 
 	return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
 	"""
@@ -182,6 +103,39 @@ class SMDDataset(Dataset):
 
 	def __len__(self):
 		return len(self.data) - self.window #- self.horizon
+
+
+def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, val_dataset=None, test_dataset=None):
+	train_loader, val_loader, test_loader = None, None, None
+	if val_split == 0.0:
+		print(f'train_size: {len(train_dataset)}')
+		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+
+	else:
+		dataset_size = len(train_dataset)
+		indices = list(range(dataset_size))
+		split = int(np.floor(val_split * dataset_size))
+		if shuffle:
+			# np.random.seed(random_seed)
+			np.random.shuffle(indices)
+		train_indices, val_indices = indices[split:], indices[:split]
+
+		train_sampler = SubsetRandomSampler(train_indices)
+		valid_sampler = SubsetRandomSampler(val_indices)
+
+		train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+												   sampler=train_sampler)
+		val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
+												 sampler=valid_sampler)
+
+		print(f'train_size: {len(train_indices)}')
+		print(f'validation_size: {len(val_indices)}')
+
+	if test_dataset is not None:
+		test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+		print(f'test_size: {len(test_dataset)}')
+
+	return train_loader, val_loader, test_loader
 
 
 def plot_losses(losses, save_path=''):

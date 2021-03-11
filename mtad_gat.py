@@ -43,7 +43,7 @@ class MTAD_GAT(nn.Module):
 
 		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2) # (b, n, 3k)
 
-		gru_out, h_end = self.gru(h_cat)  # (
+		gru_out, h_end = self.gru(h_cat)
 
 		h_end = h_end.view(x.shape[0], -1) #gru_out[:, -1, :]  # Hidden state for last timestamp
 
