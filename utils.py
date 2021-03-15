@@ -165,3 +165,12 @@ def plot_losses(losses, save_path=''):
 	plt.savefig(f'{save_path}/validation_losses.png', bbox_inches='tight')
 	plt.show()
 	plt.close()
+
+
+def load(model, PATH, device='cpu'):
+	"""
+	Loads the model's parameters from the path mentioned
+	:param PATH: Should contain pickle file
+	"""
+
+	model.load_state_dict(torch.load(PATH, map_location=device))

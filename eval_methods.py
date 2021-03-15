@@ -78,7 +78,7 @@ def adjust_predicts(score, label, threshold,
 	return new_predict
 
 
-def pot_eval(init_score, score, label, q=1e-4, level=0.96):
+def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 	"""
 	Run POT method on given score.
 	Args:
@@ -92,11 +92,12 @@ def pot_eval(init_score, score, label, q=1e-4, level=0.96):
 	Returns:
 		dict: pot result dict
 	"""
+	print(f'Running POT with q={q}, level={level}..')
 	s = SPOT(q)  # SPOT object
 	s.fit(init_score, score)  # data import
 	s.initialize(level=level, min_extrema=False)  # initialization step
-	#ret = s.run(dynamic=True)  # run
-	ret = s.run(dynamic=False, with_alarm=False)	# much faster
+	# ret = s.run(dynamic=True)  # run
+	ret = s.run(dynamic=False, with_alarm=False)  # much faster
 	print(len(ret['alarms']))
 	print(len(ret['thresholds']))
 	# if np.mean(ret['thresholds']) == ret['thresholds'][-1]:
@@ -107,7 +108,7 @@ def pot_eval(init_score, score, label, q=1e-4, level=0.96):
 	# 	pot_th = ret['thresholds']
 
 	pot_th = np.mean(ret['thresholds'])
-	pred = adjust_predicts(score, label, pot_th, advance=1)
+	pred = adjust_predicts(score, label, pot_th, advance=1, delay=20)
 	p_t = calc_point2point(pred, label)
 	print('POT result: ', p_t, pot_th)
 	return {
@@ -122,3 +123,39 @@ def pot_eval(init_score, score, label, q=1e-4, level=0.96):
 		'pred': pred,
 		'pot_thresholds': ret['thresholds']
 	}
+
+
+def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose=True):
+	"""
+	Find the best-f1 score by searching best `threshold` in [`start`, `end`).
+	Returns:
+		list: list for results
+		float: the `threshold` for best-f1
+	"""
+	if step_num is None or end is None:
+		end = start
+		step_num = 1
+	search_step, search_range, search_lower_bound = step_num, end - start, start
+	if verbose:
+		print("search range: ", search_lower_bound, search_lower_bound + search_range)
+	threshold = search_lower_bound
+	m = (-1., -1., -1.)
+	m_t = 0.0
+	for i in range(search_step):
+		threshold += search_range / float(search_step)
+		target = calc_seq(score, label, threshold)
+		if target[0] > m[0]:
+			m_t = threshold
+			m = target
+		if verbose and i % display_freq == 0:
+			print("cur thr: ", threshold, target, m, m_t)
+	print(m, m_t)
+	return m, m_t
+
+
+def calc_seq(score, label, threshold):
+	"""
+	Calculate f1 score for a score sequence
+	"""
+	predict = adjust_predicts(score, label, threshold)
+	return calc_point2point(predict, label)

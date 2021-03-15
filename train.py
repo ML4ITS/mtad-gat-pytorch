@@ -1,82 +1,93 @@
-import os
-import torch
+import sys
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.metrics import mean_squared_error
 import argparse
+import json
 
 from utils import *
 from mtad_gat import MTAD_GAT
+from training import Trainer
+from prediction import Predictor
 
 
-def evaluate(model, loader, criterion):
+def detect_anomalies(model, loader, save_path, true_anomalies=None, use_cuda=True):
+	""" Method that forecasts next value and reconstructs input using given model.
+		Saves dataframe that, for each timestamp, contains:
+			- predicted value for each feature
+			- reconstructed value for each feature 
+			- true value for each feature
+			- RSE between predicted and true value
+			- if timestamp is predicted anomaly (0 or 1)
+			- whether the timestamp was an anomaly (if provided)
+			
+		:param model: Model (pre-trained) used to forecast and reconstruct
+		:param loader: Pytorch dataloader
+		:param save_path: Path to save output
+		:param true_anomalies: boolean array indicating if timestamp is anomaly (0 or 1)
+	"""
+	print(f'Detecting anomalies..')
 	model.eval()
 
-	losses = []
+	preds = []
+	true_y = []
+	recons = []
+
+	device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
 	with torch.no_grad():
 		for x, y in loader:
-			y_hat, recons = model(x)
+			x = x.to(device)
+			y = y.to(device)
+
+			y_hat, window_recons = model(x)
 			if y_hat.ndim == 3:
 				y_hat = y_hat.squeeze(1)
 			if y.ndim == 3:
 				y = y.squeeze(1)
 
-			# loss = criterion(y_hat, y)
-			loss = criterion(y, y_hat)
-			losses.append(loss.item())
+			preds.extend(y_hat.detach().cpu().numpy())
+			true_y.extend(y.detach().cpu().numpy())
+			recons.extend(window_recons.detach().cpu().numpy())
 
-	return np.sqrt(np.array(losses).mean())
+	window_size = x.shape[1]
+	n_features = x.shape[2]
 
+	preds = np.array(preds)
+	true_y = np.array(true_y)
+	recons = np.array(recons)
 
-def predict(model, loader, scaler, target_col=None, dataset='hpc', plot_name=''):
-	model.eval()
+	last_recons = recons[-1, -(recons.shape[0] % window_size)+1:, :]
 
-	preds = []
-	true_y = []
-	with torch.no_grad():
-		for x, y in loader:
-			y_hat, recons = model(x)
-			preds.extend(y_hat.detach().cpu().numpy().squeeze())
-			true_y.extend(y.detach().cpu().squeeze().numpy())
+	recons = recons[window_size::window_size].reshape((-1, n_features))
+	recons = np.append(recons, last_recons, axis=0)
+	recons = np.append(recons, [true_y[-1, :]], axis=0)
 
-	preds = np.array(preds)[-125:]
-	true_y = np.array(true_y)[-125:]
+	rmse = np.sqrt(mean_squared_error(true_y, preds)) + np.sqrt(mean_squared_error(true_y, recons))
+	#l1 = np.abs(recons-true_y).mean()
+	print(rmse.mean())
+	gamma = 1
 
-	rmse = np.sqrt(mean_squared_error(true_y, preds))
-	if target_col is not None:
-		scaler_input = np.zeros((preds.shape[0], x.shape[2]))
-		scaler_input[:, target_col] = preds
-		preds = scaler.inverse_transform(scaler_input)[:, target_col]
-		scaler_input[:, target_col] = true_y
-		true_y = scaler.inverse_transform(scaler_input)[:, target_col]
+	df = pd.DataFrame()
+	for i in range(n_features):
+		df[f'Pred_{i}'] = preds[:, i]
+		df[f'Recon_{i}'] = recons[:, i]
+		df[f'True_{i}'] = true_y[:, i]
+		df[f'A_Score_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + gamma * np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
 
-		preds = np.expand_dims(preds, 1)
-		true_y = np.expand_dims(true_y, 1)
-	else:
-		preds = scaler.inverse_transform(preds)
-		true_y = scaler.inverse_transform(true_y)
+	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
+	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
 
-	# Plot preds and true
-	for i in range(preds.shape[1]):
-		plt.plot([j for j in range(len(preds))], preds[:, i].ravel(), label='Preds')
-		plt.plot([j for j in range(len(true_y))], true_y[:, i].ravel(), label='True')
-		plt.title(f'{plot_name} | Feature: {i}')
-		plt.legend()
-		plt.savefig(f'plots/{dataset}/{plot_name}_feature{i}.png', bbox_inches='tight')
-		plt.show()
-		plt.close()
-
-	return rmse
+	print(f'Saving output to {save_path}')
+	df.to_pickle(f'{save_path}.pkl')
+	print('-- Done.')
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 
 	# Data params
-	parser.add_argument('--dataset', type=str, default='hpc', choices=['hpc', 'gsd'],
-						help='hpc: hourly household power consumption data /n gsd: gas sensor data')
+	parser.add_argument('--dataset', type=str, default='smd')
+	parser.add_argument('--group', type=str, default="1-1",
+						help='Required for smd dataset. <group_index>-<index>')
 	parser.add_argument('--lookback', type=int, default=100)
 	parser.add_argument('--horizon', type=int, default=1)
 	parser.add_argument('--target_col', type=int, default=None)
@@ -84,133 +95,124 @@ if __name__ == '__main__':
 	# Model params
 	parser.add_argument('--kernel_size', type=int, default=7)
 	parser.add_argument('--gru_layers', type=int, default=1)
-	parser.add_argument('--gru_hid_dim', type=int, default=8)
-	parser.add_argument('--fc_layers', type=int, default=1)
-	parser.add_argument('--fc_hid_dim', type=int, default=8)
+	parser.add_argument('--gru_hid_dim', type=int, default=150)
+	parser.add_argument('--autoenc_layers', type=int, default=1)
+	parser.add_argument('--autoenc_hid_dim', type=int, default=128)
+	parser.add_argument('--fc_layers', type=int, default=3)
+	parser.add_argument('--fc_hid_dim', type=int, default=150)
 
 	# Train params
 	parser.add_argument('--test_size', type=float, default=0.2)
-	parser.add_argument('--epochs', type=int, default=30)
-	parser.add_argument('--bs', type=int, default=64)
-	parser.add_argument('--lr', type=int, default=1e-4)
+	parser.add_argument('--epochs', type=int, default=100)
+	parser.add_argument('--bs', type=int, default=256)
+	parser.add_argument('--init_lr', type=float, default=1e-3)
+	parser.add_argument('--val_split', type=float, default=0.1)
+	parser.add_argument('--shuffle_dataset', type=bool, default=True)
 	parser.add_argument('--dropout', type=float, default=0.3)
 	parser.add_argument('--use_cuda', type=bool, default=True)
-	parser.add_argument('--model_path', type=str, default="./saved_models/")
+	parser.add_argument('--model_path', type=str, default="models")
+	parser.add_argument('--print_every', type=int, default=1)
 
+	# Other
+	parser.add_argument('--comment', type=str, default="")
 	args = parser.parse_args()
-	print(args)
 
-	if not os.path.exists(f'plots/{args.dataset}'):
-		os.makedirs(f'plots/{args.dataset}')
+	### If loading model, do this ###
+	# pre_trained_model = '10032021_155823'
+	# pre_trained_model_path = f'models/{pre_trained_model}/{pre_trained_model}'
+	# args_path = f'{pre_trained_model_path}_config.txt'
+	# with open(args_path, 'r') as f:
+	# 	args.__dict__ = json.load(f)
+	###
+
+
+	if args.dataset == 'smd':
+		output_path = f'output/smd/{args.group}'
+	else:
+		output_path = f'output/{args.dataset}'
+
+	log_dir = f'{output_path}/logs'
+
+	if not os.path.exists(output_path):
+		os.makedirs(output_path)
+
+	if not os.path.exists(log_dir):
+		os.makedirs(log_dir)
+
+	if not os.path.exists(args.model_path):
+		os.makedirs(args.model_path)
 
 	window_size = args.lookback
 	horizon = args.horizon
 	target_col = args.target_col
+	n_epochs = args.epochs
+	batch_size = args.bs
+	init_lr = args.init_lr
+	val_split = args.val_split
+	shuffle_dataset = args.shuffle_dataset
+	use_cuda = args.use_cuda
+	model_path = args.model_path
+	print_every = args.print_every
+	group_index = args.group[0]
+	index = args.group[2]
+	args_summary = str(args.__dict__)
 
-	data = process_data(args.dataset, window_size, horizon, test_size=args.test_size, target_col=target_col)
-	feature_names = data['feature_names']
-	print(feature_names)
-	out_dim = len(feature_names) if target_col is None else 1
-	cuda = torch.cuda.is_available() and args.use_cuda
-	device = 'cuda' if cuda else 'cpu'
+	(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
 
-	scaler = data['scaler']
-	train_x = torch.from_numpy(data['train_x']).float().to(device)
-	train_y = torch.from_numpy(data['train_y']).float().to(device)
+	x_train = torch.from_numpy(x_train).float()
+	x_test = torch.from_numpy(x_test).float()
+	n_features = x_train.shape[1]
 
-	val_x = torch.from_numpy(data['val_x']).float().to(device)
-	val_y = torch.from_numpy(data['val_y']).float().to(device)
+	train_dataset = SlidingWindowDataset(x_train, window_size)
+	test_dataset = SlidingWindowDataset(x_test, window_size)
 
-	test_x = torch.from_numpy(data['test_x']).float().to(device)
-	test_y = torch.from_numpy(data['test_y']).float().to(device)
+	train_loader, val_loader, test_loader = create_data_loaders(train_dataset, batch_size, val_split, shuffle_dataset,
+																test_dataset=test_dataset)
 
-	print(f'train_x shape: {train_x.shape}')
-	print(f'val_x shape: {val_x.shape}')
-	print(f'test_x shape: {test_x.shape}')
-
-	num_nodes = len(feature_names)
-
-	model = MTAD_GAT(num_nodes, window_size, horizon, out_dim,
+	model = MTAD_GAT(n_features, window_size, horizon, n_features, batch_size,
 					 kernel_size=args.kernel_size,
 					 dropout=args.dropout,
 					 gru_n_layers=args.gru_layers,
 					 gru_hid_dim=args.gru_hid_dim,
-					 forecasting_n_layers=args.fc_layers,
-					 forecasting_hid_dim=args.fc_hid_dim,
-					 device=device)
+					 autoenc_n_layers=args.autoenc_layers,
+					 autoenc_hid_dim=args.autoenc_hid_dim,
+					 forecast_n_layers=args.fc_layers,
+					 forecast_hid_dim=args.fc_hid_dim,
+					 use_cuda=args.use_cuda)
 
-	print(f'Device: {device}')
-	if cuda:
-		model.cuda()
+	optimizer = torch.optim.Adam(model.parameters(), lr=args.init_lr)
+	forecast_criterion = nn.MSELoss()
+	recon_criterion = nn.MSELoss()
 
-	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-	criterion = nn.MSELoss()
-	n_epochs = args.epochs
-	batch_size = args.bs
-	train_data = TensorDataset(train_x, train_y)
-	train_loader = DataLoader(train_data, shuffle=True, batch_size=batch_size, drop_last=True)
+	trainer = Trainer(model, optimizer, window_size, n_features, n_epochs, batch_size,
+					  init_lr, forecast_criterion, recon_criterion, use_cuda,
+					  model_path, log_dir, print_every, args_summary)
 
-	val_data = TensorDataset(val_x, val_y)
-	val_loader = DataLoader(val_data, shuffle=False, batch_size=batch_size, drop_last=True)
+	trainer.fit(train_loader, val_loader)
 
-	test_data = TensorDataset(test_x, test_y)
-	test_loader = DataLoader(test_data, shuffle=False, batch_size=batch_size, drop_last=True)
+	# trainer.load(f'{model_path}/10032021_162228/10032021_162228_model.pt')
+	# trainer.load(f'{pre_trained_model_path}_model.pt')
 
-	init_train_loss = evaluate(model, train_loader, criterion)
-	print(f'Init train loss: {init_train_loss}')
+	plot_losses(trainer.losses, save_path=output_path)
 
-	init_val_loss = evaluate(model, val_loader, criterion)
-	print(f'Init val loss: {init_val_loss}')
+	# Creating non-shuffled train loader
+	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size)
 
-	train_losses = []
-	val_losses = []
-	print(f'Training model for {n_epochs} epochs..')
-	for epoch in range(n_epochs):
-		model.train()
-		batch_losses = []
-		for x, y in train_loader:
-			optimizer.zero_grad()
-			preds, recons = model(x)
-			if preds.ndim == 3:
-				preds = preds.squeeze(1)
-			if y.ndim == 3:
-				y = y.squeeze(1)
-			loss = torch.sqrt(criterion(y, preds))
-			loss.backward()
-			optimizer.step()
+	test_loss = trainer.evaluate(test_loader)
+	print(f'Test forecast loss: {test_loss[0]:.5f}')
+	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
+	print(f'Test total loss: {test_loss[2]:.5f}')
 
-			batch_losses.append(loss.item())
+	trainer.load(f'{model_path}/{trainer.id}/{trainer.id}_model.pt')
+	best_model = trainer.model
+	predictor = Predictor(best_model, window_size, n_features, batch_size=256, gamma=0.8, save_path=output_path)
+	label = y_test[window_size:]
+	predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
 
-		epoch_loss = np.array(batch_losses).mean()
-		train_losses.append(epoch_loss)
-
-		# Evaluate on validation set
-		val_loss = evaluate(model, val_loader, criterion)
-		val_losses.append(val_loss)
-
-		print(f'[Epoch {epoch+1}] Train loss: {epoch_loss:.5f}, Val loss: {val_loss:.5f}')
-
-	plt.plot(train_losses, label='training loss')
-	plt.plot(val_losses, label='validation loss')
-	plt.xlabel("Epoch")
-	plt.ylabel("MSE")
-	plt.legend()
-	plt.savefig(f'plots/{args.dataset}/losses.png', bbox_inches='tight')
-	plt.show()
-	plt.close()
-
-	# Predict
-	# Make train loader with no shuffle
-	train_loader = DataLoader(train_data, shuffle=False, batch_size=batch_size, drop_last=True)
-	rmse_train = predict(model, train_loader, scaler, target_col, dataset=args.dataset, plot_name='train_preds')
-	rmse_val = predict(model, val_loader, scaler, target_col, dataset=args.dataset, plot_name='val_preds')
-	rmse_test = predict(model, test_loader, scaler, target_col, dataset=args.dataset, plot_name='test_preds')
-
-	print(rmse_test)
-
-	test_loss = evaluate(model, test_loader, criterion)
-	print(f'Test loss (RMSE): {test_loss:.3f}')
-
+	# Save config
+	args_path = f'{model_path}/{trainer.id}/{trainer.id}_config.txt'
+	with open(args_path, 'w') as f:
+		json.dump(args.__dict__, f, indent=2)
 
 
 
