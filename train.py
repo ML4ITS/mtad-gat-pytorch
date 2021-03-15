@@ -42,16 +42,8 @@ if __name__ == '__main__':
 
 	# Other
 	parser.add_argument('--comment', type=str, default="")
+
 	args = parser.parse_args()
-
-	### If loading model, do this ###
-	# pre_trained_model = '10032021_155823'
-	# pre_trained_model_path = f'models/{pre_trained_model}/{pre_trained_model}'
-	# args_path = f'{pre_trained_model_path}_config.txt'
-	# with open(args_path, 'r') as f:
-	# 	args.__dict__ = json.load(f)
-	###
-
 
 	if args.dataset == 'smd':
 		output_path = f'output/smd/{args.group}'
@@ -84,7 +76,10 @@ if __name__ == '__main__':
 	index = args.group[2]
 	args_summary = str(args.__dict__)
 
-	(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
+	if args.dataset == 'smd':
+		(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
+	else:
+		(x_train, _), (x_test, y_test) = get_data(args.dataset)
 
 	x_train = torch.from_numpy(x_train).float()
 	x_test = torch.from_numpy(x_test).float()
@@ -117,22 +112,23 @@ if __name__ == '__main__':
 
 	trainer.fit(train_loader, val_loader)
 
-	# trainer.load(f'{model_path}/10032021_162228/10032021_162228_model.pt')
-	# trainer.load(f'{pre_trained_model_path}_model.pt')
-
 	plot_losses(trainer.losses, save_path=output_path)
 
-	# Creating non-shuffled train loader
-	train_loader = DataLoader(train_dataset, shuffle=False, batch_size=batch_size)
-
+	# Check test loss
 	test_loss = trainer.evaluate(test_loader)
 	print(f'Test forecast loss: {test_loss[0]:.5f}')
 	print(f'Test reconstruction loss: {test_loss[1]:.5f}')
 	print(f'Test total loss: {test_loss[2]:.5f}')
 
+	# Predict anomalies
+	# 'level' argument for POT-method
+	level_dict = {'smap': 0.93, 'msl': 0.99, 'smd-1': 0.9950, 'smd-2': 0.9925, 'smd-3': 0.9999}
+	key = 'smd-' + args.group[0] if args.dataset == 'smd' else args.dataset
+	level = level_dict[key]
+
 	trainer.load(f'{model_path}/{trainer.id}/{trainer.id}_model.pt')
 	best_model = trainer.model
-	predictor = Predictor(best_model, window_size, n_features, batch_size=256, gamma=0.8, save_path=output_path)
+	predictor = Predictor(best_model, window_size, n_features, batch_size=256, level=level, gamma=0.8, save_path=output_path)
 	label = y_test[window_size:]
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
 

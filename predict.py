@@ -66,6 +66,8 @@ if __name__ == '__main__':
 		group_index = args.group[0]
 		index = args.group[2]
 		(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
+	else:
+		(x_train, _), (x_test, y_test) = get_data(args.dataset)
 
 	save_scores = args.save_scores
 	load_scores = args.load_scores
@@ -93,5 +95,5 @@ if __name__ == '__main__':
 
 	model = load(model, f'{pre_trained_model_path}_model.pt')
 
-	predictor = Predictor(model, window_size, n_features, batch_size=256, level=level, gamma=0.8, save_path=output_path)
+	predictor = Predictor(model, window_size, n_features, level=level, save_path=output_path)
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)

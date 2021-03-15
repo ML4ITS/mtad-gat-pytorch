@@ -108,7 +108,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 	# 	pot_th = ret['thresholds']
 
 	pot_th = np.mean(ret['thresholds'])
-	pred = adjust_predicts(score, label, pot_th, advance=1, delay=20)
+	pred = adjust_predicts(score, label, pot_th, advance=1, delay=30)
 	p_t = calc_point2point(pred, label)
 	print('POT result: ', p_t, pot_th)
 	return {

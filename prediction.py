@@ -17,7 +17,7 @@ class Predictor:
 	    :param save_path: path to save predictions and other output files
 
 	    """
-	def __init__(self, model, window_size, n_features, level=0.99, gamma=1, batch_size=256, use_cuda=True, save_path=''):
+	def __init__(self, model, window_size, n_features, level=0.99, gamma=0.8, batch_size=256, use_cuda=True, save_path=''):
 		self.model = model
 		self.window_size = window_size
 		self.n_features = n_features
@@ -36,7 +36,6 @@ class Predictor:
 
 		print("Predicting and calculating anomaly scores..")
 		data = SlidingWindowDataset(values, self.window_size)
-		# loader, _, _ = create_data_loaders(data, val_split=0.0, batch_size=, shuffle=False)
 		loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size, shuffle=False)
 		device = 'cuda' if self.use_cuda and torch.cuda.is_available() else 'cpu'
 

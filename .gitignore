@@ -8,4 +8,7 @@ ServerMachineDataset/processed/
 plots/
 *.pkl
 models/
-output/smd/1-1/logs
+output/smd/*/logs
+output/smd/*/preds.pkl
+output/smd/*/train_scores.npy
+output/smd/*/test_scores.npy
