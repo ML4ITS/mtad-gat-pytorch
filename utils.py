@@ -172,5 +172,8 @@ def load(model, PATH, device='cpu'):
 	Loads the model's parameters from the path mentioned
 	:param PATH: Should contain pickle file
 	"""
-
-	model.load_state_dict(torch.load(PATH, map_location=device))
+	if device == 'cpu':
+		model.load_state_dict(torch.load(PATH, map_location='cpu'))
+	else:
+		model.load_state_dict(torch.load(PATH))
+	return model
