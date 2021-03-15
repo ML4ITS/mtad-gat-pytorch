@@ -2,27 +2,10 @@ import numpy as np
 from spot import SPOT
 
 
-def calc_point2point(predict, actual):
-	"""
-	calculate f1 score by predict and actual.
-	Args:
-		predict (np.ndarray): the predict label
-		actual (np.ndarray): np.ndarray
-	"""
-	TP = np.sum(predict * actual)
-	TN = np.sum((1 - predict) * (1 - actual))
-	FP = np.sum(predict * (1 - actual))
-	FN = np.sum((1 - predict) * actual)
-	precision = TP / (TP + FP + 0.00001)
-	recall = TP / (TP + FN + 0.00001)
-	f1 = 2 * precision * recall / (precision + recall + 0.00001)
-	return f1, precision, recall, TP, TN, FP, FN
-
-
 def adjust_predicts(score, label, threshold,
-					advance=0,
-					delay=7,
-					pred=None):
+					advance=1,
+					pred=None,
+					calc_latency=False):
 	"""
 	Calculate adjusted predict labels using given `score`, `threshold` (or given `pred`) and `label`.
 	Args:
@@ -44,38 +27,74 @@ def adjust_predicts(score, label, threshold,
 	else:
 		predict = pred
 
-	# actual = label > 0.1
-	# anomaly_state = False
-	# anomaly_count = 0
-
-	# Code from Time-Series Anomaly Detection Service at Microsof: https://arxiv.org/pdf/1906.03821.pdf
+	actual = label > 0.1
+	anomaly_state = False
+	anomaly_count = 0
+	latency = 0
 
 	# Added advance in case model predicts anomaly 'in advance' within a small window
 	# Advance should be 0 or small
+	for i in range(len(score)):
+		if any(actual[max(i-advance, 0):i+1]) and predict[i] and not anomaly_state:
+			anomaly_state = True
+			anomaly_count += 1
+			for j in range(i, 0, -1):
+				if not actual[j]:
+					break
+				else:
+					if not predict[j]:
+						predict[j] = True
+						latency += 1
+		elif not actual[i]:
+			anomaly_state = False
+		if anomaly_state:
+			predict[i] = True
+	if calc_latency:
+		return predict, latency / (anomaly_count + 1e-4)
+	else:
+		return predict
 
-	splits = np.where(label[1:] != label[:-1])[0] + 1
-	print(splits)
-	is_anomaly = label[0] == 1
-	new_predict = np.array(predict)
-	pos = 0
 
-	for sp in splits:
-		if is_anomaly:
-			if 1 in predict[(pos - advance):min(pos + delay + 1, sp)]:
-				new_predict[pos: sp] = 1
-			else:
-				new_predict[pos: sp] = 0
-		is_anomaly = not is_anomaly
-		pos = sp
-	sp = len(label)
+def calc_point2point(predict, actual):
+	"""
+	calculate f1 score by predict and actual.
+	Args:
+		predict (np.ndarray): the predict label
+		actual (np.ndarray): np.ndarray
+	"""
+	TP = np.sum(predict * actual)
+	TN = np.sum((1 - predict) * (1 - actual))
+	FP = np.sum(predict * (1 - actual))
+	FN = np.sum((1 - predict) * actual)
+	precision = TP / (TP + FP + 0.00001)
+	recall = TP / (TP + FN + 0.00001)
+	f1 = 2 * precision * recall / (precision + recall + 0.00001)
+	return f1, precision, recall, TP, TN, FP, FN
 
-	if is_anomaly:  # anomaly in the end
-		if 1 in predict[(pos - advance): min(pos + delay + 1, sp)]:
-			new_predict[pos: sp] = 1
-		else:
-			new_predict[pos: sp] = 0
-
-	return new_predict
+	# Code from Time-Series Anomaly Detection Service at Microsof: https://arxiv.org/pdf/1906.03821.pdf
+	# splits = np.where(label[1:] != label[:-1])[0] + 1
+	# print(splits)
+	# is_anomaly = label[0] == 1
+	# new_predict = np.array(predict)
+	# pos = 0
+	#
+	# for sp in splits:
+	# 	if is_anomaly:
+	# 		if 1 in predict[(pos - advance):min(pos + delay + 1, sp)]:
+	# 			new_predict[pos: sp] = 1
+	# 		else:
+	# 			new_predict[pos: sp] = 0
+	# 	is_anomaly = not is_anomaly
+	# 	pos = sp
+	# sp = len(label)
+	#
+	# if is_anomaly:  # anomaly in the end
+	# 	if 1 in predict[(pos - advance): min(pos + delay + 1, sp)]:
+	# 		new_predict[pos: sp] = 1
+	# 	else:
+	# 		new_predict[pos: sp] = 0
+	#
+	# return new_predict
 
 
 def pot_eval(init_score, score, label, q=1e-3, level=0.99):
@@ -100,15 +119,10 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 	ret = s.run(dynamic=False, with_alarm=False)  # much faster
 	print(len(ret['alarms']))
 	print(len(ret['thresholds']))
-	# if np.mean(ret['thresholds']) == ret['thresholds'][-1]:
-	# 	# Constant threshold
-	# 	pot_th = np.mean(ret['thresholds'])
-	# else:
-	# 	# Dynamic threshold
-	# 	pot_th = ret['thresholds']
 
 	pot_th = np.mean(ret['thresholds'])
-	pred = adjust_predicts(score, label, pot_th, advance=1, delay=30)
+	pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
+	# pred = adjust_predicts(score, label, pot_th, advance=1, delay=30)
 	p_t = calc_point2point(pred, label)
 	print('POT result: ', p_t, pot_th)
 	return {
@@ -120,6 +134,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 		'pot-FP': p_t[5],
 		'pot-FN': p_t[6],
 		'pot-threshold': pot_th,
+		'pot-latency': p_latency,
 		'pred': pred,
 		'pot_thresholds': ret['thresholds']
 	}
