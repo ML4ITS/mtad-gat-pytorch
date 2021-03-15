@@ -7,7 +7,7 @@ eda/.ipynb_checkpoints/
 ServerMachineDataset/processed/
 plots/
 *.pkl
-models/
+# models/
 output/smd/*/logs
 output/smd/*/preds.pkl
 output/smd/*/train_scores.npy
