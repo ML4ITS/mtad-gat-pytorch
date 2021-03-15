@@ -118,11 +118,11 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	### If loading model, do this ###
-	pre_trained_model = '10032021_155823'
-	pre_trained_model_path = f'models/{pre_trained_model}/{pre_trained_model}'
-	args_path = f'{pre_trained_model_path}_config.txt'
-	with open(args_path, 'r') as f:
-		args.__dict__ = json.load(f)
+	# pre_trained_model = '10032021_155823'
+	# pre_trained_model_path = f'models/{pre_trained_model}/{pre_trained_model}'
+	# args_path = f'{pre_trained_model_path}_config.txt'
+	# with open(args_path, 'r') as f:
+	# 	args.__dict__ = json.load(f)
 	###
 
 
@@ -188,23 +188,10 @@ if __name__ == '__main__':
 					  init_lr, forecast_criterion, recon_criterion, use_cuda,
 					  model_path, log_dir, print_every, args_summary)
 
-	# trainer.fit(train_loader, val_loader)
+	trainer.fit(train_loader, val_loader)
 
 	# trainer.load(f'{model_path}/10032021_162228/10032021_162228_model.pt')
-	trainer.load(f'{pre_trained_model_path}_model.pt')
-
-	model = trainer.model
-	predictor = Predictor(model, window_size, n_features, batch_size=256, gamma=0.8, save_path=output_path)
-	# a_scores = predictor.get_score(x_test[:1000])
-	# print(a_scores.shape)
-	#label = y_test[window_size:]
-	# predictor.predict_anomalies(x_train, x_test, label)
-
-	test_start, test_end = 15000, 18000
-	label = y_test[window_size:]
-	predictor.predict_anomalies(x_train, x_test, label, load_scores=True)
-
-	sys.exit()
+	# trainer.load(f'{pre_trained_model_path}_model.pt')
 
 	plot_losses(trainer.losses, save_path=output_path)
 
@@ -218,8 +205,9 @@ if __name__ == '__main__':
 
 	trainer.load(f'{model_path}/{trainer.id}/{trainer.id}_model.pt')
 	best_model = trainer.model
-	# detect_anomalies(best_model, train_loader, save_path=f'{output_path}/train_out', use_cuda=use_cuda)
-	detect_anomalies(best_model, test_loader, save_path=f'{output_path}/test_out', true_anomalies=y_test, use_cuda=use_cuda)
+	predictor = Predictor(best_model, window_size, n_features, batch_size=256, gamma=0.8, save_path=output_path)
+	label = y_test[window_size:]
+	predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
 
 	# Save config
 	args_path = f'{model_path}/{trainer.id}/{trainer.id}_config.txt'
