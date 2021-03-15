@@ -1,6 +1,4 @@
-import sys
 import torch.nn as nn
-from sklearn.metrics import mean_squared_error
 import argparse
 import json
 
@@ -8,77 +6,6 @@ from utils import *
 from mtad_gat import MTAD_GAT
 from training import Trainer
 from prediction import Predictor
-
-
-def detect_anomalies(model, loader, save_path, true_anomalies=None, use_cuda=True):
-	""" Method that forecasts next value and reconstructs input using given model.
-		Saves dataframe that, for each timestamp, contains:
-			- predicted value for each feature
-			- reconstructed value for each feature 
-			- true value for each feature
-			- RSE between predicted and true value
-			- if timestamp is predicted anomaly (0 or 1)
-			- whether the timestamp was an anomaly (if provided)
-			
-		:param model: Model (pre-trained) used to forecast and reconstruct
-		:param loader: Pytorch dataloader
-		:param save_path: Path to save output
-		:param true_anomalies: boolean array indicating if timestamp is anomaly (0 or 1)
-	"""
-	print(f'Detecting anomalies..')
-	model.eval()
-
-	preds = []
-	true_y = []
-	recons = []
-
-	device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
-	with torch.no_grad():
-		for x, y in loader:
-			x = x.to(device)
-			y = y.to(device)
-
-			y_hat, window_recons = model(x)
-			if y_hat.ndim == 3:
-				y_hat = y_hat.squeeze(1)
-			if y.ndim == 3:
-				y = y.squeeze(1)
-
-			preds.extend(y_hat.detach().cpu().numpy())
-			true_y.extend(y.detach().cpu().numpy())
-			recons.extend(window_recons.detach().cpu().numpy())
-
-	window_size = x.shape[1]
-	n_features = x.shape[2]
-
-	preds = np.array(preds)
-	true_y = np.array(true_y)
-	recons = np.array(recons)
-
-	last_recons = recons[-1, -(recons.shape[0] % window_size)+1:, :]
-
-	recons = recons[window_size::window_size].reshape((-1, n_features))
-	recons = np.append(recons, last_recons, axis=0)
-	recons = np.append(recons, [true_y[-1, :]], axis=0)
-
-	rmse = np.sqrt(mean_squared_error(true_y, preds)) + np.sqrt(mean_squared_error(true_y, recons))
-	#l1 = np.abs(recons-true_y).mean()
-	print(rmse.mean())
-	gamma = 1
-
-	df = pd.DataFrame()
-	for i in range(n_features):
-		df[f'Pred_{i}'] = preds[:, i]
-		df[f'Recon_{i}'] = recons[:, i]
-		df[f'True_{i}'] = true_y[:, i]
-		df[f'A_Score_{i}'] = np.sqrt((preds[:, i] - true_y[:, i]) ** 2) + gamma * np.sqrt((recons[:, i] - true_y[:, i]) ** 2)
-
-	df['Pred_Anomaly'] = -1  # TODO: Implement threshold method for anomaly
-	df['True_Anomaly'] = true_anomalies[window_size:] if true_anomalies is not None else 0
-
-	print(f'Saving output to {save_path}')
-	df.to_pickle(f'{save_path}.pkl')
-	print('-- Done.')
 
 
 if __name__ == '__main__':

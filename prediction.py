@@ -10,6 +10,7 @@ class Predictor:
 	    :param model: MTAD-GAT model (pre-trained) used to forecast and reconstruct
 	    :param window_size: Length of the input sequence
 	    :param n_features: Number of input features
+	    :param level: param used in the Peak-Over-Threshold method
 	    :param gamma: weighting of recon loss relative to prediction loss (1=equally weighted)
 	    :param batch_size: Number of windows in a single batch
 	    :param boolean use_cuda: To be run on GPU or not
@@ -29,6 +30,8 @@ class Predictor:
 	def get_score(self, values, save_forecasts_and_recons=False):
 		""" Method that calculates anomaly score using given model and data
 			:param values: 2D array of multivariate time series data, shape (n, k)
+			:param save_forecasts_and_recons: if True, saves forecasts and
+			reconstructions together with anomaly score for each feature
 		"""
 
 		print("Predicting and calculating anomaly scores..")
@@ -64,7 +67,7 @@ class Predictor:
 				df[f'Pred_{i}'] = preds[:, i]
 				df[f'Recon_{i}'] = recons[:, i]
 				df[f'True_{i}'] = actual[:, i]
-				df[f'A_Score_{i}'] = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
+				df[f'A_Score_{i}'] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
 
 			df_path = f'{self.save_path}/preds.pkl'
 			print(f'Saving feature forecasts, reconstructions and anomaly scores to {df_path}')
