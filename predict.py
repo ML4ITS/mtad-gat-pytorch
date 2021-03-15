@@ -71,8 +71,6 @@ if __name__ == '__main__':
 
 	save_scores = args.save_scores
 	load_scores = args.load_scores
-	if save_scores and load_scores:
-		save_scores = False
 
 	label = y_test[window_size:]
 	x_train = torch.from_numpy(x_train).float()
@@ -94,6 +92,7 @@ if __name__ == '__main__':
 					 use_cuda=model_args.use_cuda)
 
 	model = load(model, f'{pre_trained_model_path}_model.pt')
-	
+
+	print(load_scores)
 	predictor = Predictor(model, window_size, n_features, level=level, save_path=output_path)
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
