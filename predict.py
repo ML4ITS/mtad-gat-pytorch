@@ -93,7 +93,7 @@ if __name__ == '__main__':
 					 forecast_hid_dim=model_args.fc_hid_dim,
 					 use_cuda=model_args.use_cuda)
 
-	model = load(model, f'{pre_trained_model_path}_model.pt')
+	load(model, f'{pre_trained_model_path}_model.pt')
 
 	predictor = Predictor(model, window_size, n_features, level=level, save_path=output_path)
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
