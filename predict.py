@@ -19,6 +19,7 @@ if __name__ == '__main__':
 	# Predictor args
 	parser.add_argument('--save_scores', type=bool, default=True, help="To save anomaly scores predicted.")
 	parser.add_argument('--load_scores', type=bool, default=False, help="To use already computed anomaly scores")
+	parser.add_argument('--gamma', type=float, default=0.8)
 
 	args = parser.parse_args()
 	print(args)
@@ -97,5 +98,5 @@ if __name__ == '__main__':
 	load(model, f'{pre_trained_model_path}_model.pt', device=device)
 	model.to(device)
 
-	predictor = Predictor(model, window_size, n_features, level=level, save_path=output_path)
+	predictor = Predictor(model, window_size, n_features, level=level, gamma=args.gamma, save_path=output_path)
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
