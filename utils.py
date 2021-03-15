@@ -90,7 +90,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 	return (train_data, None), (test_data, test_label)
 
 
-class SMDDataset(Dataset):
+class SlidingWindowDataset(Dataset):
 	def __init__(self, data, window, horizon=1):
 		self.data = data
 		self.window = window

@@ -41,6 +41,7 @@ class MTAD_GAT(nn.Module):
 		h_feat = self.feature_gat(x)
 		h_temp = self.temporal_gat(x)
 
+		# h_cat = torch.cat([x, h_feat.permute(0, 2, 1)], dim=2)
 		h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2) # (b, n, 3k)
 
 		gru_out, h_end = self.gru(h_cat)

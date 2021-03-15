@@ -76,12 +76,12 @@ class Trainer:
 		:param val_loader: validation loader of input data
 		"""
 
-		init_train_loss = self.evaluate(train_loader)
-		print(f'Init total train loss: {init_train_loss[2]}')
+		#init_train_loss = self.evaluate(train_loader)
+		#print(f'Init total train loss: {init_train_loss[2]}')
 
-		if val_loader is not None:
-			init_val_loss = self.evaluate(val_loader)
-			print(f'Init total val loss: {init_val_loss[2]}')
+		#if val_loader is not None:
+		#	init_val_loss = self.evaluate(val_loader)
+		#	print(f'Init total val loss: {init_val_loss[2]}')
 
 		print(f'Training model for {self.n_epochs} epochs..')
 		train_start = time.time()
@@ -213,7 +213,8 @@ class Trainer:
 		Loads the model's parameters from the path mentioned
 		:param PATH: Should contain pickle file
 		"""
-		self.model.load_state_dict(torch.load(PATH))
+
+		self.model.load_state_dict(torch.load(PATH, map_location=self.device))
 
 	def write_loss(self, epoch):
 		for key, value in self.losses.items():
