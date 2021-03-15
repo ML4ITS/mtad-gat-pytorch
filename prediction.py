@@ -72,8 +72,8 @@ class Predictor:
 			print(f'Saving feature forecasts, reconstructions and anomaly scores to {df_path}')
 			df.to_pickle(f'{df_path}')
 
-		anomaly_scores = np.sum(np.sqrt((preds - actual) ** 2) +
-								self.gamma * np.sqrt((recons - actual) ** 2), 1) / (1+self.gamma)
+		anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) +
+								self.gamma * np.sqrt((recons - actual) ** 2), 1)
 
 		return anomaly_scores
 

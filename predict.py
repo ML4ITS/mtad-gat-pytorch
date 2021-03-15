@@ -95,8 +95,7 @@ if __name__ == '__main__':
 
 	device = 'cuda' if args.use_cuda and torch.cuda.is_available() else 'cpu'
 	load(model, f'{pre_trained_model_path}_model.pt', device=device)
-	if device == 'cuda':
-		model.cuda()
+	model.to(device)
 
 	predictor = Predictor(model, window_size, n_features, level=level, save_path=output_path)
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
