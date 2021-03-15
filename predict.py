@@ -21,6 +21,7 @@ if __name__ == '__main__':
 	parser.add_argument('--load_scores', type=bool, default=False, help="To use already computed anomaly scores")
 
 	args = parser.parse_args()
+	print(args)
 	model = args.model
 
 	# Peak-Over-Threshold args
@@ -42,6 +43,7 @@ if __name__ == '__main__':
 	# Get configs of model
 	parser = argparse.ArgumentParser()
 	model_args, unknown = parser.parse_known_args()
+	print(model_args)
 	model_args_path = f'{pre_trained_model_path}_config.txt'
 	with open(model_args_path, 'r') as f:
 		model_args.__dict__ = json.load(f)
@@ -93,6 +95,5 @@ if __name__ == '__main__':
 
 	model = load(model, f'{pre_trained_model_path}_model.pt')
 
-	print(load_scores)
 	predictor = Predictor(model, window_size, n_features, level=level, save_path=output_path)
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
