@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
 	trainer.load(f'{model_path}/{trainer.id}/{trainer.id}_model.pt')
 	best_model = trainer.model
-	predictor = Predictor(best_model, window_size, n_features, batch_size=256, level=level, gamma=0.8, save_path=output_path)
+	predictor = Predictor(best_model, window_size, n_features, batch_size=256, level=level, gamma=1, save_path=output_path)
 	label = y_test[window_size:]
 	predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
 
