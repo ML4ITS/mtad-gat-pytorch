@@ -29,7 +29,7 @@ class Predictor:
 
 	def get_score(self, values, save_forecasts_and_recons=False):
 		""" Method that calculates anomaly score using given model and data
-			:param values: 2D array of multivariate time series data, shape (n, k)
+			:param values: 2D array of multivariate time series data, shape (N, k)
 			:param save_forecasts_and_recons: if True, saves forecasts and
 			reconstructions together with anomaly score for each feature
 		"""

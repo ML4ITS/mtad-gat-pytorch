@@ -71,46 +71,20 @@ def calc_point2point(predict, actual):
 	f1 = 2 * precision * recall / (precision + recall + 0.00001)
 	return f1, precision, recall, TP, TN, FP, FN
 
-	# Code from Time-Series Anomaly Detection Service at Microsof: https://arxiv.org/pdf/1906.03821.pdf
-	# splits = np.where(label[1:] != label[:-1])[0] + 1
-	# print(splits)
-	# is_anomaly = label[0] == 1
-	# new_predict = np.array(predict)
-	# pos = 0
-	#
-	# for sp in splits:
-	# 	if is_anomaly:
-	# 		if 1 in predict[(pos - advance):min(pos + delay + 1, sp)]:
-	# 			new_predict[pos: sp] = 1
-	# 		else:
-	# 			new_predict[pos: sp] = 0
-	# 	is_anomaly = not is_anomaly
-	# 	pos = sp
-	# sp = len(label)
-	#
-	# if is_anomaly:  # anomaly in the end
-	# 	if 1 in predict[(pos - advance): min(pos + delay + 1, sp)]:
-	# 		new_predict[pos: sp] = 1
-	# 	else:
-	# 		new_predict[pos: sp] = 0
-	#
-	# return new_predict
-
 
 def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 	"""
 	Run POT method on given score.
-	Args:
-		init_score (np.ndarray): The data to get init threshold.
+	:param init_score (np.ndarray): The data to get init threshold.
 			For `OmniAnomaly`, it should be the anomaly score of train set.
-		score (np.ndarray): The data to run POT method.
+	:param: score (np.ndarray): The data to run POT method.
 			For `OmniAnomaly`, it should be the anomaly score of test set.
-		label:
-		q (float): Detection level (risk)
-		level (float): Probability associated with the initial threshold t
-	Returns:
-		dict: pot result dict
+	:param label (np.ndarray): boolean list of true anomalies in score
+	:param q (float): Detection level (risk)
+	:param level (float): Probability associated with the initial threshold t
+	:return dict: pot result dict
 	"""
+
 	print(f'Running POT with q={q}, level={level}..')
 	s = SPOT(q)  # SPOT object
 	s.fit(init_score, score)  # data import

@@ -20,6 +20,7 @@ if __name__ == '__main__':
 	parser.add_argument('--save_scores', type=bool, default=True, help="To save anomaly scores predicted.")
 	parser.add_argument('--load_scores', type=bool, default=False, help="To use already computed anomaly scores")
 	parser.add_argument('--gamma', type=float, default=1)
+	parser.add_argument('--level', type=float, default=None)
 
 	args = parser.parse_args()
 	print(args)
@@ -32,9 +33,12 @@ if __name__ == '__main__':
 	# SMD group 1: 0.9950
 	# SMD group 2: 0.9925
 	# SMD group 3: 0.9999
-	level_dict = {'smap': 0.93, 'msl': 0.99, 'smd-1': 0.9950, 'smd-2': 0.9925, 'smd-3': 0.9999}
-	key = 'smd-' + args.group[0] if args.dataset == 'smd' else args.dataset
-	level = level_dict[key]
+	if args.level is not None:
+		level = args.level
+	else:
+		level_dict = {'smap': 0.93, 'msl': 0.99, 'smd-1': 0.9950, 'smd-2': 0.9925, 'smd-3': 0.9999}
+		key = 'smd-' + args.group[0] if args.dataset == 'smd' else args.dataset
+		level = level_dict[key]
 
 	pre_trained_model_path = f'models/{model}/{model}'
 	# Check that model exist
