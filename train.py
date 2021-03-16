@@ -73,7 +73,7 @@ if __name__ == '__main__':
 	model_path = args.model_path
 	print_every = args.print_every
 	group_index = args.group[0]
-	index = args.group[2]
+	index = args.group[2:]
 	args_summary = str(args.__dict__)
 
 	if args.dataset == 'smd':

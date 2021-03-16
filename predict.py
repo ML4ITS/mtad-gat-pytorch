@@ -19,7 +19,7 @@ if __name__ == '__main__':
 	# Predictor args
 	parser.add_argument('--save_scores', type=bool, default=True, help="To save anomaly scores predicted.")
 	parser.add_argument('--load_scores', type=bool, default=False, help="To use already computed anomaly scores")
-	parser.add_argument('--gamma', type=float, default=0.8)
+	parser.add_argument('--gamma', type=float, default=1)
 
 	args = parser.parse_args()
 	print(args)
@@ -44,10 +44,10 @@ if __name__ == '__main__':
 	# Get configs of model
 	parser = argparse.ArgumentParser()
 	model_args, unknown = parser.parse_known_args()
-	print(model_args)
 	model_args_path = f'{pre_trained_model_path}_config.txt'
 	with open(model_args_path, 'r') as f:
 		model_args.__dict__ = json.load(f)
+	print(model_args)
 	window_size = model_args.lookback
 
 	# Check that model is trained on specified dataset
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
 	if args.dataset == 'smd':
 		group_index = args.group[0]
-		index = args.group[2]
+		index = args.group[2:]
 		(x_train, _), (x_test, y_test) = get_data(f'machine-{group_index}-{index}')
 	else:
 		(x_train, _), (x_test, y_test) = get_data(args.dataset)
