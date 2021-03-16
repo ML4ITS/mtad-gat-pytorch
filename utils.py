@@ -6,6 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 import torch
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import matplotlib.pyplot as plt
+import sys
 
 
 prefix = "ServerMachineDataset/processed"
@@ -81,9 +82,11 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 		f.close()
 	except (KeyError, FileNotFoundError):
 		test_label = None
-	if do_preprocess:
-		train_data, _ = preprocess(train_data)
-		test_data, _ = preprocess(test_data)
+
+	# if do_preprocess:
+	#	train_data, _ = preprocess(train_data)
+	#	test_data, _ = preprocess(test_data)
+
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
 	print("test set label shape: ", test_label.shape)
