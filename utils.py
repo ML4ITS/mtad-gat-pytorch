@@ -15,7 +15,7 @@ def preprocess(df, scaler=None):
 	"""returns normalized and standardized data.
 	"""
 
-	# df = np.asarray(df, dtype=np.float32)
+	df = np.asarray(df, dtype=np.float32)
 
 	if len(df.shape) == 1:
 		raise ValueError('Data must be a 2-D array')
@@ -81,9 +81,9 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 		f.close()
 	except (KeyError, FileNotFoundError):
 		test_label = None
-	# if do_preprocess:
-	#	train_data, scaler = preprocess(train_data)
-	#	test_data, _ = preprocess(test_data, scaler)
+	if do_preprocess:
+		train_data, _ = preprocess(train_data)
+		test_data, _ = preprocess(test_data)
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
 	print("test set label shape: ", test_label.shape)
