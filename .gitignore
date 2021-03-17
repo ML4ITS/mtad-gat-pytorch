@@ -10,5 +10,4 @@ plots/
 models/
 output/smd/*/logs
 output/smd/*/preds.pkl
-output/smd/*/train_scores.npy
-output/smd/*/test_scores.npy
+output/smd/*/anomaly_preds.pkl
