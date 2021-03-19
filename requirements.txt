@@ -8,3 +8,4 @@ pre-commit==2.11.1
 torch==1.8.0
 tqdm==4.59.0
 tensorboard==2.4.1
+tensorflow==2.4.1
