@@ -1,15 +1,11 @@
 import os
 import numpy as np
-import pandas as pd
 import pickle
 from sklearn.preprocessing import MinMaxScaler
 import torch
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import matplotlib.pyplot as plt
 import sys
-
-
-prefix = "ServerMachineDataset/processed"
 
 
 def preprocess(df, scaler=None):
@@ -55,6 +51,10 @@ def get_data(dataset, max_train_size=None, max_test_size=None, print_log=True, d
 
 	return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
 	"""
+	prefix = ""
+	if str(dataset).startswith('machine'):
+		prefix = "ServerMachineDataset/processed"
+
 	if max_train_size is None:
 		train_end = None
 	else:
