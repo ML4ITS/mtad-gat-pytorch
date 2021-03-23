@@ -43,7 +43,7 @@ def get_data_dim(dataset):
         return 25
     elif dataset == "MSL":
         return 55
-    elif dataset == 'SMD':
+    elif str(dataset).startswith("machine"):
         return 38
     else:
         raise ValueError("unknown dataset " + str(dataset))
@@ -60,7 +60,7 @@ def get_target_dims(dataset):
         return 0
     elif dataset == "MSL":
         return 0
-    elif str(dataset).startswith("machine"):
+    elif dataset == "SMD":
         return None
     else:
         raise ValueError("unknown dataset " + str(dataset))
