@@ -50,8 +50,8 @@ if __name__ == "__main__":
     else:
         (x_train, _), (x_test, y_test) = get_data(dataset)
 
-    x_train = torch.from_numpy(x_train).float()[:1000]
-    x_test = torch.from_numpy(x_test).float()[:1000]
+    x_train = torch.from_numpy(x_train).float()
+    x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
 
     print(x_train.shape)
