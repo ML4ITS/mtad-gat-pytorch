@@ -59,7 +59,9 @@ if __name__ == "__main__":
     print(y_test.shape)
 
     target_dims = get_target_dims(dataset)
-    if target_dims is None or type(target_dims) == int:
+    if target_dims is None:
+        out_dim = n_features
+    elif type(target_dims) == int:
         out_dim = 1
     else:
         out_dim = len(target_dims)
