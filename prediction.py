@@ -25,6 +25,7 @@ class Predictor:
         model,
         window_size,
         n_features,
+        target_dims=None,
         level=0.99,
         gamma=0.8,
         batch_size=256,
@@ -34,6 +35,7 @@ class Predictor:
         self.model = model
         self.window_size = window_size
         self.n_features = n_features
+        self.target_dims=target_dims
         self.level = level
         self.gamma = gamma
         self.batch_size = batch_size
@@ -48,7 +50,7 @@ class Predictor:
         """
 
         print("Predicting and calculating anomaly scores..")
-        data = SlidingWindowDataset(values, self.window_size)
+        data = SlidingWindowDataset(values, self.window_size, self.target_dims)
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size, shuffle=False)
         device = "cuda" if self.use_cuda and torch.cuda.is_available() else "cpu"
 
@@ -73,9 +75,12 @@ class Predictor:
         recons = np.concatenate(recons, axis=0)
         actual = values.detach().cpu().numpy()[self.window_size:]
 
+        if self.target_dims is not None:
+            actual = actual[:, self.target_dims]
+
         if save_forecasts_and_recons:
             df = pd.DataFrame()
-            for i in range(self.n_features):
+            for i in range(preds.shape[1]):
                 df[f"Pred_{i}"] = preds[:, i]
                 df[f"Recon_{i}"] = recons[:, i]
                 df[f"True_{i}"] = actual[:, i]

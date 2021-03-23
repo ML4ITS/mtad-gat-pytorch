@@ -79,14 +79,22 @@ if __name__ == "__main__":
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
 
-    train_dataset = SlidingWindowDataset(x_train, window_size)
-    test_dataset = SlidingWindowDataset(x_test, window_size)
+    target_dims = get_target_dims(args.dataset)
+    if target_dims is None:
+        out_dim = n_features
+    elif type(target_dims) == int:
+        out_dim = 1
+    else:
+        out_dim = len(target_dims)
+
+    train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
+    test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
 
     model = MTAD_GAT(
         n_features,
         window_size,
         model_args.horizon,
-        n_features,
+        out_dim,
         model_args.bs,
         kernel_size=model_args.kernel_size,
         dropout=model_args.dropout,
@@ -107,6 +115,7 @@ if __name__ == "__main__":
         model,
         window_size,
         n_features,
+        target_dims=target_dims,
         level=level,
         gamma=args.gamma,
         save_path=output_path,

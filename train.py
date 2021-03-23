@@ -50,8 +50,8 @@ if __name__ == "__main__":
     else:
         (x_train, _), (x_test, y_test) = get_data(dataset)
 
-    x_train = torch.from_numpy(x_train).float()
-    x_test = torch.from_numpy(x_test).float()
+    x_train = torch.from_numpy(x_train).float()[:1000]
+    x_test = torch.from_numpy(x_test).float()[:1000]
     n_features = x_train.shape[1]
 
     print(x_train.shape)
@@ -99,6 +99,7 @@ if __name__ == "__main__":
         optimizer,
         window_size,
         n_features,
+        target_dims,
         n_epochs,
         batch_size,
         init_lr,
@@ -139,6 +140,7 @@ if __name__ == "__main__":
         best_model,
         window_size,
         n_features,
+        target_dims=target_dims,
         batch_size=256,
         level=level,
         gamma=1,
