@@ -30,6 +30,7 @@ if __name__ == "__main__":
         os.makedirs(args.model_path)
 
     dataset = args.dataset
+    do_preprocess = args.do_preprocess
     window_size = args.lookback
     horizon = args.horizon
     target_col = args.target_col
@@ -44,19 +45,16 @@ if __name__ == "__main__":
     group_index = args.group[0]
     index = args.group[2:]
     args_summary = str(args.__dict__)
+    print(args_summary)
 
     if args.dataset == "SMD":
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
     else:
-        (x_train, _), (x_test, y_test) = get_data(dataset)
+        (x_train, _), (x_test, y_test) = get_data(dataset, do_preprocess=do_preprocess)
 
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
-
-    print(x_train.shape)
-    print(x_test.shape)
-    print(y_test.shape)
 
     target_dims = get_target_dims(dataset)
     if target_dims is None:

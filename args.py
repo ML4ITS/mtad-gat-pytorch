@@ -15,6 +15,7 @@ def get_parser():
     parser.add_argument("--lookback", type=int, default=100)
     parser.add_argument("--horizon", type=int, default=1)
     parser.add_argument("--target_col", type=int, default=None)
+    parser.add_argument("--do_preprocess", type=bool, default=False)
 
     # Model params
     parser.add_argument("--kernel_size", type=int, default=7)

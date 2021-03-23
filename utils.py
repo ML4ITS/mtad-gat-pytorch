@@ -9,28 +9,24 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
-def preprocess(df, scaler=None):
-	"""returns normalized and standardized data."""
+def preprocess(df):
+	""" Returns normalized and standardized data.
+	"""
 
 	df = np.asarray(df, dtype=np.float32)
 
 	if len(df.shape) == 1:
-		raise ValueError("Data must be a 2-D array")
+		raise ValueError('Data must be a 2-D array')
 
 	if np.any(sum(np.isnan(df)) != 0):
-		print("Data contains null values. Will be replaced with 0")
+		print('Data contains null values. Will be replaced with 0')
 		df = np.nan_to_num()
 
 	# normalize data
-	if scaler is None:
-		scaler = MinMaxScaler().fit(df)
+	df = MinMaxScaler().fit_transform(df)
+	print('Data normalized')
 
-	df = scaler.transform(df)
-	# df = MinMaxScaler().fit_transform(df)
-
-	print("Data normalized")
-
-	return df, scaler
+	return df
 
 
 def get_data_dim(dataset):
@@ -71,7 +67,7 @@ def get_data(
 	max_train_size=None,
 	max_test_size=None,
 	print_log=True,
-	do_preprocess=True,
+	do_preprocess=False,
 	train_start=0,
 	test_start=0,
 ):
@@ -114,9 +110,9 @@ def get_data(
 	except (KeyError, FileNotFoundError):
 		test_label = None
 
-	# if do_preprocess:
-	# 	train_data, _ = preprocess(train_data)
-	# 	test_data, _ = preprocess(test_data)
+	if do_preprocess:
+		train_data, _ = preprocess(train_data)
+		test_data, _ = preprocess(test_data)
 
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
@@ -133,13 +129,8 @@ class SlidingWindowDataset(Dataset):
 
 	def __getitem__(self, index):
 		x = self.data[index:index + self.window]
-		# y_recon = None
-		# if self.target_dim is not None:
-		# 	y_recon = self.data[index:index + self.window, self.target_dim].unsqueeze(1)
-		# 	y = self.data[index + self.window: index + self.window + self.horizon, self.target_dim]
-		# else:
 		y = self.data[index + self.window: index + self.window + self.horizon]
-		return x, y #, y_recon
+		return x, y
 
 	def __len__(self):
 		return len(self.data) - self.window  # - self.horizon
