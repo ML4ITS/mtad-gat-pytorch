@@ -71,7 +71,7 @@ class Predictor:
 
         preds = np.concatenate(preds, axis=0)
         recons = np.concatenate(recons, axis=0)
-        actual = values.detach().cpu().numpy()[self.window_size :]
+        actual = values.detach().cpu().numpy()[self.window_size:]
 
         if save_forecasts_and_recons:
             df = pd.DataFrame()

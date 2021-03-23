@@ -34,12 +34,34 @@ def preprocess(df, scaler=None):
 
 
 def get_data_dim(dataset):
+    """
+
+    :param dataset: Name of dataset
+    :return: Number of dimensions in data
+    """
     if dataset == "SMAP":
         return 25
     elif dataset == "MSL":
         return 55
     elif str(dataset).startswith("machine"):
         return 38
+    else:
+        raise ValueError("unknown dataset " + str(dataset))
+
+
+def get_target_dims(dataset):
+    """
+
+    :param dataset: Name of dataset
+    :return: index of data dimension that should be modeled (forecasted and reconstructed),
+             returns None if all input dimensions should be modeled
+    """
+    if dataset == "SMAP":
+        return 0
+    elif dataset == "MSL":
+        return 0
+    elif str(dataset).startswith("machine"):
+        return None
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -103,14 +125,18 @@ def get_data(
 
 
 class SlidingWindowDataset(Dataset):
-    def __init__(self, data, window, horizon=1):
+    def __init__(self, data, window, target_dim=None, horizon=1):
         self.data = data
         self.window = window
+        self.target_dim = target_dim
         self.horizon = horizon
 
     def __getitem__(self, index):
-        x = self.data[index : index + self.window]
-        y = self.data[index + self.window : index + self.window + self.horizon]
+        x = self.data[index:index + self.window]
+        if self.target_dim is not None:
+            y = self.data[index + self.window: index + self.window + self.horizon, self.target_dim]
+        else:
+            y = self.data[index + self.window: index + self.window + self.horizon]
         return x, y
 
     def __len__(self):

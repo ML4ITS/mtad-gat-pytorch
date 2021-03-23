@@ -29,6 +29,7 @@ if __name__ == "__main__":
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
+    dataset = args.dataset
     window_size = args.lookback
     horizon = args.horizon
     target_col = args.target_col
@@ -47,14 +48,24 @@ if __name__ == "__main__":
     if args.dataset == "SMD":
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")
     else:
-        (x_train, _), (x_test, y_test) = get_data(args.dataset)
+        (x_train, _), (x_test, y_test) = get_data(dataset)
 
-    x_train = torch.from_numpy(x_train).float()
-    x_test = torch.from_numpy(x_test).float()
+    x_train = torch.from_numpy(x_train).float()[:1000]
+    x_test = torch.from_numpy(x_test).float()[:1000]
     n_features = x_train.shape[1]
 
-    train_dataset = SlidingWindowDataset(x_train, window_size)
-    test_dataset = SlidingWindowDataset(x_test, window_size)
+    print(x_train.shape)
+    print(x_test.shape)
+    print(y_test.shape)
+
+    target_dims = get_target_dims(dataset)
+    if target_dims is None or type(target_dims) == int:
+        out_dim = 1
+    else:
+        out_dim = len(target_dims)
+
+    train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
+    test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
 
     train_loader, val_loader, test_loader = create_data_loaders(
         train_dataset, batch_size, val_split, shuffle_dataset, test_dataset=test_dataset
@@ -64,7 +75,7 @@ if __name__ == "__main__":
         n_features,
         window_size,
         horizon,
-        n_features,
+        out_dim,
         batch_size,
         kernel_size=args.kernel_size,
         dropout=args.dropout,
