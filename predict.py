@@ -1,43 +1,17 @@
 import argparse
 import json
 
+from args import get_parser
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
 from utils import *
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
 
-    # Model and data args
+    parser = get_parser()
     parser.add_argument("--model", type=str, required=True, help="Name of model to use")
-    parser.add_argument("--dataset", type=str, default="smd")
-    parser.add_argument(
-        "--group",
-        type=str,
-        default="1-1",
-        help="Required for smd dataset. <group_index>-<index>",
-    )
-    parser.add_argument("--use_cuda", type=bool, default=True)
-    parser.add_argument("--model_path", type=str, default="models")
-
-    # Predictor args
-    parser.add_argument(
-        "--save_scores",
-        type=bool,
-        default=True,
-        help="To save anomaly scores predicted.",
-    )
-    parser.add_argument(
-        "--load_scores",
-        type=bool,
-        default=False,
-        help="To use already computed anomaly scores",
-    )
-    parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--level", type=float, default=None)
-
     args = parser.parse_args()
-    print(args)
+
     model = args.model
 
     # Peak-Over-Threshold args
@@ -58,7 +32,7 @@ if __name__ == "__main__":
             "smd-3": 0.9999,
         }
         key = "smd-" + args.group[0] if args.dataset == "smd" else args.dataset
-        level = level_dict[key]
+        level = level_dict[key.lower()]
 
     pre_trained_model_path = f"models/{model}/{model}"
     # Check that model exist
@@ -69,6 +43,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     model_args, unknown = parser.parse_known_args()
     model_args_path = f"{pre_trained_model_path}_config.txt"
+
     with open(model_args_path, "r") as f:
         model_args.__dict__ = json.load(f)
     print(model_args)
@@ -76,16 +51,12 @@ if __name__ == "__main__":
 
     # Check that model is trained on specified dataset
     if args.dataset != model_args.dataset:
-        raise Exception(
-            f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}."
-        )
+        raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
-    if args.dataset == "smd" and args.group != model_args.group:
-        raise Warning(
-            f"Model trained on smd group {model_args.group}, but asked to predict smd group {args.group}."
-        )
+    if args.dataset == "SMD" and args.group != model_args.group:
+        raise Warning(f"Model trained on smd group {model_args.group}, but asked to predict smd group {args.group}.")
 
-    if args.dataset == "smd":
+    if args.dataset == "SMD":
         output_path = f"output/smd/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
@@ -93,7 +64,7 @@ if __name__ == "__main__":
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    if args.dataset == "smd":
+    if args.dataset == "SMD":
         group_index = args.group[0]
         index = args.group[2:]
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")
@@ -140,6 +111,4 @@ if __name__ == "__main__":
         gamma=args.gamma,
         save_path=output_path,
     )
-    predictor.predict_anomalies(
-        x_train, x_test, label, save_scores=save_scores, load_scores=load_scores
-    )
+    predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)

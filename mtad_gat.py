@@ -5,7 +5,7 @@ from modules import (
     GRU,
     ConvLayer,
     FeatureAttentionLayer,
-    ForecastingModel,
+    Forecasting_Model,
     RNNAutoencoder,
     TemporalAttentionLayer,
 )
@@ -35,14 +35,10 @@ class MTAD_GAT(nn.Module):
         device = "cuda" if use_cuda and torch.cuda.is_available() else "cpu"
 
         self.conv = ConvLayer(n_features, window_size, kernel_size, device)
-        self.feature_gat = FeatureAttentionLayer(
-            n_features, window_size, dropout, alpha, device
-        )
-        self.temporal_gat = TemporalAttentionLayer(
-            n_features, window_size, dropout, alpha, device
-        )
+        self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, device)
+        self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, device)
         self.gru = GRU(3 * n_features, gru_hid_dim, gru_n_layers, dropout, device)
-        self.forecasting_model = ForecastingModel(
+        self.forecasting_model = Forecasting_Model(
             gru_hid_dim,
             forecast_hid_dim,
             out_dim * horizon,
@@ -82,9 +78,7 @@ class MTAD_GAT(nn.Module):
 
         gru_out, h_end = self.gru(h_cat)
 
-        h_end = h_end.view(
-            x.shape[0], -1
-        )  # gru_out[:, -1, :]  # Hidden state for last timestamp
+        h_end = h_end.view(x.shape[0], -1)  # gru_out[:, -1, :]  # Hidden state for last timestamp
 
         predictions = self.forecasting_model(h_end)
         recons = self.recon_model(h_end)

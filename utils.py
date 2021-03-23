@@ -58,9 +58,11 @@ def get_data(
 
     return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
     """
-    prefix = ""
+    prefix = "datasets"
     if str(dataset).startswith("machine"):
-        prefix = "ServerMachineDataset/processed"
+        prefix += "/ServerMachineDataset/processed"
+    else:
+        prefix += "/data/processed"
 
     if max_train_size is None:
         train_end = None
@@ -126,9 +128,7 @@ def create_data_loaders(
     train_loader, val_loader, test_loader = None, None, None
     if val_split == 0.0:
         print(f"train_size: {len(train_dataset)}")
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=shuffle
-        )
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
 
     else:
         dataset_size = len(train_dataset)
@@ -142,12 +142,8 @@ def create_data_loaders(
         train_sampler = SubsetRandomSampler(train_indices)
         valid_sampler = SubsetRandomSampler(val_indices)
 
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=batch_size, sampler=train_sampler
-        )
-        val_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=batch_size, sampler=valid_sampler
-        )
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, sampler=train_sampler)
+        val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, sampler=valid_sampler)
 
         print(f"train_size: {len(train_indices)}")
         print(f"validation_size: {len(val_indices)}")

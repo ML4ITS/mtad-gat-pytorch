@@ -1,55 +1,19 @@
-import argparse
 import json
 
 import torch.nn as nn
 
+from args import get_parser
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
 from training import Trainer
 from utils import *
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
 
-    # Data params
-    parser.add_argument("--dataset", type=str, default="smd")
-    parser.add_argument(
-        "--group",
-        type=str,
-        default="1-1",
-        help="Required for smd dataset. <group_index>-<index>",
-    )
-    parser.add_argument("--lookback", type=int, default=100)
-    parser.add_argument("--horizon", type=int, default=1)
-    parser.add_argument("--target_col", type=int, default=None)
-
-    # Model params
-    parser.add_argument("--kernel_size", type=int, default=7)
-    parser.add_argument("--gru_layers", type=int, default=1)
-    parser.add_argument("--gru_hid_dim", type=int, default=150)
-    parser.add_argument("--autoenc_layers", type=int, default=1)
-    parser.add_argument("--autoenc_hid_dim", type=int, default=128)
-    parser.add_argument("--fc_layers", type=int, default=3)
-    parser.add_argument("--fc_hid_dim", type=int, default=150)
-
-    # Train params
-    parser.add_argument("--test_size", type=float, default=0.2)
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--bs", type=int, default=256)
-    parser.add_argument("--init_lr", type=float, default=1e-3)
-    parser.add_argument("--val_split", type=float, default=0.1)
-    parser.add_argument("--shuffle_dataset", type=bool, default=True)
-    parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--use_cuda", type=bool, default=True)
-    parser.add_argument("--model_path", type=str, default="models")
-    parser.add_argument("--print_every", type=int, default=1)
-
-    # Other
-    parser.add_argument("--comment", type=str, default="")
-
+    parser = get_parser()
     args = parser.parse_args()
 
-    if args.dataset == "smd":
+    if args.dataset == "SMD":
         output_path = f"output/smd/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
@@ -80,7 +44,7 @@ if __name__ == "__main__":
     index = args.group[2:]
     args_summary = str(args.__dict__)
 
-    if args.dataset == "smd":
+    if args.dataset == "SMD":
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")
     else:
         (x_train, _), (x_test, y_test) = get_data(args.dataset)
@@ -153,8 +117,8 @@ if __name__ == "__main__":
         "smd-2": 0.9925,
         "smd-3": 0.9999,
     }
-    key = "smd-" + args.group[0] if args.dataset == "smd" else args.dataset
-    level = level_dict[key]
+    key = "smd-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level = level_dict[key.lower()]
 
     trainer.load(f"{model_path}/{trainer.id}/{trainer.id}_model.pt")
     best_model = trainer.model

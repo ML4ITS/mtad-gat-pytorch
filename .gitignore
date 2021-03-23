@@ -2,10 +2,12 @@
 __pycache__/
 .idea/
 .DS_Store
-datasets/household_power_consumption.csv
 datasets/ecg_data.txt
+datasets/ServerMachineDataset/processed/
+/datasets/data/processed/
+/datasets/data/test/
+/datasets/data/train/
 eda/.ipynb_checkpoints/
-ServerMachineDataset/processed/
 plots/
 *.pkl
 models/

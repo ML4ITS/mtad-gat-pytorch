@@ -11,5 +11,5 @@ jobs:
           python-version: 3.8
       - name: Install Black
         run: pip install black
-      - name: Run black --check .
-        run: black --check .
+      - name: Run black with line length 120
+        run: black --check . -l 120

@@ -17,15 +17,11 @@ class ConvLayer(nn.Module):
     def __init__(self, n_features, window_size, kernel_size=7, device="cpu"):
         super(ConvLayer, self).__init__()
         self.padding = nn.ConstantPad1d((kernel_size - 1) // 2, 0.0)
-        self.conv = nn.Conv1d(
-            in_channels=n_features, out_channels=n_features, kernel_size=kernel_size
-        )
+        self.conv = nn.Conv1d(in_channels=n_features, out_channels=n_features, kernel_size=kernel_size)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        x = x.permute(
-            0, 2, 1
-        )  # To get the features/nodes as channel and timesteps as the spatial dimension
+        x = x.permute(0, 2, 1)  # To get the features/nodes as channel and timesteps as the spatial dimension
         x = self.padding(x)
         x = self.relu(self.conv(x))
         return x.permute(0, 2, 1)  # Permute back
@@ -38,7 +34,6 @@ class FeatureAttentionLayer(nn.Module):
     :param dropout: percentage of nodes to dropout
     :param alpha: negative slope used in the leaky rely activation function
     :param device: which device to use (cpu or cuda)
-
     """
 
     def __init__(self, num_nodes, window_size, dropout, alpha, device="cpu"):
@@ -81,26 +76,24 @@ class FeatureAttentionLayer(nn.Module):
         """Preparing the feature attention mechanism.
         Creating matrix with all possible combinations of concatenations of node.
         Each node consists of all values of that node within the window
-                v1 || v1,
-                ...
-                v1 || vK,
-                v2 || v1,
-                ...
-                v2 || vK,
-                ...
-                ...
-                vK || v1,
-                ...
-                vK || vK,
+            v1 || v1,
+            ...
+            v1 || vK,
+            v2 || v1,
+            ...
+            v2 || vK,
+            ...
+            ...
+            vK || v1,
+            ...
+            vK || vK,
         """
 
         K = self.num_nodes
         Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
         Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
 
-        combined = torch.cat(
-            (Wh_blocks_repeating, Wh_blocks_alternating), dim=2
-        )  # Shape (b, K*K, 2*window_size)
+        combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
 
         return combined.view(v.size(0), K, K, 2 * self.window_size)
 
@@ -151,14 +144,14 @@ class TemporalAttentionLayer(nn.Module):
     def _make_attention_input(self, v):
         """Preparing the temporal attention mechanism.
         Creating matrix with all possible combinations of concatenations of node values:
-                (v1, v2..)_t1 || (v1, v2..)_t1
-                (v1, v2..)_t1 || (v1, v2..)_t2
+            (v1, v2..)_t1 || (v1, v2..)_t1
+            (v1, v2..)_t1 || (v1, v2..)_t2
 
-                ...
-                ...
+            ...
+            ...
 
-                (v1, v2..)_tn || (v1, v2..)_t1
-                (v1, v2..)_tn || (v1, v2..)_t2
+            (v1, v2..)_tn || (v1, v2..)_t1
+            (v1, v2..)_tn || (v1, v2..)_t2
 
         """
 
@@ -168,9 +161,7 @@ class TemporalAttentionLayer(nn.Module):
         Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
         Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
 
-        combined = torch.cat(
-            (Wh_blocks_repeating, Wh_blocks_alternating), dim=2
-        )  # Shape (b, K*K, 2*window_size)
+        combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
         return combined.view(v.size(0), K, K, 2 * self.num_nodes)
 
 
@@ -189,9 +180,7 @@ class GRU(nn.Module):
         self.n_layers = n_layers
         self.device = device
 
-        self.gru = nn.GRU(
-            in_dim, hid_dim, num_layers=n_layers, batch_first=True, dropout=dropout
-        )
+        self.gru = nn.GRU(in_dim, hid_dim, num_layers=n_layers, batch_first=True, dropout=dropout)
 
     def forward(self, x):
         # h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
@@ -274,9 +263,7 @@ class RNNAutoencoder(nn.Module):
     :param device: which device to use (cpu or cuda)
     """
 
-    def __init__(
-        self, window_size, in_dim, n_layers, hid_dim, out_dim, dropout, device="cpu"
-    ):
+    def __init__(self, window_size, in_dim, n_layers, hid_dim, out_dim, dropout, device="cpu"):
         super(RNNAutoencoder, self).__init__()
 
         self.window_size = window_size
@@ -284,9 +271,7 @@ class RNNAutoencoder(nn.Module):
         self.device = device
 
         # self.encoder = RNNEncoder(in_dim, n_layers, hid_dim, dropout=dropout, device=device)
-        self.decoder = RNNDecoder(
-            in_dim, n_layers, hid_dim, out_dim, dropout=dropout, device=device
-        )
+        self.decoder = RNNDecoder(in_dim, n_layers, hid_dim, out_dim, dropout=dropout, device=device)
 
     def forward(self, x):
         # x shape: (b, n, k)
@@ -294,16 +279,14 @@ class RNNAutoencoder(nn.Module):
         # h_end = self.encoder(x).squeeze(0).unsqueeze(2)
         # Use last hidden state from GRU module as the encoding
         h_end = x
-        h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(
-            x.size(0), self.window_size, -1
-        )
+        h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 
         out = self.decoder(h_end_rep)
 
         return out
 
 
-class ForecastingModel(nn.Module):
+class Forecasting_Model(nn.Module):
     """Forecasting model (fully-connected network)
     :param in_dim: number of input features
     :param hid_dim: hidden size of the FC network
@@ -314,9 +297,10 @@ class ForecastingModel(nn.Module):
     """
 
     def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout, device="cpu"):
-        super(ForecastingModel, self).__init__()
+        super(Forecasting_Model, self).__init__()
 
-        layers = [nn.Linear(in_dim, hid_dim)]
+        layers = []
+        layers.append(nn.Linear(in_dim, hid_dim))
         for _ in range(n_layers - 1):
             layers.append(nn.Linear(hid_dim, hid_dim))
 

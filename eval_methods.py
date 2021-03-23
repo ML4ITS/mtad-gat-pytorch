@@ -33,11 +33,7 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
     # Added advance in case model predicts anomaly 'in advance' within a small window
     # Advance should be 0 or small
     for i in range(len(score)):
-        if (
-            any(actual[max(i - advance, 0) : i + 1])
-            and predict[i]
-            and not anomaly_state
-        ):
+        if any(actual[max(i - advance, 0) : i + 1]) and predict[i] and not anomaly_state:
             anomaly_state = True
             anomaly_count += 1
             for j in range(i, 0, -1):

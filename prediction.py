@@ -3,6 +3,8 @@ from tqdm import tqdm
 from eval_methods import *
 from utils import *
 
+import pandas as pd
+
 
 class Predictor:
     """MTAD-GAT predictor class.
@@ -47,9 +49,7 @@ class Predictor:
 
         print("Predicting and calculating anomaly scores..")
         data = SlidingWindowDataset(values, self.window_size)
-        loader = torch.utils.data.DataLoader(
-            data, batch_size=self.batch_size, shuffle=False
-        )
+        loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size, shuffle=False)
         device = "cuda" if self.use_cuda and torch.cuda.is_available() else "cpu"
 
         self.model.eval()
@@ -79,27 +79,22 @@ class Predictor:
                 df[f"Pred_{i}"] = preds[:, i]
                 df[f"Recon_{i}"] = recons[:, i]
                 df[f"True_{i}"] = actual[:, i]
-                df[f"A_Score_{i}"] = np.sqrt(
-                    (preds[:, i] - actual[:, i]) ** 2
-                ) + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
+                df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
+                    (recons[:, i] - actual[:, i]) ** 2
+                )
 
             df_path = f"{self.save_path}/preds.pkl"
-            print(
-                f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}"
-            )
+            print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
             df.to_pickle(f"{df_path}")
 
         anomaly_scores = np.mean(
-            np.sqrt((preds - actual) ** 2)
-            + self.gamma * np.sqrt((recons - actual) ** 2),
+            np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2),
             1,
         )
 
         return anomaly_scores
 
-    def predict_anomalies(
-        self, train, test, true_anomalies, save_scores=False, load_scores=False
-    ):
+    def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False):
         """Predicts anomalies for given test set.
         Train data needed to setting threshold (via the peak-over-threshold method)
 
@@ -118,9 +113,7 @@ class Predictor:
             if save_scores:
                 np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
                 np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
-                print(
-                    f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy"
-                )
+                print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
 
         # bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=0.20, step_num=10, verbose=False)
 

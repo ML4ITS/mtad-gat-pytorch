@@ -138,9 +138,7 @@ class Trainer:
             # Evaluate on validation set
             forecast_val_loss, recon_val_loss, total_val_loss = None, None, None
             if val_loader is not None:
-                forecast_val_loss, recon_val_loss, total_val_loss = self.evaluate(
-                    val_loader
-                )
+                forecast_val_loss, recon_val_loss, total_val_loss = self.evaluate(val_loader)
                 self.losses["val_forecast"].append(forecast_val_loss)
                 self.losses["val_recon"].append(recon_val_loss)
                 self.losses["val_total"].append(total_val_loss)

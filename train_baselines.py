@@ -90,9 +90,7 @@ if __name__ == "__main__":
             out_dim=feature_dim,
         )
 
-    es = keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=5, restore_best_weights=True
-    )
+    es = keras.callbacks.EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)
     opt = keras.optimizers.Adam(learning_rate=lr)
     model.compile(loss="mse", optimizer=opt)
 
