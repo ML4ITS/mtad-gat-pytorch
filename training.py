@@ -107,9 +107,14 @@ class Trainer:
             for x, y in train_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
-
                 self.optimizer.zero_grad()
+
                 preds, recons = self.model(x)
+
+                if preds.ndim == 3:
+                    preds = preds.squeeze(1)
+                if y.ndim == 3:
+                    y = y.squeeze(1)
 
                 if self.target_dims is not None:
                     x = x[:, :, self.target_dims]
@@ -187,13 +192,18 @@ class Trainer:
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                y_hat, recons = self.model(x)
+                preds, recons = self.model(x)
+
+                if preds.ndim == 3:
+                    preds = preds.squeeze(1)
+                if y.ndim == 3:
+                    y = y.squeeze(1)
 
                 if self.target_dims is not None:
                     x = x[:, :, self.target_dims]
                     y = y[:, :, self.target_dims].squeeze(-1)
 
-                forecast_loss = torch.sqrt(self.forecast_criterion(y, y_hat))
+                forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
 
                 forecast_losses.append(forecast_loss.item())

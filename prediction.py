@@ -35,7 +35,7 @@ class Predictor:
         self.model = model
         self.window_size = window_size
         self.n_features = n_features
-        self.target_dims=target_dims
+        self.target_dims = target_dims
         self.level = level
         self.gamma = gamma
         self.batch_size = batch_size
