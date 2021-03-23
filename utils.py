@@ -9,8 +9,8 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
-def preprocess(df, scaler=None):
-    """returns normalized and standardized data."""
+def preprocess(df):
+    """Returns normalized and standardized data."""
 
     df = np.asarray(df, dtype=np.float32)
 
@@ -22,18 +22,18 @@ def preprocess(df, scaler=None):
         df = np.nan_to_num()
 
     # normalize data
-    if scaler is None:
-        scaler = MinMaxScaler().fit(df)
-
-    df = scaler.transform(df)
-    # df = MinMaxScaler().fit_transform(df)
-
+    df = MinMaxScaler().fit_transform(df)
     print("Data normalized")
 
-    return df, scaler
+    return df
 
 
 def get_data_dim(dataset):
+    """
+
+    :param dataset: Name of dataset
+    :return: Number of dimensions in data
+    """
     if dataset == "SMAP":
         return 25
     elif dataset == "MSL":
@@ -44,12 +44,29 @@ def get_data_dim(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
+def get_target_dims(dataset):
+    """
+
+    :param dataset: Name of dataset
+    :return: index of data dimension that should be modeled (forecasted and reconstructed),
+                     returns None if all input dimensions should be modeled
+    """
+    if dataset == "SMAP":
+        return [0]
+    elif dataset == "MSL":
+        return [0]
+    elif dataset == "SMD":
+        return None
+    else:
+        raise ValueError("unknown dataset " + str(dataset))
+
+
 def get_data(
     dataset,
     max_train_size=None,
     max_test_size=None,
     print_log=True,
-    do_preprocess=True,
+    do_preprocess=False,
     train_start=0,
     test_start=0,
 ):
@@ -92,9 +109,9 @@ def get_data(
     except (KeyError, FileNotFoundError):
         test_label = None
 
-    # if do_preprocess:
-    # 	train_data, _ = preprocess(train_data)
-    # 	test_data, _ = preprocess(test_data)
+    if do_preprocess:
+        train_data = preprocess(train_data)
+        test_data = preprocess(test_data)
 
     print("train set shape: ", train_data.shape)
     print("test set shape: ", test_data.shape)
@@ -103,9 +120,10 @@ def get_data(
 
 
 class SlidingWindowDataset(Dataset):
-    def __init__(self, data, window, horizon=1):
+    def __init__(self, data, window, target_dim=None, horizon=1):
         self.data = data
         self.window = window
+        self.target_dim = target_dim
         self.horizon = horizon
 
     def __getitem__(self, index):

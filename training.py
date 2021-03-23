@@ -32,6 +32,7 @@ class Trainer:
         optimizer,
         window_size,
         n_features,
+        target_dims=None,
         n_epochs=200,
         batch_size=256,
         init_lr=0.001,
@@ -48,6 +49,7 @@ class Trainer:
         self.optimizer = optimizer
         self.window_size = window_size
         self.n_features = n_features
+        self.target_dims = target_dims
         self.n_epochs = n_epochs
         self.batch_size = batch_size
         self.init_lr = init_lr
@@ -105,9 +107,14 @@ class Trainer:
             for x, y in train_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
-
                 self.optimizer.zero_grad()
+
                 preds, recons = self.model(x)
+
+                if self.target_dims is not None:
+                    x = x[:, :, self.target_dims]
+                    y = y[:, :, self.target_dims].squeeze(-1)
+
                 if preds.ndim == 3:
                     preds = preds.squeeze(1)
                 if y.ndim == 3:
@@ -181,17 +188,25 @@ class Trainer:
         recon_losses = []
 
         with torch.no_grad():
-            for x, y in data_loader:
+            for (
+                x,
+                y,
+            ) in data_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                y_hat, recons = self.model(x)
-                if y_hat.ndim == 3:
-                    y_hat = y_hat.squeeze(1)
+                preds, recons = self.model(x)
+
+                if self.target_dims is not None:
+                    x = x[:, :, self.target_dims]
+                    y = y[:, :, self.target_dims].squeeze(-1)
+
+                if preds.ndim == 3:
+                    preds = preds.squeeze(1)
                 if y.ndim == 3:
                     y = y.squeeze(1)
 
-                forecast_loss = torch.sqrt(self.forecast_criterion(y, y_hat))
+                forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
 
                 forecast_losses.append(forecast_loss.item())

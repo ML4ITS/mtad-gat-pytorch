@@ -51,7 +51,7 @@ class MTAD_GAT(nn.Module):
             gru_hid_dim,
             autoenc_n_layers,
             autoenc_hid_dim,
-            n_features,
+            out_dim,
             dropout,
             device,
         )
