@@ -111,8 +111,8 @@ def get_data(
 		test_label = None
 
 	if do_preprocess:
-		train_data, _ = preprocess(train_data)
-		test_data, _ = preprocess(test_data)
+		train_data = preprocess(train_data)
+		test_data = preprocess(test_data)
 
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
