@@ -117,6 +117,7 @@ if __name__ == "__main__":
         n_features,
         target_dims=target_dims,
         level=level,
+        q=args.q,
         gamma=args.gamma,
         save_path=output_path,
     )

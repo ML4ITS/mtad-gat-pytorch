@@ -8,7 +8,7 @@ eda/.ipynb_checkpoints/
 plots/
 *.pkl
 models/
-
+output/
 output/*/*/logs
 output/*/*/preds.pkl
 output/*/*/anomaly_preds.pkl

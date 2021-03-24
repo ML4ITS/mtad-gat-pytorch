@@ -4,6 +4,7 @@ from eval_methods import *
 from utils import *
 
 import pandas as pd
+import json
 
 
 class Predictor:
@@ -27,6 +28,7 @@ class Predictor:
         n_features,
         target_dims=None,
         level=0.99,
+        q=1e-3,
         gamma=0.8,
         batch_size=256,
         use_cuda=True,
@@ -36,6 +38,7 @@ class Predictor:
         self.window_size = window_size
         self.n_features = n_features
         self.target_dims = target_dims
+        self.q = q
         self.level = level
         self.gamma = gamma
         self.batch_size = batch_size
@@ -126,7 +129,7 @@ class Predictor:
             train_anomaly_scores,
             test_anomaly_scores,
             true_anomalies,
-            q=1e-3,
+            q=self.q,
             level=self.level,
         )
 
@@ -137,11 +140,13 @@ class Predictor:
 
         df = pd.DataFrame()
         df["a_score"] = test_anomaly_scores
-        df["pot_threshold"] = eval["pot_thresholds"]
+        df["threshold"] = eval["pot_thresholds"]
         df["pred_anomaly"] = eval["pred"].astype(int)
         df["anomaly"] = true_anomalies
 
-        df_path = f"{self.save_path}/anomaly_preds.pkl"
-        print(f"Saving output to {df_path}")
-        df.to_pickle(f"{df_path}")
+        print(f"Saving output to {self.save_path}/")
+        df.to_pickle(f"{self.save_path}/anomaly_preds.pkl")
+        with open(f'{self.save_path}/metrics.txt', 'w') as f:
+            json.dump(print_eval, f, indent=2)
+
         print("-- Done.")

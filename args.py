@@ -14,7 +14,6 @@ def get_parser():
     )
     parser.add_argument("--lookback", type=int, default=100)
     parser.add_argument("--horizon", type=int, default=1)
-    parser.add_argument("--target_col", type=int, default=None)
     parser.add_argument("--do_preprocess", type=bool, default=False)
 
     # Model params
@@ -53,6 +52,7 @@ def get_parser():
     )
     parser.add_argument("--gamma", type=float, default=1)
     parser.add_argument("--level", type=float, default=None)
+    parser.add_argument("--q", type=float, default=1e-3)
 
     # Other
     parser.add_argument("--comment", type=str, default="")
