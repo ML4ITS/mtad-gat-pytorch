@@ -33,7 +33,6 @@ if __name__ == "__main__":
     do_preprocess = args.do_preprocess
     window_size = args.lookback
     horizon = args.horizon
-    target_col = args.target_col
     n_epochs = args.epochs
     batch_size = args.bs
     init_lr = args.init_lr
