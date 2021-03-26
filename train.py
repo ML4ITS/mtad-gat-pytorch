@@ -131,17 +131,23 @@ if __name__ == "__main__":
     key = "smd-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key.lower()]
 
+    prediction_args = {
+        'model_name': args.model,
+        'target_dims': target_dims,
+        'level': level,
+        'q': args.q,
+        'use_mov_av': args.use_mov_av,
+        'gamma': args.gamma,
+        'save_path': output_path
+    }
+
     trainer.load(f"{model_path}/{trainer.id}/{trainer.id}_model.pt")
     best_model = trainer.model
     predictor = Predictor(
         best_model,
         window_size,
         n_features,
-        target_dims=target_dims,
-        batch_size=256,
-        level=level,
-        gamma=1,
-        save_path=output_path,
+        prediction_args,
     )
     label = y_test[window_size:]
     predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
