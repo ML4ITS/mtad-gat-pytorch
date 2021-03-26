@@ -131,6 +131,16 @@ if __name__ == "__main__":
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
 
+    prediction_args = {
+        'model_name': args.model,
+        'target_dims': target_dims,
+        'level': level,
+        'q': args.q,
+        'use_mov_av': args.use_mov_av,
+        'gamma': args.gamma,
+        'save_path': output_path
+    }
+
     trainer.load(f"{model_path}/{trainer.id}/{trainer.id}_model.pt")
     prediction_args = {
         "model_name": trainer.id,
