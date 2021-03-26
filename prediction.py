@@ -83,10 +83,8 @@ class Predictor:
                 df[f"Pred_{i}"] = preds[:, i]
                 df[f"Recon_{i}"] = recons[:, i]
                 df[f"True_{i}"] = actual[:, i]
-                #df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) \
-                                    # + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
-                df[f"A_Score_{i}"] = np.abs(preds[:, i] - actual[:, i] / (1+actual[:, i])) \
-                     + self.gamma * np.abs(recons[:, i] - actual[:, i] / (1+actual[:, i]))
+                df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) \
+                                    + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
 
             df_path = f"{self.save_path}/preds.pkl"
             print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
