@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser = get_parser()
     parser.add_argument("--model", type=str, required=True, help="Name of model to use")
     args = parser.parse_args()
+    print(args)
 
     model = args.model
 
@@ -26,14 +27,14 @@ if __name__ == "__main__":
         level = args.level
     else:
         level_dict = {
-            "smap": 0.93,
-            "msl": 0.99,
-            "smd-1": 0.9950,
-            "smd-2": 0.9925,
-            "smd-3": 0.9999,
+            "SMAP": 0.93,
+            "MSL": 0.99,
+            "SMD-1": 0.9950,
+            "SMD-2": 0.9925,
+            "SMD-3": 0.9999,
         }
-        key = "smd-" + args.group[0] if args.dataset == "SMD" else args.dataset
-        level = level_dict[key.lower()]
+        key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+        level = level_dict[key]
 
     pre_trained_model_path = f"models/{model}/{model}"
     # Check that model exist
@@ -41,13 +42,12 @@ if __name__ == "__main__":
         raise Exception(f"Model <{pre_trained_model_path}_model.pt> does not exist.")
 
     # Get configs of model
-    parser = argparse.ArgumentParser()
-    model_args, unknown = parser.parse_known_args()
+    model_parser = argparse.ArgumentParser()
+    model_args, unknown = model_parser.parse_known_args()
     model_args_path = f"{pre_trained_model_path}_config.txt"
 
     with open(model_args_path, "r") as f:
         model_args.__dict__ = json.load(f)
-    print(model_args)
     window_size = model_args.lookback
 
     # Check that model is trained on specified dataset
@@ -55,10 +55,10 @@ if __name__ == "__main__":
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
     if args.dataset == "SMD" and args.group != model_args.group:
-        raise Warning(f"Model trained on smd group {model_args.group}, but asked to predict smd group {args.group}.")
+        raise Warning(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
     if args.dataset == "SMD":
-        output_path = f"output/smd/{args.group}"
+        output_path = f"output/SMD/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
 
@@ -74,6 +74,8 @@ if __name__ == "__main__":
 
     save_scores = args.save_scores
     load_scores = args.load_scores
+
+    print(load_scores)
 
     label = y_test[window_size:]
     x_train = torch.from_numpy(x_train).float()

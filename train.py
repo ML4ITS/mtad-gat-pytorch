@@ -14,7 +14,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.dataset == "SMD":
-        output_path = f"output/smd/{args.group}"
+        output_path = f"output/SMD/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
 
@@ -122,14 +122,14 @@ if __name__ == "__main__":
     # Predict anomalies
     # 'level' argument for POT-method
     level_dict = {
-        "smap": 0.93,
-        "msl": 0.99,
-        "smd-1": 0.9950,
-        "smd-2": 0.9925,
-        "smd-3": 0.9999,
+        "SMAP": 0.93,
+        "MSL": 0.99,
+        "SMD-1": 0.9950,
+        "SMD-2": 0.9925,
+        "SMD-3": 0.9999,
     }
-    key = "smd-" + args.group[0] if args.dataset == "SMD" else args.dataset
-    level = level_dict[key.lower()]
+    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level = level_dict[key]
 
     trainer.load(f"{model_path}/{trainer.id}/{trainer.id}_model.pt")
     prediction_args = {
