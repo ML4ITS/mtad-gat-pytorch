@@ -26,24 +26,20 @@ class Predictor:
         model,
         window_size,
         n_features,
-        target_dims=None,
-        level=0.99,
-        q=1e-3,
-        gamma=0.8,
-        batch_size=256,
-        use_cuda=True,
-        save_path="",
+        pred_args
     ):
         self.model = model
         self.window_size = window_size
         self.n_features = n_features
-        self.target_dims = target_dims
-        self.q = q
-        self.level = level
-        self.gamma = gamma
-        self.batch_size = batch_size
-        self.use_cuda = use_cuda
-        self.save_path = save_path
+        self.target_dims = pred_args['target_dims']
+        self.q = pred_args['q']
+        self.level = pred_args['level']
+        self.use_mov_av = pred_args['use_mov_av']
+        self.gamma = pred_args['gamma']
+        self.save_path = pred_args['save_path']
+        self.batch_size = 256
+        self.use_cuda = True
+        self.pred_args = pred_args
 
     def get_score(self, values, save_forecasts_and_recons=False):
         """Method that calculates anomaly score using given model and data
@@ -87,18 +83,14 @@ class Predictor:
                 df[f"Pred_{i}"] = preds[:, i]
                 df[f"Recon_{i}"] = recons[:, i]
                 df[f"True_{i}"] = actual[:, i]
-                df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
-                    (recons[:, i] - actual[:, i]) ** 2
-                )
+                df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) \
+                                     + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
 
             df_path = f"{self.save_path}/preds.pkl"
             print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
             df.to_pickle(f"{df_path}")
 
-        anomaly_scores = np.mean(
-            np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2),
-            1,
-        )
+        anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
 
         return anomaly_scores
 
@@ -123,7 +115,22 @@ class Predictor:
                 np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
                 print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
 
-        # bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=0.20, step_num=10, verbose=False)
+        # Recommended values for start, end
+        # SMD: 0.01, 0.5
+        # MSL: 0.1, 2
+        # SMAP:
+        bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
+        print(f'Results using best f1 score search:\n {bf_eval}')
+
+        if self.use_mov_av:
+            smoothing_window = int(self.batch_size * self.window_size * 0.05)
+            train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
+            # test_anomaly_scores = pd.DataFrame(test_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
+
+        # output = pd.read_pickle(f'{self.save_path}/preds.pkl')
+        # test_anomaly_scores = test_anomaly_scores / output['True_0'].values
+        # train_anomaly_scores = train_anomaly_scores / np.ptp(true_anomalies.astype(int))
+        # test_anomaly_scores = test_anomaly_scores / np.ptp(true_anomalies.astype(int))
 
         eval = pot_eval(
             train_anomaly_scores,
@@ -135,18 +142,27 @@ class Predictor:
 
         print_eval = dict(eval)
         del print_eval["pred"]
-        del print_eval["pot_thresholds"]
-        print(str(print_eval))
+        del print_eval["thresholds"]
+        print(f'Results using peak-over-threshold method:\n {print_eval}')
 
         df = pd.DataFrame()
         df["a_score"] = test_anomaly_scores
-        df["threshold"] = eval["pot_thresholds"]
+        df["threshold"] = eval["thresholds"]
         df["pred_anomaly"] = eval["pred"].astype(int)
         df["anomaly"] = true_anomalies
 
         print(f"Saving output to {self.save_path}/")
         df.to_pickle(f"{self.save_path}/anomaly_preds.pkl")
-        with open(f'{self.save_path}/metrics.txt', 'w') as f:
-            json.dump(print_eval, f, indent=2)
+
+        for k, v in print_eval.items():
+            print_eval[k] = float(v)
+        for k, v in bf_eval.items():
+            bf_eval[k] = float(v)
+
+        summary = {'pred_args': self.pred_args,
+                   'pot_result': print_eval,
+                   'bf_result': bf_eval}
+        with open(f'{self.save_path}/summary.txt', 'w') as f:
+            json.dump(summary, f, indent=2)
 
         print("-- Done.")

@@ -53,6 +53,7 @@ def get_parser():
     parser.add_argument("--gamma", type=float, default=1)
     parser.add_argument("--level", type=float, default=None)
     parser.add_argument("--q", type=float, default=1e-3)
+    parser.add_argument("--use_mov_av", type=bool, default=False)
 
     # Other
     parser.add_argument("--comment", type=str, default="")

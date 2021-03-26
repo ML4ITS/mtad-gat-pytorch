@@ -21,6 +21,7 @@ if __name__ == "__main__":
     # SMD group 1: 0.9950
     # SMD group 2: 0.9925
     # SMD group 3: 0.9999
+
     if args.level is not None:
         level = args.level
     else:
@@ -31,7 +32,7 @@ if __name__ == "__main__":
             "smd-2": 0.9925,
             "smd-3": 0.9999,
         }
-        key = "smd-" + args.group[0] if args.dataset == "smd" else args.dataset
+        key = "smd-" + args.group[0] if args.dataset == "SMD" else args.dataset
         level = level_dict[key.lower()]
 
     pre_trained_model_path = f"models/{model}/{model}"
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     window_size = model_args.lookback
 
     # Check that model is trained on specified dataset
-    if args.dataset != model_args.dataset:
+    if args.dataset.lower() != model_args.dataset.lower():
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
     if args.dataset == "SMD" and args.group != model_args.group:
@@ -111,14 +112,19 @@ if __name__ == "__main__":
     load(model, f"{pre_trained_model_path}_model.pt", device=device)
     model.to(device)
 
+    prediction_args = {
+        'model_name': args.model,
+        'target_dims': target_dims,
+        'level': level,
+        'q': args.q,
+        'use_mov_av': args.use_mov_av,
+        'gamma': args.gamma,
+        'save_path': output_path
+    }
     predictor = Predictor(
         model,
         window_size,
         n_features,
-        target_dims=target_dims,
-        level=level,
-        q=args.q,
-        gamma=args.gamma,
-        save_path=output_path,
+        prediction_args
     )
     predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
