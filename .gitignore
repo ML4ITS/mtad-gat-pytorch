@@ -5,7 +5,9 @@ __pycache__/
 datasets/data/
 datasets/ServerMachineDataset/processed/
 visualization/.ipynb_checkpoints/
-plots/
-*.pkl
 models/
-output/
+**.pkl
+**.npy
+**/logs
+*.pkl
+*.npy
