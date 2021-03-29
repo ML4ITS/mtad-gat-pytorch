@@ -120,7 +120,7 @@ def get_data(
 
 	print("train set shape: ", train_data.shape)
 	print("test set shape: ", test_data.shape)
-	print("test set label shape: ", test_label.shape)
+	print("test set label shape: ", None if test_label is None else test_label.shape)
 	return (train_data, None), (test_data, test_label)
 
 
