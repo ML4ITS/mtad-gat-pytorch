@@ -67,6 +67,7 @@ def load_data(dataset="SMD"):
             for anomaly in anomalies:
                 label[anomaly[0] : anomaly[1] + 1] = True
             labels.extend(label)
+
         labels = np.asarray(labels)
         print(dataset, "test_label", labels.shape)
 

@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser = get_parser()
     parser.add_argument("--model", type=str, required=True, help="Name of model to use")
     args = parser.parse_args()
+    print(args)
 
     model = args.model
 
@@ -21,18 +22,19 @@ if __name__ == "__main__":
     # SMD group 1: 0.9950
     # SMD group 2: 0.9925
     # SMD group 3: 0.9999
+
     if args.level is not None:
         level = args.level
     else:
         level_dict = {
-            "smap": 0.93,
-            "msl": 0.99,
-            "smd-1": 0.9950,
-            "smd-2": 0.9925,
-            "smd-3": 0.9999,
+            "SMAP": 0.93,
+            "MSL": 0.99,
+            "SMD-1": 0.9950,
+            "SMD-2": 0.9925,
+            "SMD-3": 0.9999,
         }
-        key = "smd-" + args.group[0] if args.dataset == "smd" else args.dataset
-        level = level_dict[key.lower()]
+        key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+        level = level_dict[key]
 
     pre_trained_model_path = f"models/{model}/{model}"
     # Check that model exist
@@ -40,24 +42,23 @@ if __name__ == "__main__":
         raise Exception(f"Model <{pre_trained_model_path}_model.pt> does not exist.")
 
     # Get configs of model
-    parser = argparse.ArgumentParser()
-    model_args, unknown = parser.parse_known_args()
+    model_parser = argparse.ArgumentParser()
+    model_args, unknown = model_parser.parse_known_args()
     model_args_path = f"{pre_trained_model_path}_config.txt"
 
     with open(model_args_path, "r") as f:
         model_args.__dict__ = json.load(f)
-    print(model_args)
     window_size = model_args.lookback
 
     # Check that model is trained on specified dataset
-    if args.dataset != model_args.dataset:
+    if args.dataset.lower() != model_args.dataset.lower():
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
     if args.dataset == "SMD" and args.group != model_args.group:
-        raise Warning(f"Model trained on smd group {model_args.group}, but asked to predict smd group {args.group}.")
+        raise Warning(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
     if args.dataset == "SMD":
-        output_path = f"output/smd/{args.group}"
+        output_path = f"output/SMD/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
 
@@ -79,14 +80,22 @@ if __name__ == "__main__":
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
 
-    train_dataset = SlidingWindowDataset(x_train, window_size)
-    test_dataset = SlidingWindowDataset(x_test, window_size)
+    target_dims = get_target_dims(args.dataset)
+    if target_dims is None:
+        out_dim = n_features
+    elif type(target_dims) == int:
+        out_dim = 1
+    else:
+        out_dim = len(target_dims)
+
+    train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
+    test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
 
     model = MTAD_GAT(
         n_features,
         window_size,
         model_args.horizon,
-        n_features,
+        out_dim,
         model_args.bs,
         kernel_size=model_args.kernel_size,
         dropout=model_args.dropout,
@@ -103,12 +112,14 @@ if __name__ == "__main__":
     load(model, f"{pre_trained_model_path}_model.pt", device=device)
     model.to(device)
 
-    predictor = Predictor(
-        model,
-        window_size,
-        n_features,
-        level=level,
-        gamma=args.gamma,
-        save_path=output_path,
-    )
+    prediction_args = {
+        "model_name": args.model,
+        "target_dims": target_dims,
+        "level": level,
+        "q": args.q,
+        "use_mov_av": args.use_mov_av,
+        "gamma": args.gamma,
+        "save_path": output_path,
+    }
+    predictor = Predictor(model, window_size, n_features, prediction_args)
     predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)

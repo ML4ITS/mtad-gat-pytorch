@@ -1,6 +1,6 @@
 import numpy as np
 
-from spot import SPOT
+from spot import SPOT, dSPOT
 
 
 def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=False):
@@ -87,8 +87,13 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     s = SPOT(q)  # SPOT object
     s.fit(init_score, score)  # data import
     s.initialize(level=level, min_extrema=False)  # initialization step
-    # ret = s.run(dynamic=True)  # run
     ret = s.run(dynamic=False, with_alarm=False)  # much faster
+
+    # s = dSPOT(q, depth=300)  # SPOT object
+    # s.fit(init_score, score)  # data import
+    # s.initialize()  # initialization step
+    # ret = s.run()  # much faster
+
     print(len(ret["alarms"]))
     print(len(ret["thresholds"]))
 
@@ -96,19 +101,19 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
     # pred = adjust_predicts(score, label, pot_th, advance=1, delay=30)
     p_t = calc_point2point(pred, label)
-    print("POT result: ", p_t, pot_th)
+    # print("POT result: ", p_t, pot_th)
     return {
-        "pot-f1": p_t[0],
-        "pot-precision": p_t[1],
-        "pot-recall": p_t[2],
-        "pot-TP": p_t[3],
-        "pot-TN": p_t[4],
-        "pot-FP": p_t[5],
-        "pot-FN": p_t[6],
-        "pot-threshold": pot_th,
-        "pot-latency": p_latency,
+        "f1": p_t[0],
+        "precision": p_t[1],
+        "recall": p_t[2],
+        "TP": p_t[3],
+        "TN": p_t[4],
+        "FP": p_t[5],
+        "FN": p_t[6],
+        "threshold": pot_th,
+        "latency": p_latency,
         "pred": pred,
-        "pot_thresholds": ret["thresholds"],
+        "thresholds": ret["thresholds"],
     }
 
 
@@ -119,6 +124,7 @@ def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose
             list: list for results
             float: the `threshold` for best-f1
     """
+    print(f"Finding best f1-score by searching for threshold..")
     if step_num is None or end is None:
         end = start
         step_num = 1
@@ -128,21 +134,33 @@ def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose
     threshold = search_lower_bound
     m = (-1.0, -1.0, -1.0)
     m_t = 0.0
+    m_l = 0
     for i in range(search_step):
         threshold += search_range / float(search_step)
-        target = calc_seq(score, label, threshold)
+        target, latency = calc_seq(score, label, threshold)
         if target[0] > m[0]:
             m_t = threshold
             m = target
+            m_l = latency
         if verbose and i % display_freq == 0:
             print("cur thr: ", threshold, target, m, m_t)
-    print(m, m_t)
-    return m, m_t
+
+    return {
+        "f1": m[0],
+        "precision": m[1],
+        "recall": m[2],
+        "TP": m[3],
+        "TN": m[4],
+        "FP": m[5],
+        "FN": m[6],
+        "threshold": m_t,
+        "latency": m_l,
+    }
 
 
 def calc_seq(score, label, threshold):
     """
     Calculate f1 score for a score sequence
     """
-    predict = adjust_predicts(score, label, threshold)
-    return calc_point2point(predict, label)
+    predict, latency = adjust_predicts(score, label, threshold, calc_latency=True)
+    return calc_point2point(predict, label), latency

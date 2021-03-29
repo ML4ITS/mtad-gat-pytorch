@@ -14,7 +14,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.dataset == "SMD":
-        output_path = f"output/smd/{args.group}"
+        output_path = f"output/SMD/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
 
@@ -29,9 +29,10 @@ if __name__ == "__main__":
     if not os.path.exists(args.model_path):
         os.makedirs(args.model_path)
 
+    dataset = args.dataset
+    do_preprocess = args.do_preprocess
     window_size = args.lookback
     horizon = args.horizon
-    target_col = args.target_col
     n_epochs = args.epochs
     batch_size = args.bs
     init_lr = args.init_lr
@@ -43,18 +44,27 @@ if __name__ == "__main__":
     group_index = args.group[0]
     index = args.group[2:]
     args_summary = str(args.__dict__)
+    print(args_summary)
 
     if args.dataset == "SMD":
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
     else:
-        (x_train, _), (x_test, y_test) = get_data(args.dataset)
+        (x_train, _), (x_test, y_test) = get_data(dataset, do_preprocess=do_preprocess)
 
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
 
-    train_dataset = SlidingWindowDataset(x_train, window_size)
-    test_dataset = SlidingWindowDataset(x_test, window_size)
+    target_dims = get_target_dims(dataset)
+    if target_dims is None:
+        out_dim = n_features
+    elif type(target_dims) == int:
+        out_dim = 1
+    else:
+        out_dim = len(target_dims)
+
+    train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
+    test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
 
     train_loader, val_loader, test_loader = create_data_loaders(
         train_dataset, batch_size, val_split, shuffle_dataset, test_dataset=test_dataset
@@ -64,7 +74,7 @@ if __name__ == "__main__":
         n_features,
         window_size,
         horizon,
-        n_features,
+        out_dim,
         batch_size,
         kernel_size=args.kernel_size,
         dropout=args.dropout,
@@ -86,6 +96,7 @@ if __name__ == "__main__":
         optimizer,
         window_size,
         n_features,
+        target_dims,
         n_epochs,
         batch_size,
         init_lr,
@@ -111,25 +122,31 @@ if __name__ == "__main__":
     # Predict anomalies
     # 'level' argument for POT-method
     level_dict = {
-        "smap": 0.93,
-        "msl": 0.99,
-        "smd-1": 0.9950,
-        "smd-2": 0.9925,
-        "smd-3": 0.9999,
+        "SMAP": 0.93,
+        "MSL": 0.99,
+        "SMD-1": 0.9950,
+        "SMD-2": 0.9925,
+        "SMD-3": 0.9999,
     }
-    key = "smd-" + args.group[0] if args.dataset == "SMD" else args.dataset
-    level = level_dict[key.lower()]
+    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level = level_dict[key]
 
     trainer.load(f"{model_path}/{trainer.id}/{trainer.id}_model.pt")
+    prediction_args = {
+        "model_name": trainer.id,
+        "target_dims": target_dims,
+        "level": level,
+        "q": args.q,
+        "use_mov_av": args.use_mov_av,
+        "gamma": args.gamma,
+        "save_path": output_path,
+    }
     best_model = trainer.model
     predictor = Predictor(
         best_model,
         window_size,
         n_features,
-        batch_size=256,
-        level=level,
-        gamma=1,
-        save_path=output_path,
+        prediction_args,
     )
     label = y_test[window_size:]
     predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
