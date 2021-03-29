@@ -121,7 +121,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     else:
         return {
             'pred': pred,
-            'threshold': ret["thresholds"],
+            'thresholds': ret["thresholds"],
         }
 
 
