@@ -76,7 +76,8 @@ if __name__ == "__main__":
     save_scores = args.save_scores
     load_scores = args.load_scores
 
-    label = y_test[window_size:]
+    if y_test is not None:
+        label = y_test[window_size:]
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
