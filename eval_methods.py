@@ -16,6 +16,10 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
     Returns:
             np.ndarray: predict labels
     """
+    if label is None:
+        predict = score > threshold
+        return predict
+
     if len(score) != len(label):
         raise ValueError("score and label must have the same length")
     score = np.asarray(score)
@@ -99,9 +103,11 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 
     pot_th = np.mean(ret["thresholds"])
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
-    # pred = adjust_predicts(score, label, pot_th, advance=1, delay=30)
-    p_t = calc_point2point(pred, label)
-    # print("POT result: ", p_t, pot_th)
+    if label is not None:
+        p_t = calc_point2point(pred, label)
+    else:
+        p_t = None
+
     return {
         "f1": p_t[0],
         "precision": p_t[1],

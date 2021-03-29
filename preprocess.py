@@ -2,6 +2,8 @@ from ast import literal_eval
 from csv import reader
 from os import listdir, makedirs, path
 from pickle import dump
+import glob
+import os
 
 import numpy as np
 
@@ -79,6 +81,25 @@ def load_data(dataset="SMD"):
             for row in data_info:
                 filename = row[0]
                 temp = np.load(path.join(dataset_folder, category, filename + ".npy"))
+                data.extend(temp)
+            data = np.asarray(data)
+            print(dataset, category, data.shape)
+            with open(path.join(output_folder, dataset + "_" + category + ".pkl"), "wb") as file:
+                dump(data, file)
+
+        for c in ["train", "test"]:
+            concatenate_and_save(c)
+
+    elif dataset == 'TELENOR':
+        dataset_folder = "datasets/telenor"
+        output_folder = "datasets/telenor/processed"
+        makedirs(output_folder, exist_ok=True)
+
+        def concatenate_and_save(category):
+            data = []
+            filelist = os.listdir(f'{dataset_folder}/{category}')
+            for file in sorted(filelist, key=lambda x: int(x.replace('-', '').split('.')[0])):
+                temp = np.load(f'{dataset_folder}/{category}/{file}')
                 data.extend(temp)
             data = np.asarray(data)
             print(dataset, category, data.shape)
