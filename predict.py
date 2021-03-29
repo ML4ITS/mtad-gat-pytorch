@@ -32,6 +32,7 @@ if __name__ == "__main__":
             "SMD-1": 0.9950,
             "SMD-2": 0.9925,
             "SMD-3": 0.9999,
+            "TELENOR": 0.99
         }
         key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
         level = level_dict[key]
