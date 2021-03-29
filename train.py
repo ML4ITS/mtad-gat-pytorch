@@ -161,8 +161,8 @@ if __name__ == "__main__":
         n_features,
         prediction_args,
     )
-    if y_test is not None:
-        label = y_test[window_size:]
+
+    label = y_test[window_size:] if y_test is not None else None
     predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
 
     # Save config
