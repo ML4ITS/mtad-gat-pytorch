@@ -18,7 +18,7 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
     """
     if label is None:
         predict = score > threshold
-        return predict
+        return predict, None
 
     if len(score) != len(label):
         raise ValueError("score and label must have the same length")
@@ -105,22 +105,27 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
     if label is not None:
         p_t = calc_point2point(pred, label)
+        return {
+            "f1": p_t[0],
+            "precision": p_t[1],
+            "recall": p_t[2],
+            "TP": p_t[3],
+            "TN": p_t[4],
+            "FP": p_t[5],
+            "FN": p_t[6],
+            "threshold": pot_th,
+            "latency": p_latency,
+            "pred": pred,
+            "thresholds": ret["thresholds"],
+        }
     else:
-        p_t = None
+        return {
+            'pred': pred,
+            'threshold': ret["thresholds"],
+        }
 
-    return {
-        "f1": p_t[0],
-        "precision": p_t[1],
-        "recall": p_t[2],
-        "TP": p_t[3],
-        "TN": p_t[4],
-        "FP": p_t[5],
-        "FN": p_t[6],
-        "threshold": pot_th,
-        "latency": p_latency,
-        "pred": pred,
-        "thresholds": ret["thresholds"],
-    }
+
+
 
 
 def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose=True):

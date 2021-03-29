@@ -119,8 +119,9 @@ class Predictor:
         # SMD: 0.01, 0.5
         # MSL: 0.1, 2
         # SMAP:
-        bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
-        print(f'Results using best f1 score search:\n {bf_eval}')
+        if true_anomalies is not None:
+            bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
+            print(f'Results using best f1 score search:\n {bf_eval}')
 
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)
