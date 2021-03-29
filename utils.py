@@ -79,6 +79,8 @@ def get_data(
 	prefix = "datasets"
 	if str(dataset).startswith("machine"):
 		prefix += "/ServerMachineDataset/processed"
+	elif dataset == "TELENOR":
+		prefix += '/telenor/processed'
 	else:
 		prefix += "/data/processed"
 

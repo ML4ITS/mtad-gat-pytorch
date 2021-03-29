@@ -48,7 +48,7 @@ class Plotter:
 				print(f"\tAvg latency: {result_dict['latency']:.2f}")
 				print()
 				print(f"\tPrecison:  {result_dict['precision']:.4f}")
-				print(f"\tRecall:    {result_dict['precision']:.4f}")
+				print(f"\tRecall:    {result_dict['recall']:.4f}")
 				print(f"\tF1:        {result_dict['f1']:.4f}")
 		except FileNotFoundError as e:
 			print(e)
@@ -82,7 +82,7 @@ class Plotter:
 		for r in ranges:
 			shape = {
 				'type': 'rect',
-				'x0': r[0] - 30,  # self.config.l_s,
+				'x0': r[0] - 0,  # self.config.l_s,
 				'y0': _min,
 				'x1': r[1] + 0,  # self.config.l_s,
 				'y1': _max,

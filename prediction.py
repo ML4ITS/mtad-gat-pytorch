@@ -127,11 +127,6 @@ class Predictor:
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
             # test_anomaly_scores = pd.DataFrame(test_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
-        # output = pd.read_pickle(f'{self.save_path}/preds.pkl')
-        # test_anomaly_scores = test_anomaly_scores / output['True_0'].values
-        # train_anomaly_scores = train_anomaly_scores / np.ptp(true_anomalies.astype(int))
-        # test_anomaly_scores = test_anomaly_scores / np.ptp(true_anomalies.astype(int))
-
         eval = pot_eval(
             train_anomaly_scores,
             test_anomaly_scores,
@@ -140,10 +135,13 @@ class Predictor:
             level=self.level,
         )
 
-        print_eval = dict(eval)
-        del print_eval["pred"]
-        del print_eval["thresholds"]
-        print(f'Results using peak-over-threshold method:\n {print_eval}')
+        if true_anomalies is not None:
+            print_eval = dict(eval)
+            del print_eval["pred"]
+            del print_eval["thresholds"]
+            print(f'Results using peak-over-threshold method:\n {print_eval}')
+        else:
+            print(f'No labels given. Evaluation not possible. ')
 
         df = pd.DataFrame()
         df["a_score"] = test_anomaly_scores
@@ -154,10 +152,14 @@ class Predictor:
         print(f"Saving output to {self.save_path}/")
         df.to_pickle(f"{self.save_path}/anomaly_preds.pkl")
 
-        for k, v in print_eval.items():
-            print_eval[k] = float(v)
-        for k, v in bf_eval.items():
-            bf_eval[k] = float(v)
+        if true_anomalies is not None:
+            for k, v in print_eval.items():
+                print_eval[k] = float(v)
+            for k, v in bf_eval.items():
+                bf_eval[k] = float(v)
+        else:
+            print_eval = None
+            bf_eval = None
 
         summary = {'pred_args': self.pred_args,
                    'pot_result': print_eval,
