@@ -121,12 +121,15 @@ if __name__ == "__main__":
 
     # Predict anomalies
     # 'level' argument for POT-method
+    if args.level is not None:
+        level = args.level
     level_dict = {
         "SMAP": 0.93,
         "MSL": 0.99,
         "SMD-1": 0.9950,
         "SMD-2": 0.9925,
         "SMD-3": 0.9999,
+        'TELENOR': 0.99
     }
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
