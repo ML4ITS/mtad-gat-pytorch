@@ -37,7 +37,7 @@ class MTAD_GAT(nn.Module):
         self.conv = ConvLayer(n_features, window_size, kernel_size, device)
         self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, device)
         self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, device)
-        self.gru = GRU(3 * n_features, gru_hid_dim, gru_n_layers, dropout, device)
+        self.gru = GRU(n_features, gru_hid_dim, gru_n_layers, dropout, device)
         self.forecasting_model = Forecasting_Model(
             gru_hid_dim,
             forecast_hid_dim,
@@ -70,12 +70,12 @@ class MTAD_GAT(nn.Module):
         # x shape (b, n, k): b - batch size, n - window size, k - number of nodes/features
         x = self.conv(x)
 
-        h_feat = self.feature_gat(x)
-        h_temp = self.temporal_gat(x)
+        #h_feat = self.feature_gat(x)
+        #h_temp = self.temporal_gat(x)
 
         # h_cat = torch.cat([x, h_feat.permute(0, 2, 1)], dim=2)
-        h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)  # (b, n, 3k)
-
+        #h_cat = torch.cat([x, h_feat.permute(0, 2, 1), h_temp], dim=2)  # (b, n, 3k)
+        h_cat = x
         gru_out, h_end = self.gru(h_cat)
 
         h_end = h_end.view(x.shape[0], -1)  # gru_out[:, -1, :]  # Hidden state for last timestamp
