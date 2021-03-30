@@ -58,9 +58,12 @@ if __name__ == "__main__":
     target_dims = get_target_dims(dataset)
     if target_dims is None:
         out_dim = n_features
+        print(f'Will forecast and reconstruct all {n_features} input features')
     elif type(target_dims) == int:
+        print(f'Will forecast and reconstruct input feature: {target_dims}')
         out_dim = 1
     else:
+        print(f'Will forecast and reconstruct input features: [{target_dims}]')
         out_dim = len(target_dims)
 
     train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
