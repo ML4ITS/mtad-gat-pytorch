@@ -122,7 +122,7 @@ class Trainer:
 
                 forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
-                loss = forecast_loss #+ recon_loss
+                loss = forecast_loss + recon_loss
 
                 loss.backward()
                 self.optimizer.step()
