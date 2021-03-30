@@ -142,7 +142,7 @@ class Predictor:
             del print_eval["thresholds"]
             print(f'Results using peak-over-threshold method:\n {print_eval}')
         else:
-            print(f'No labels given. Evaluation not possible. ')
+            print(f'No labels given, not doing evaluation of predictions')
 
         df = pd.DataFrame()
         df["a_score"] = test_anomaly_scores

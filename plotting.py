@@ -19,11 +19,14 @@ class Plotter:
 		self.data_name = self.result_path.split('/')[-1]
 		self.data = None
 		self._load_results()
+		self.labels_available = False
 
 	def _load_results(self):
 		print(f"Loading results of {self.result_path}")
 		anomaly_preds = pd.read_pickle(f'{self.result_path}/anomaly_preds.pkl')
-		anomaly_preds['anomaly'] = anomaly_preds['anomaly'].astype(int)
+		if not anomaly_preds['anomaly'].isnull().any():
+			self.labels_available = True
+			anomaly_preds['anomaly'] = anomaly_preds['anomaly'].astype(int)
 		output = pd.read_pickle(f'{self.result_path}/preds.pkl')
 		test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy")
 
@@ -34,6 +37,10 @@ class Plotter:
 		self.data = output
 
 	def result_summary(self):
+		if not self.labels_available:
+			print(f'Labels not available.')
+			return
+
 		path = f'{self.result_path}/summary.txt'
 		if not os.path.exists(path):
 			print(f'Folder {self.result_path} do not have a summary.txt file')
