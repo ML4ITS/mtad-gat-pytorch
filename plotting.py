@@ -18,13 +18,13 @@ class Plotter:
 		self.result_path = result_path
 		self.data_name = self.result_path.split('/')[-1]
 		self.data = None
-		self._load_results()
 		self.labels_available = False
+		self._load_results()
 
 	def _load_results(self):
 		print(f"Loading results of {self.result_path}")
 		anomaly_preds = pd.read_pickle(f'{self.result_path}/anomaly_preds.pkl')
-		if not anomaly_preds['anomaly'].isnull().any():
+		if not self.data_name == "TELENOR":
 			self.labels_available = True
 			anomaly_preds['anomaly'] = anomaly_preds['anomaly'].astype(int)
 		output = pd.read_pickle(f'{self.result_path}/preds.pkl')
@@ -89,9 +89,9 @@ class Plotter:
 		for r in ranges:
 			shape = {
 				'type': 'rect',
-				'x0': r[0] - 5,  # self.config.l_s,
+				'x0': r[0] - 3,  # self.config.l_s,
 				'y0': _min,
-				'x1': r[1] + 5,  # self.config.l_s,
+				'x1': r[1] + 2,  # self.config.l_s,
 				'y1': _max,
 				'fillcolor': color,
 				'opacity': 0.2,
