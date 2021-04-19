@@ -90,16 +90,16 @@ def load_data(dataset="SMD"):
         for c in ["train", "test"]:
             concatenate_and_save(c)
 
-    elif dataset == 'TELENOR':
+    elif dataset == "TELENOR":
         dataset_folder = "datasets/telenor"
         output_folder = "datasets/telenor/processed"
         makedirs(output_folder, exist_ok=True)
 
         def concatenate_and_save(category):
             data = []
-            filelist = os.listdir(f'{dataset_folder}/{category}')
-            for file in sorted(filelist, key=lambda x: int(x.replace('-', '').split('.')[0])):
-                temp = np.load(f'{dataset_folder}/{category}/{file}')
+            filelist = os.listdir(f"{dataset_folder}/{category}")
+            for file in sorted(filelist, key=lambda x: int(x.replace("-", "").split(".")[0])):
+                temp = np.load(f"{dataset_folder}/{category}/{file}")
                 data.extend(temp)
             data = np.asarray(data)
             print(dataset, category, data.shape)
