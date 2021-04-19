@@ -58,12 +58,12 @@ if __name__ == "__main__":
     target_dims = get_target_dims(dataset)
     if target_dims is None:
         out_dim = n_features
-        print(f'Will forecast and reconstruct all {n_features} input features')
+        print(f"Will forecast and reconstruct all {n_features} input features")
     elif type(target_dims) == int:
-        print(f'Will forecast and reconstruct input feature: {target_dims}')
+        print(f"Will forecast and reconstruct input feature: {target_dims}")
         out_dim = 1
     else:
-        print(f'Will forecast and reconstruct input features: {target_dims}')
+        print(f"Will forecast and reconstruct input features: {target_dims}")
         out_dim = len(target_dims)
 
     train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
@@ -126,25 +126,18 @@ if __name__ == "__main__":
     # 'level' argument for POT-method
     if args.level is not None:
         level = args.level
-    level_dict = {
-        "SMAP": 0.93,
-        "MSL": 0.99,
-        "SMD-1": 0.9950,
-        "SMD-2": 0.9925,
-        "SMD-3": 0.9999,
-        'TELENOR': 0.99
-    }
+    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
 
     prediction_args = {
-        'model_name': args.model,
-        'target_dims': target_dims,
-        'level': level,
-        'q': args.q,
-        'use_mov_av': args.use_mov_av,
-        'gamma': args.gamma,
-        'save_path': output_path
+        "model_name": args.model,
+        "target_dims": target_dims,
+        "level": level,
+        "q": args.q,
+        "use_mov_av": args.use_mov_av,
+        "gamma": args.gamma,
+        "save_path": output_path,
     }
 
     trainer.load(f"{model_path}/{trainer.id}/{trainer.id}_model.pt")

@@ -66,7 +66,7 @@ class Predictor:
 
         preds = np.concatenate(preds, axis=0)
         recons = np.concatenate(recons, axis=0)
-        actual = values.detach().cpu().numpy()[self.window_size:]
+        actual = values.detach().cpu().numpy()[self.window_size :]
 
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
