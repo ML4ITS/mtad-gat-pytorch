@@ -42,7 +42,7 @@ def get_data_dim(dataset):
 	elif str(dataset).startswith("machine"):
 		return 38
 	elif dataset == 'TELENOR':
-		return 14
+		return 48
 	else:
 		raise ValueError("unknown dataset " + str(dataset))
 
@@ -61,7 +61,7 @@ def get_target_dims(dataset):
 	elif dataset == "SMD":
 		return None
 	elif dataset == "TELENOR":
-		return [1, 3]
+		return None
 	else:
 		raise ValueError("unknown dataset " + str(dataset))
 
