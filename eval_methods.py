@@ -125,9 +125,6 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
         }
 
 
-
-
-
 def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose=True):
     """
     Find the best-f1 score by searching best `threshold` in [`start`, `end`).
@@ -135,7 +132,8 @@ def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose
             list: list for results
             float: the `threshold` for best-f1
     """
-    print(f'Finding best f1-score by searching for threshold..')
+
+    print(f"Finding best f1-score by searching for threshold..")
     if step_num is None or end is None:
         end = start
         step_num = 1

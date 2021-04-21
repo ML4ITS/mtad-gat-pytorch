@@ -21,13 +21,7 @@ class Predictor:
 
     """
 
-    def __init__(
-        self,
-        model,
-        window_size,
-        n_features,
-        pred_args
-    ):
+    def __init__(self, model, window_size, n_features, pred_args):
         self.model = model
         self.window_size = window_size
         self.n_features = n_features
@@ -73,6 +67,9 @@ class Predictor:
         preds = np.concatenate(preds, axis=0)
         recons = np.concatenate(recons, axis=0)
         actual = values.detach().cpu().numpy()[self.window_size:]
+
+        if self.target_dims is not None:
+            actual = actual[:, self.target_dims]
 
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
@@ -128,13 +125,12 @@ class Predictor:
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
             # test_anomaly_scores = pd.DataFrame(test_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
-        eval = pot_eval(
-            train_anomaly_scores,
-            test_anomaly_scores,
-            true_anomalies,
-            q=self.q,
-            level=self.level,
-        )
+        # output = pd.read_pickle(f'{self.save_path}/preds.pkl')
+        # test_anomaly_scores = test_anomaly_scores / output['True_0'].values
+        # train_anomaly_scores = train_anomaly_scores / np.ptp(true_anomalies.astype(int))
+        # test_anomaly_scores = test_anomaly_scores / np.ptp(true_anomalies.astype(int))
+
+        eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, q=self.q, level=self.level)
 
         if true_anomalies is not None:
             print_eval = dict(eval)
@@ -165,7 +161,8 @@ class Predictor:
         summary = {'pred_args': self.pred_args,
                    'pot_result': print_eval,
                    'bf_result': bf_eval}
-        with open(f'{self.save_path}/summary.txt', 'w') as f:
+
+        with open(f"{self.save_path}/summary.txt", "w") as f:
             json.dump(summary, f, indent=2)
 
         print("-- Done.")

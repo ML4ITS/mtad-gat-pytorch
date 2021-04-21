@@ -10,9 +10,7 @@ from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
 def preprocess(df):
-	""" Returns normalized and standardized data.
-	"""
-
+	"""Returns normalized and standardized data."""
 	df = np.asarray(df, dtype=np.float32)
 
 	if len(df.shape) == 1:
@@ -109,6 +107,7 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
 		test = preprocess(test)
 
 	return train.astype(float), test.astype(float)
+
 
 def get_data(
 	dataset,

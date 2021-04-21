@@ -34,8 +34,8 @@ if __name__ == "__main__":
             "SMD-3": 0.9999,
             "TELENOR": 0.99
         }
-        key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
-        level = level_dict[key]
+    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level = level_dict[key]
 
     pre_trained_model_path = f"models/{model}/{model}"
     # Check that model exist
@@ -122,18 +122,13 @@ if __name__ == "__main__":
     model.to(device)
 
     prediction_args = {
-        'model_name': args.model,
-        'target_dims': target_dims,
-        'level': level,
-        'q': args.q,
-        'use_mov_av': args.use_mov_av,
-        'gamma': args.gamma,
-        'save_path': output_path
+        "model_name": args.model,
+        "target_dims": target_dims,
+        "level": level,
+        "q": args.q,
+        "use_mov_av": args.use_mov_av,
+        "gamma": args.gamma,
+        "save_path": output_path,
     }
-    predictor = Predictor(
-        model,
-        window_size,
-        n_features,
-        prediction_args
-    )
+    predictor = Predictor(model, window_size, n_features, prediction_args)
     predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
