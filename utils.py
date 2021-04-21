@@ -66,6 +66,50 @@ def get_target_dims(dataset):
 		raise ValueError("unknown dataset " + str(dataset))
 
 
+def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
+	if site is None:
+		data = np.load('datasets/telenor/graph_signals.npy', allow_pickle=True)
+		print(f'Data shape: {data.shape}')
+		sector_list = [f'{e[0]}_{e[1]}' for e in data[0, :, 1:3]]
+		print(f'Number of nodes (sectors): {len(sector_list)}')
+		print(f'Site_Sector Combinations: {sector_list}')
+		print(f'-'*50)
+		print(f'Data start-end: {data[0, 0, 0]} - {data[-1, 0, 0]}')
+		if test_split == 0.0:
+			train = data
+			test = None
+		else:
+			test_start = int(len(data) * (1 - test_split))
+			print(f'Train start-end: {data[0, 0, 0]} - {data[test_start - 1, 0, 0]}')
+			print(f'Test start-end: {data[test_start, 0, 0]} - {data[-1, 0, 0]}')
+			train, test = data[:test_start], data[test_start:]
+
+		train = train[:, :, 2:]  # Remove timestamp and site_sector column
+		test = test[:, :, 2:]
+
+	else:
+		data = np.load(f'datasets/telenor/site_data/{site}.npy', allow_pickle=True)
+		print(f'Loading data for site: {site}')
+		print(f'Data shape: {data.shape}')
+		print(f'Data start-end: {data[0, 0]} - {data[-1, 0]}')
+		if test_split == 0.0:
+			train = data
+			test = None
+		else:
+			test_start = int(len(data) * (1-test_split))
+			print(f'Train start-end: {data[0, 0]} - {data[test_start-1, 0]}')
+			print(f'Test start-end: {data[test_start, 0]} - {data[-1, 0]}')
+			train, test = data[:test_start], data[test_start:]
+
+		train = train[:, 2:]  # Remove timestamp and site_sector column
+		test = test[:, 2:]
+
+	if do_preprocess:
+		train = preprocess(train)
+		test = preprocess(test)
+
+	return train.astype(float), test.astype(float)
+
 def get_data(
 	dataset,
 	max_train_size=None,
@@ -142,14 +186,7 @@ class SlidingWindowDataset(Dataset):
 		return len(self.data) - self.window  # - self.horizon
 
 
-def create_data_loaders(
-	train_dataset,
-	batch_size,
-	val_split=0.1,
-	shuffle=True,
-	val_dataset=None,
-	test_dataset=None,
-):
+def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, val_dataset=None, test_dataset=None):
 	train_loader, val_loader, test_loader = None, None, None
 	if val_split == 0.0:
 		print(f"train_size: {len(train_dataset)}")

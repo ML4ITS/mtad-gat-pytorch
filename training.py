@@ -39,7 +39,7 @@ class Trainer:
         forecast_criterion=nn.MSELoss(),
         recon_criterion=nn.MSELoss(),
         use_cuda=True,
-        dload="models/",
+        dload="",
         log_dir="output/",
         print_every=1,
         args_summary="",
@@ -56,6 +56,7 @@ class Trainer:
         self.forecast_criterion = forecast_criterion
         self.recon_criterion = recon_criterion
         self.device = "cuda" if use_cuda and torch.cuda.is_available() else "cpu"
+        self.dload = dload
         self.log_dir = log_dir
         self.print_every = print_every
 
@@ -69,13 +70,15 @@ class Trainer:
         }
         self.epoch_times = []
 
+
         if self.device == "cuda":
             self.model.cuda()
 
-        self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
-        self.dload = f"{dload}/{self.id}"
+        # self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
+        # self.dload = dload
 
-        self.writer = SummaryWriter(f"{log_dir}/{self.id}")
+
+        self.writer = SummaryWriter(f"{log_dir}")
         self.writer.add_text("args_summary", args_summary)
 
     def __repr__(self):
@@ -153,7 +156,7 @@ class Trainer:
             self.write_loss(epoch)
 
             if total_val_loss <= self.losses["val_total"][-1]:
-                self.save(f"{self.id}_model.pt")
+                self.save(f"model.pt")
 
             epoch_time = time.time() - epoch_start
             self.epoch_times.append(epoch_time)
