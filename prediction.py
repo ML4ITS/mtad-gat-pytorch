@@ -71,9 +71,6 @@ class Predictor:
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
 
-        if self.target_dims is not None:
-            actual = actual[:, self.target_dims]
-
         if save_forecasts_and_recons:
             df = pd.DataFrame()
             for i in range(preds.shape[1]):
