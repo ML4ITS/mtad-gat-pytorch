@@ -22,11 +22,16 @@ class Plotter:
         self.data_name = self.result_path.split("/")[-1]
         self.data = None
         self._load_results()
+        self.labels_available = False
 
     def _load_results(self):
         print(f"Loading results of {self.result_path}")
         anomaly_preds = pd.read_pickle(f"{self.result_path}/anomaly_preds.pkl")
-        anomaly_preds["anomaly"] = anomaly_preds["anomaly"].astype(int)
+        try:
+            anomaly_preds["anomaly"] = anomaly_preds["anomaly"].astype(int)
+            self.labels_available = True
+        except:
+            anomaly_preds["anomaly"] = 0
         output = pd.read_pickle(f"{self.result_path}/preds.pkl")
         test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy")
 
@@ -55,6 +60,8 @@ class Plotter:
                 print(f"\tF1:        {result_dict['f1']:.4f}")
         except FileNotFoundError as e:
             print(e)
+        except Exception:
+            print('\tNo results because labels are not available')
 
     def create_shapes(self, ranges, sequence_type, _min, _max, plot_values):
         """
