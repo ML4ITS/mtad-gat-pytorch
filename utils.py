@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 def preprocess(df):
 	"""Returns normalized and standardized data."""
-	df = np.asarray(df, dtype=np.float32)
+	# df = np.asarray(df, dtype=np.float32)
 
 	if len(df.shape) == 1:
 		raise ValueError('Data must be a 2-D array')
@@ -101,6 +101,7 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
 
 		train = train[:, 2:]  # Remove timestamp and site_sector column
 		test = test[:, 2:]
+
 
 	if do_preprocess:
 		train = preprocess(train)
