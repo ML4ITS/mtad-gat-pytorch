@@ -92,9 +92,9 @@ class Plotter:
         for r in ranges:
             shape = {
                 "type": "rect",
-                "x0": r[0] - 30,  # self.config.l_s,
+                "x0": r[0] - 10,  # self.config.l_s,
                 "y0": _min,
-                "x1": r[1] + 0,  # self.config.l_s,
+                "x1": r[1] + 10,  # self.config.l_s,
                 "y1": _max,
                 "fillcolor": color,
                 "opacity": 0.2,
