@@ -27,7 +27,7 @@ class Plotter:
         if "TELENOR" in result_path:
             path ='../datasets/telenor/site_data/metadata.txt'
             with open(path) as f:
-                self.column_names = json.load(f)["columns"][1:]
+                self.column_names = json.load(f)["columns"][2:]
 
     def _load_results(self):
         print(f"Loading results of {self.result_path}")
