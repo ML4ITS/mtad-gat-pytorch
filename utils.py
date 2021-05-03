@@ -59,7 +59,7 @@ def get_target_dims(dataset):
 	elif dataset == "SMD":
 		return None
 	elif dataset == "TELENOR":
-		return [6, 9, 10, 13, 14, 22, 29]
+		return None
 	else:
 		raise ValueError("unknown dataset " + str(dataset))
 
@@ -101,7 +101,6 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
 
 		train = train[:, 2:]  # Remove timestamp and site_sector column
 		test = test[:, 2:]
-
 
 	if do_preprocess:
 		train = preprocess(train)

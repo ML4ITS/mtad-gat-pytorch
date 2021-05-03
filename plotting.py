@@ -23,6 +23,11 @@ class Plotter:
         self.data = None
         self._load_results()
         self.labels_available = False
+        self.column_names = None
+        if "TELENOR" in result_path:
+            path ='../datasets/telenor/site_data/metadata.txt'
+            with open(path) as f:
+                self.column_names = json.load(f)["columns"][1:]
 
     def _load_results(self):
         print(f"Loading results of {self.result_path}")
@@ -97,7 +102,7 @@ class Plotter:
                 "x1": r[1] + 10,  # self.config.l_s,
                 "y1": _max,
                 "fillcolor": color,
-                "opacity": 0.2,
+                "opacity": 0.1,
                 "line": {
                     "width": 0,
                 },
@@ -149,6 +154,8 @@ class Plotter:
             "true": self.get_anomaly_sequences(data_copy["True_Anomaly"].values),
         }
 
+        #y_min = -1
+        #y_max = 1
         y_min = plot_values["y_true"].min()
         y_max = plot_values["y_true"].max()
         e_max = plot_values["errors"].max()
@@ -156,6 +163,7 @@ class Plotter:
         y_min -= 0.3 * y_max
         y_max += 0.5 * y_max
         e_max += 0.5 * e_max
+
 
         # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
         y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values)
@@ -190,14 +198,14 @@ class Plotter:
         )
 
         y_layout = {
-            "title": f"Forecast & reconstruction vs true value for channel: {i} ",
+            "title": f"Forecast & reconstruction vs true value for channel {i}: {self.column_names[i] if self.column_names else ''} ",
             "shapes": y_shapes,
             "yaxis": dict(range=[y_min, y_max]),
             "showlegend": True,
         }
 
         e_layout = {
-            "title": "Total error for all channels" if show_tot_err else f"Error for channel: {i}",
+            "title": "Total error for all channels" if show_tot_err else f"Error for channel: {i}: {self.column_names[i] if self.column_names else ''}",
             "shapes": e_shapes,
             "yaxis": dict(range=[0, e_max]),
         }
