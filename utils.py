@@ -59,7 +59,7 @@ def get_target_dims(dataset):
 	elif dataset == "SMD":
 		return None
 	elif dataset == "TELENOR":
-		return None
+		return [4, 15, 26]
 	else:
 		raise ValueError("unknown dataset " + str(dataset))
 
@@ -73,6 +73,8 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
 		print(f'Site_Sector Combinations: {sector_list}')
 		print(f'-'*50)
 		print(f'Data start-end: {data[0, 0, 0]} - {data[-1, 0, 0]}')
+		if do_preprocess:
+			data = preprocess(data)
 		if test_split == 0.0:
 			train = data
 			test = None
@@ -90,6 +92,8 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
 		print(f'Loading data for site: {site}')
 		print(f'Data shape: {data.shape}')
 		print(f'Data start-end: {data[0, 0]} - {data[-1, 0]}')
+		if do_preprocess:
+			data[:, 2:] = preprocess(data[:, 2:])
 		if test_split == 0.0:
 			train = data
 			test = None
@@ -101,10 +105,6 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
 
 		train = train[:, 2:]  # Remove timestamp and site_sector column
 		test = test[:, 2:]
-
-	if do_preprocess:
-		train = preprocess(train)
-		test = preprocess(test)
 
 	return train.astype(float), test.astype(float)
 

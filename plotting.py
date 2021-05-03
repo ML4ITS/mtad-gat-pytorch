@@ -20,7 +20,8 @@ class Plotter:
     def __init__(self, result_path):
         self.result_path = result_path
         self.data_name = self.result_path.split("/")[-1]
-        self.data = None
+        self.train_data = None
+        self.test_data = None
         self._load_results()
         self.labels_available = False
         self.column_names = None
@@ -37,14 +38,27 @@ class Plotter:
             self.labels_available = True
         except:
             anomaly_preds["anomaly"] = 0
-        output = pd.read_pickle(f"{self.result_path}/preds.pkl")
-        test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy")
 
-        output["Tot_A_Score"] = test_anomaly_scores
-        output["Pred_Anomaly"] = anomaly_preds["pred_anomaly"]
-        output["True_Anomaly"] = anomaly_preds["anomaly"]
-        output["threshold"] = anomaly_preds["threshold"]
-        self.data = output
+        try:
+            train_output = pd.read_pickle(f"{self.result_path}/preds_train.pkl")
+            train_anomaly_scores = np.load(f"{self.result_path}/train_scores.npy")
+            train_output["Tot_A_Score"] = train_anomaly_scores
+            train_output["Pred_Anomaly"] = 0
+            train_output["True_Anomaly"] = 0
+            train_output["threshold"] = 0
+        except:
+            train_output = None
+            train_anomaly_scores = None
+
+        test_output = pd.read_pickle(f"{self.result_path}/preds_test.pkl")
+        test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy")
+        test_output["Tot_A_Score"] = test_anomaly_scores
+        test_output["Pred_Anomaly"] = anomaly_preds["pred_anomaly"]
+        test_output["True_Anomaly"] = anomaly_preds["anomaly"]
+        test_output["threshold"] = anomaly_preds["threshold"]
+
+        self.train_data = train_output
+        self.test_data = test_output
 
     def result_summary(self):
         path = f"{self.result_path}/summary.txt"
@@ -97,9 +111,9 @@ class Plotter:
         for r in ranges:
             shape = {
                 "type": "rect",
-                "x0": r[0] - 10,  # self.config.l_s,
+                "x0": r[0] - 1,  # self.config.l_s,
                 "y0": _min,
-                "x1": r[1] + 10,  # self.config.l_s,
+                "x1": r[1] + 1,  # self.config.l_s,
                 "y1": _max,
                 "fillcolor": color,
                 "opacity": 0.1,
@@ -123,14 +137,19 @@ class Plotter:
 
         return a_seqs
 
-    def plot_channel(self, channel, show_tot_err=False, start=None, end=None, plot_errors=True):
+    def plot_channel(self, channel, type="test", show_tot_err=False, start=None, end=None, plot_errors=True):
         """Plot forecasting, reconstruction, true value of a specific channel (feature),
         along with the anomaly score for that channel
         """
-        if channel < 0 or f"Pred_{channel}" not in self.data.columns:
+
+        if type == "train":
+            data_copy = self.train_data.copy()
+        elif type == "test":
+            data_copy = self.test_data.copy()
+
+        if channel < 0 or f"Pred_{channel}" not in data_copy.columns:
             raise Exception(f"Channel {channel} not present in data.")
 
-        data_copy = self.data.copy()
         if start is not None and end is not None:
             assert start < end
         if start is not None:
@@ -224,8 +243,13 @@ class Plotter:
         if plot_errors:
             e_df.iplot(kind="scatter", layout=e_layout, colors=["red", "black"], dash=[None, "dash"])
 
-    def plot_all_channels(self, start=None, end=None):
-        data_copy = self.data.copy().drop(columns=["Tot_A_Score", "threshold"])
+    def plot_all_channels(self, start=None, end=None, type="test"):
+        if type == "train":
+            data_copy = self.train_data.copy()
+        elif type == "test":
+            data_copy = self.test_data.copy()
+        data_copy = data_copy.drop(columns=["Tot_A_Score", "threshold"])
+
         if start is not None and end is not None:
             assert start < end
         if start is not None:
@@ -240,18 +264,23 @@ class Plotter:
         data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.1), style=colors)
         plt.show()
 
-    def plot_errors(self, channel):
+    def plot_errors(self, channel, type="test"):
+        if type == "train":
+            return
+        elif type == "test":
+            data_copy = self.test_data.copy()
+
         fig, axs = plt.subplots(
             2,
             figsize=(30, 10),
             sharex=True,
         )
         if channel == "all":
-            axs[0].plot(self.data[f"Tot_A_Score"], c="r", label="anomaly scores")
+            axs[0].plot(data_copy[f"Tot_A_Score"], c="r", label="anomaly scores")
         else:
-            axs[0].plot(self.data[f"A_Score_{channel}"], c="r", label="anomaly scores")
-        axs[0].plot(self.data["threshold"], linestyle="dashed", c="black", label="threshold")
-        axs[1].plot(self.data["True_Anomaly"], label="actual anomalies", alpha=0.7)
-        axs[0].set_ylim([0, 2 * self.data["threshold"].mean()])
+            axs[0].plot(data_copy[f"A_Score_{channel}"], c="r", label="anomaly scores")
+        axs[0].plot(data_copy["threshold"], linestyle="dashed", c="black", label="threshold")
+        axs[1].plot(data_copy["True_Anomaly"], label="actual anomalies", alpha=0.7)
+        axs[0].set_ylim([0, 2 * data_copy["threshold"].mean()])
         fig.legend(prop={"size": 20})
         plt.show()

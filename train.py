@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
 	trainer.fit(train_loader, val_loader)
 
-	plot_losses(trainer.losses, save_path=save_path)
+	#plot_losses(trainer.losses, save_path=save_path)
 
 	# Check test loss
 	test_loss = trainer.evaluate(test_loader)
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 		"SMD-1": 0.9950,
 		"SMD-2": 0.9925,
 		"SMD-3": 0.9999,
-		'TELENOR': 0.9999
+		'TELENOR': 0.99
 	}
 	key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
 	level = level_dict[key]

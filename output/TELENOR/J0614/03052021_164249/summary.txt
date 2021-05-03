@@ -1,0 +1,25 @@
+{
+  "pred_args": {
+    "target_dims": [
+      4,
+      5,
+      6,
+      7,
+      15,
+      16,
+      17,
+      18,
+      26,
+      27,
+      28,
+      29
+    ],
+    "level": 0.99,
+    "q": 0.001,
+    "use_mov_av": false,
+    "gamma": 1,
+    "save_path": "output/TELENOR/J0614/03052021_164249"
+  },
+  "pot_result": null,
+  "bf_result": null
+}
