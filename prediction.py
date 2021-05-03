@@ -35,7 +35,7 @@ class Predictor:
         self.use_cuda = True
         self.pred_args = pred_args
 
-    def get_score(self, values, save_forecasts_and_recons=False):
+    def get_score(self, values, save_forecasts_and_recons=False, save_name=''):
         """Method that calculates anomaly score using given model and data
         :param values: 2D array of multivariate time series data, shape (N, k)
         :param save_forecasts_and_recons: if True, saves forecasts and
@@ -80,7 +80,7 @@ class Predictor:
                 df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) \
                                     + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
 
-            df_path = f"{self.save_path}/preds.pkl"
+            df_path = f"{self.save_path}/{save_name}.pkl"
             print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
             df.to_pickle(f"{df_path}")
 
@@ -101,13 +101,13 @@ class Predictor:
             train_anomaly_scores = np.load(f"{self.save_path}/train_scores.npy")
             test_anomaly_scores = np.load(f"{self.save_path}/test_scores.npy")
         else:
-            train_anomaly_scores = self.get_score(train)
-            test_anomaly_scores = self.get_score(test, save_forecasts_and_recons=True)
+            train_anomaly_scores = self.get_score(train, save_forecasts_and_recons=True, save_name='preds_train')
+            test_anomaly_scores = self.get_score(test, save_forecasts_and_recons=True, save_name='preds_test')
 
-            if save_scores:
-                np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
-                np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
-                print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
+        if save_scores:
+            np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
+            np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
+            print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
 
         # Recommended values for start, end
         # SMD: 0.01, 0.5

@@ -33,7 +33,7 @@ def get_parser():
     parser.add_argument("--fc_hid_dim", type=int, default=150)
 
     # Train params
-    parser.add_argument("--test_size", type=float, default=0.0)
+    parser.add_argument("--test_size", type=float, default=0.1)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--bs", type=int, default=256)
     parser.add_argument("--init_lr", type=float, default=1e-3)

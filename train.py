@@ -42,6 +42,7 @@ if __name__ == "__main__":
 	batch_size = args.bs
 	init_lr = args.init_lr
 	val_split = args.val_split
+	test_split = args.test_size
 	shuffle_dataset = args.shuffle_dataset
 	use_cuda = args.use_cuda
 	print_every = args.print_every
@@ -51,7 +52,7 @@ if __name__ == "__main__":
 	print(args_summary)
 
 	if args.dataset == "TELENOR":
-		x_train, x_test = get_telenor_data(site, test_split=0.3, do_preprocess=do_preprocess)
+		x_train, x_test = get_telenor_data(site, test_split=test_split, do_preprocess=do_preprocess)
 		y_test = None
 	elif args.dataset == "SMD":
 		(x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
@@ -139,7 +140,7 @@ if __name__ == "__main__":
 		"SMD-1": 0.9950,
 		"SMD-2": 0.9925,
 		"SMD-3": 0.9999,
-		'TELENOR': 0.99
+		'TELENOR': 0.9999
 	}
 	key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
 	level = level_dict[key]
