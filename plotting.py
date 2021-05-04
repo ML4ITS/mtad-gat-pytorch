@@ -24,11 +24,20 @@ class Plotter:
         self.test_data = None
         self._load_results()
         self.labels_available = False
-        self.column_names = None
+        self.pred_cols = None
         if "TELENOR" in result_path:
             path ='../datasets/telenor/site_data/metadata.txt'
             with open(path) as f:
-                self.column_names = json.load(f)["columns"][2:]
+                input_cols = np.array(json.load(f)["columns"][2:])
+
+            result_summary_path = f'{result_path}/summary.txt'
+            with open(result_summary_path) as f:
+                target_dims = json.load(f)['pred_args']['target_dims']
+                if target_dims is None:
+                    self.pred_cols = input_cols
+                else:
+                    self.pred_cols = input_cols[target_dims]
+
 
     def _load_results(self):
         print(f"Loading results of {self.result_path}")
@@ -217,14 +226,14 @@ class Plotter:
         )
 
         y_layout = {
-            "title": f"Forecast & reconstruction vs true value for channel {i}: {self.column_names[i] if self.column_names else ''} ",
+            "title": f"Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
             "shapes": y_shapes,
             "yaxis": dict(range=[y_min, y_max]),
             "showlegend": True,
         }
 
         e_layout = {
-            "title": "Total error for all channels" if show_tot_err else f"Error for channel: {i}: {self.column_names[i] if self.column_names else ''}",
+            "title": "Total error for all channels" if show_tot_err else f"Error for channel: {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
             "shapes": e_shapes,
             "yaxis": dict(range=[0, e_max]),
         }
