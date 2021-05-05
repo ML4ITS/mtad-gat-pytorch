@@ -59,7 +59,7 @@ def get_target_dims(dataset):
 	elif dataset == "SMD":
 		return None
 	elif dataset == "TELENOR":
-		return [4, 15, 26]
+		return None
 	else:
 		raise ValueError("unknown dataset " + str(dataset))
 
