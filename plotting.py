@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 import cufflinks as cf
 
+from eval_methods import find_epsilon
 cf.go_offline()
 
 
@@ -25,6 +26,8 @@ class Plotter:
         self._load_results()
         self.labels_available = False
         self.pred_cols = None
+        self.feature_error_thresholds = []
+
         if "TELENOR" in result_path:
             path ='../datasets/telenor/site_data/metadata.txt'
             with open(path) as f:
@@ -37,6 +40,12 @@ class Plotter:
                     self.pred_cols = input_cols
                 else:
                     self.pred_cols = input_cols[target_dims]
+
+        # Make column-wise anomaly predictions (based on column-wise thresholding)
+        for i in range(len(self.pred_cols)):
+            feature_anomaly_scores = self.train_data[f'A_Score_{i}'].values
+            epsilon = find_epsilon(feature_anomaly_scores)
+            self.feature_error_thresholds.append(epsilon)
 
     def _load_results(self):
         print(f"Loading results of {self.result_path}")
@@ -119,12 +128,12 @@ class Plotter:
         for r in ranges:
             shape = {
                 "type": "rect",
-                "x0": r[0] - 1,  # self.config.l_s,
+                "x0": r[0] - 5,  # self.config.l_s,
                 "y0": _min,
-                "x1": r[1] + 1,  # self.config.l_s,
+                "x1": r[1] + 5,  # self.config.l_s,
                 "y1": _max,
                 "fillcolor": color,
-                "opacity": 0.1,
+                "opacity": 0.08,
                 "line": {
                     "width": 0,
                 },
@@ -178,8 +187,13 @@ class Plotter:
                 "threshold": data_copy["threshold"].values,
             }
 
+            channel_error_threshold = self.feature_error_thresholds[i]
+            channel_anomaly_scores = data_copy[f"A_Score_{i}"].values
+            anomaly_preds = (channel_anomaly_scores > channel_error_threshold).astype(int)
+
             anomaly_sequences = {
-                "pred": self.get_anomaly_sequences(data_copy["Pred_Anomaly"].values),
+                'pred': self.get_anomaly_sequences(anomaly_preds),
+                # "pred": self.get_anomaly_sequences(data_copy["Pred_Anomaly"].values),
                 "true": self.get_anomaly_sequences(data_copy["True_Anomaly"].values),
             }
 
@@ -187,7 +201,7 @@ class Plotter:
             y_max = plot_values["y_true"].max()
             e_max = 2 #plot_values["errors"].max()
 
-            y_min -= 0.3 * y_max
+            y_min -= 0.1 * y_max
             y_max += 0.5 * y_max
             # e_max += 0.5 * e_max
 
@@ -200,55 +214,55 @@ class Plotter:
 
             y_df = pd.DataFrame(
                 {
-                    "y_forecast": plot_values["y_forecast"].reshape(
-                        -1,
-                    ),
-                    "y_recon": plot_values["y_recon"].reshape(
-                        -1,
-                    ),
-                    "y_true": plot_values["y_true"].reshape(
-                        -1,
-                    ),
+                    "y_forecast": plot_values["y_forecast"].reshape(-1, ),
+                    "y_recon": plot_values["y_recon"].reshape(-1,),
+                    "y_true": plot_values["y_true"].reshape(-1,),
                 }
             )
 
             e_df = pd.DataFrame(
                 {
-                    "e_s": plot_values["errors"].reshape(
-                        -1,
-                    ),
-                    "threshold": plot_values["threshold"].reshape(
-                        -1,
-                    ),
+                    "e_s": plot_values["errors"].reshape(-1,),
+                    "threshold": self.feature_error_thresholds[i] #plot_values["threshold"].reshape(-1,),
                 }
             )
+
             data_type = 'Train data' if nr == 1 else 'Test data'
             y_layout = {
                 "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "shapes": y_shapes,
                 "yaxis": dict(range=[y_min, y_max]),
                 "showlegend": True,
+                #'template': 'simple_white'
             }
 
             e_layout = {
                 "title": f"{data_type} | Total error for all channels" if show_tot_err else f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
                 "shapes": e_shapes,
                 "yaxis": dict(range=[0, e_max]),
+                #'template': 'simple_white'
             }
 
             lines = [
-                go.Scatter(x=y_df["y_true"].index, y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true"),
-                go.Scatter(
-                    x=y_df["y_forecast"].index, y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast"
-                ),
-                go.Scatter(x=y_df["y_recon"].index, y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon"),
+                go.Scatter(x=y_df["y_true"].index, y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true", line=dict(width=2,)),
+                go.Scatter(x=y_df["y_forecast"].index, y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast", line=dict(width=2,)),
+                go.Scatter(x=y_df["y_recon"].index, y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon", line=dict(width=2,)),
             ]
 
             fig = go.Figure(data=lines, layout=y_layout)
             py.offline.iplot(fig)
 
-            if plot_errors:
-                e_df.iplot(kind="scatter", layout=e_layout, colors=["red", "black"], dash=[None, "dash"])
+            e_lines = [
+                go.Scatter(x=e_df['e_s'].index, y=e_df["e_s"], name="Error", line=dict(color='red', width=1,)),
+                go.Scatter(x=e_df['threshold'].index, y=e_df["threshold"], name="Threshold", line=dict(color='black', width=1, dash='dash')),
+            ]
+
+            e_fig = go.Figure(data=e_lines, layout=e_layout)
+            py.offline.iplot(e_fig)
+            #py.offline.iplot(e_fig, kind='scatter', colors=["red", "black"], dash=[None, "dash"])
+
+            #if plot_errors:
+             #   e_df.iplot(kind="scatter", layout=e_layout, colors=["red", "black"], dash=[None, "dash"])
 
     def plot_all_channels(self, start=None, end=None, type="test"):
         if type == "train":
