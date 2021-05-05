@@ -1,0 +1,12 @@
+{
+  "pred_args": {
+    "target_dims": null,
+    "level": 0.99,
+    "q": 0.001,
+    "use_mov_av": false,
+    "gamma": 1,
+    "save_path": "output/TELENOR/J3010/04052021_173626"
+  },
+  "pot_result": null,
+  "bf_result": null
+}

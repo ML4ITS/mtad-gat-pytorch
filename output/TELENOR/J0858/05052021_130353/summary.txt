@@ -1,0 +1,12 @@
+{
+  "pred_args": {
+    "target_dims": null,
+    "level": 0.99,
+    "q": 0.001,
+    "use_mov_av": false,
+    "gamma": 1,
+    "save_path": "output/TELENOR/J0858/05052021_130353"
+  },
+  "pot_result": null,
+  "bf_result": null
+}
