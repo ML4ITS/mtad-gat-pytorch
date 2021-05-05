@@ -5,6 +5,7 @@ import json
 import plotly as py
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 import cufflinks as cf
 
 from eval_methods import find_epsilon
@@ -99,7 +100,7 @@ class Plotter:
         except Exception:
             print('\tNo results because labels are not available')
 
-    def create_shapes(self, ranges, sequence_type, _min, _max, plot_values):
+    def create_shapes(self, ranges, sequence_type, _min, _max, plot_values, xref=None, yref=None):
         """
         Create shapes for regions to highlight in plotly vizzes (true and
         predicted anomaly sequences). Will plot labeled anomalous ranges if
@@ -119,10 +120,13 @@ class Plotter:
                 (dict) shape specifications for plotly
         """
 
-        if not _max:
+        if _max is None:
             _max = max(plot_values["errors"])
 
-        color = "red" if sequence_type == "true" else "blue"
+        if sequence_type is None:
+            color = 'red'
+        else:
+            color = "red" if sequence_type == "true" else "blue"
         shapes = []
 
         for r in ranges:
@@ -138,6 +142,10 @@ class Plotter:
                     "width": 0,
                 },
             }
+            if xref is not None:
+                shape['xref'] = xref
+                shape['yref'] = yref
+
             shapes.append(shape)
 
         return shapes
@@ -206,11 +214,15 @@ class Plotter:
             # e_max += 0.5 * e_max
 
             # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
-            y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values)
-            e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values)
+            if self.labels_available:
+                y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values)
+                e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values)
 
-            y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values)
-            e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values)
+                y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values)
+                e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values)
+            else:
+                y_shapes = self.create_shapes(anomaly_sequences["pred"], None, y_min, y_max, plot_values)
+                e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values)
 
             y_df = pd.DataFrame(
                 {
@@ -284,6 +296,48 @@ class Plotter:
         colors = ["gray", "gray", "gray", "r"] * (num_cols // 4) + ["b", "g"]
         data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.1), style=colors)
         plt.show()
+
+    def plot_anomaly_segments(self, start=None, end=None, type="test"):
+        if type == "train":
+            data_copy = self.train_data.copy()
+        elif type == "test":
+            data_copy = self.test_data.copy()
+
+        fig = make_subplots(rows=len(self.pred_cols), cols=1, shared_xaxes=True)
+        shapes = []
+        annotations = []
+        for i in range(len(self.pred_cols)):
+            values = data_copy[f'True_{i}'].values
+
+            channel_error_threshold = self.feature_error_thresholds[i]
+            channel_anomaly_scores = data_copy[f"A_Score_{i}"].values
+            anomaly_preds = (channel_anomaly_scores > channel_error_threshold).astype(int)
+            anomaly_sequences = self.get_anomaly_sequences(anomaly_preds)
+
+            y_min = values.min()
+            y_max = values.max()
+            y_min -= 0.1 * y_max
+            y_max += 0.5 * y_max
+
+            j = i+1
+            xref = f'x{j}' if i > 0 else 'x'
+            yref = f'y{j}' if i > 0 else 'y'
+            anomaly_shape = self.create_shapes(anomaly_sequences, None, y_min, y_max, None, xref=xref, yref=yref)
+            shapes.extend(anomaly_shape)
+
+            fig.append_trace(
+                go.Scatter(y=values, line=dict(color='gray', width=1)),
+                row=i+1, col=1
+            )
+
+            annotations.append(dict(
+                xref=xref, yref=yref, text=self.pred_cols[i],
+                showarrow=False, #align='right'
+            ))
+
+        fig.update_layout(height=4000, width=1500, shapes=shapes, template='simple_white', annotations=annotations)
+        fig.update_yaxes(showticklabels=False)
+        py.offline.iplot(fig)
 
     def plot_errors(self, channel, type="test"):
         if type == "train":

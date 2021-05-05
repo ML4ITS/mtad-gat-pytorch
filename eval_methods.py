@@ -213,4 +213,6 @@ def find_epsilon(errors):
                 sd_threshold = z
                 best_epsilon = epsilon
 
+    if best_epsilon is None:
+        best_epsilon = np.max(e_s)
     return best_epsilon
