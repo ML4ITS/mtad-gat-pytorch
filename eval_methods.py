@@ -1,5 +1,5 @@
 import numpy as np
-
+import more_itertools as mit
 from spot import SPOT, dSPOT
 
 
@@ -173,3 +173,44 @@ def calc_seq(score, label, threshold):
     """
     predict, latency = adjust_predicts(score, label, threshold, calc_latency=True)
     return calc_point2point(predict, label), latency
+
+
+def find_epsilon(errors):
+    e_s = errors
+
+    sd_threshold = None
+    best_epsilon = None
+
+    max_score = -10000000
+    mean_e_s = np.mean(e_s)
+    sd_e_s = np.std(e_s)
+
+    for z in np.arange(2.5, 12, 0.5):
+        epsilon = mean_e_s + sd_e_s * z
+        pruned_e_s = e_s[e_s < epsilon]
+
+        i_anom = np.argwhere(e_s >= epsilon).reshape(-1, )
+        buffer = np.arange(1, 50)
+        i_anom = np.sort(np.concatenate((i_anom,
+                                         np.array([i + buffer for i in i_anom])
+                                         .flatten(),
+                                         np.array([i - buffer for i in i_anom])
+                                         .flatten())))
+        i_anom = i_anom[(i_anom < len(e_s)) & (i_anom >= 0)]
+        i_anom = np.sort(np.unique(i_anom))
+
+        if len(i_anom) > 0:
+            groups = [list(group) for group in mit.consecutive_groups(i_anom)]
+            E_seq = [(g[0], g[-1]) for g in groups if not g[0] == g[-1]]
+
+            mean_perc_decrease = (mean_e_s - np.mean(pruned_e_s)) / mean_e_s
+            sd_perc_decrease = (sd_e_s - np.std(pruned_e_s)) / sd_e_s
+            score = (mean_perc_decrease + sd_perc_decrease)  # / (len(E_seq) ** 2 + len(i_anom))
+
+            # sanity checks / guardrails
+            if score >= max_score and len(i_anom) < (len(e_s) * 0.5):
+                max_score = score
+                sd_threshold = z
+                best_epsilon = epsilon
+
+    return best_epsilon
