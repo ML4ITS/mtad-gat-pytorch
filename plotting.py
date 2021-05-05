@@ -155,7 +155,7 @@ class Plotter:
 
         if plot_train:
             train_copy = self.train_data.copy()
-            plot_data.insert(0, train_copy)
+            plot_data.append(train_copy)
 
         for nr, data_copy in enumerate(plot_data):
             if channel < 0 or f"Pred_{channel}" not in data_copy.columns:
@@ -222,7 +222,7 @@ class Plotter:
                     ),
                 }
             )
-            data_type = 'Train data' if nr == 0 else 'Test data'
+            data_type = 'Train data' if nr == 1 else 'Test data'
             y_layout = {
                 "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "shapes": y_shapes,
