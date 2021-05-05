@@ -38,7 +38,6 @@ class Plotter:
                 else:
                     self.pred_cols = input_cols[target_dims]
 
-
     def _load_results(self):
         print(f"Loading results of {self.result_path}")
         anomaly_preds = pd.read_pickle(f"{self.result_path}/anomaly_preds.pkl")
@@ -146,111 +145,110 @@ class Plotter:
 
         return a_seqs
 
-    def plot_channel(self, channel, type="test", show_tot_err=False, start=None, end=None, plot_errors=True):
+    def plot_channel(self, channel, plot_train=False, type="test", show_tot_err=False, start=None, end=None, plot_errors=True):
         """Plot forecasting, reconstruction, true value of a specific channel (feature),
         along with the anomaly score for that channel
         """
 
-        if type == "train":
-            data_copy = self.train_data.copy()
-        elif type == "test":
-            data_copy = self.test_data.copy()
+        test_copy = self.test_data.copy()
+        plot_data = [test_copy]
 
-        if channel < 0 or f"Pred_{channel}" not in data_copy.columns:
-            raise Exception(f"Channel {channel} not present in data.")
+        if plot_train:
+            train_copy = self.train_data.copy()
+            plot_data.insert(0, train_copy)
 
-        if start is not None and end is not None:
-            assert start < end
-        if start is not None:
-            data_copy = data_copy.iloc[start:, :]
-        if end is not None:
-            start = 0 if start is None else start
-            data_copy = data_copy.iloc[: end - start, :]
+        for nr, data_copy in enumerate(plot_data):
+            if channel < 0 or f"Pred_{channel}" not in data_copy.columns:
+                raise Exception(f"Channel {channel} not present in data.")
 
-        i = channel
-        plot_values = {
-            "y_forecast": data_copy[f"Pred_{i}"].values,
-            "y_recon": data_copy[f"Recon_{i}"].values,
-            "y_true": data_copy[f"True_{i}"].values,
-            # 'errors': output_copy[f'A_Score_{i}'].values,
-            "errors": data_copy[f"Tot_A_Score"].values if show_tot_err else data_copy[f"A_Score_{i}"].values,
-            "threshold": data_copy["threshold"].values,
-        }
+            if start is not None and end is not None:
+                assert start < end
+            if start is not None:
+                data_copy = data_copy.iloc[start:, :]
+            if end is not None:
+                start = 0 if start is None else start
+                data_copy = data_copy.iloc[: end - start, :]
 
-        anomaly_sequences = {
-            "pred": self.get_anomaly_sequences(data_copy["Pred_Anomaly"].values),
-            "true": self.get_anomaly_sequences(data_copy["True_Anomaly"].values),
-        }
-
-        #y_min = -1
-        #y_max = 1
-        y_min = plot_values["y_true"].min()
-        y_max = plot_values["y_true"].max()
-        e_max = plot_values["errors"].max()
-
-        y_min -= 0.3 * y_max
-        y_max += 0.5 * y_max
-        e_max += 0.5 * e_max
-
-
-        # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
-        y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values)
-        e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values)
-
-        y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values)
-        e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values)
-
-        y_df = pd.DataFrame(
-            {
-                "y_forecast": plot_values["y_forecast"].reshape(
-                    -1,
-                ),
-                "y_recon": plot_values["y_recon"].reshape(
-                    -1,
-                ),
-                "y_true": plot_values["y_true"].reshape(
-                    -1,
-                ),
+            i = channel
+            plot_values = {
+                "y_forecast": data_copy[f"Pred_{i}"].values,
+                "y_recon": data_copy[f"Recon_{i}"].values,
+                "y_true": data_copy[f"True_{i}"].values,
+                "errors": data_copy[f"Tot_A_Score"].values if show_tot_err else data_copy[f"A_Score_{i}"].values,
+                "threshold": data_copy["threshold"].values,
             }
-        )
 
-        e_df = pd.DataFrame(
-            {
-                "e_s": plot_values["errors"].reshape(
-                    -1,
-                ),
-                "threshold": plot_values["threshold"].reshape(
-                    -1,
-                ),
+            anomaly_sequences = {
+                "pred": self.get_anomaly_sequences(data_copy["Pred_Anomaly"].values),
+                "true": self.get_anomaly_sequences(data_copy["True_Anomaly"].values),
             }
-        )
 
-        y_layout = {
-            "title": f"Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
-            "shapes": y_shapes,
-            "yaxis": dict(range=[y_min, y_max]),
-            "showlegend": True,
-        }
+            y_min = plot_values["y_true"].min()
+            y_max = plot_values["y_true"].max()
+            e_max = 2 #plot_values["errors"].max()
 
-        e_layout = {
-            "title": "Total error for all channels" if show_tot_err else f"Error for channel: {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
-            "shapes": e_shapes,
-            "yaxis": dict(range=[0, e_max]),
-        }
+            y_min -= 0.3 * y_max
+            y_max += 0.5 * y_max
+            # e_max += 0.5 * e_max
 
-        lines = [
-            go.Scatter(x=y_df["y_true"].index, y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true"),
-            go.Scatter(
-                x=y_df["y_forecast"].index, y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast"
-            ),
-            go.Scatter(x=y_df["y_recon"].index, y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon"),
-        ]
+            # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
+            y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values)
+            e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values)
 
-        fig = go.Figure(data=lines, layout=y_layout)
-        py.offline.iplot(fig)
+            y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values)
+            e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values)
 
-        if plot_errors:
-            e_df.iplot(kind="scatter", layout=e_layout, colors=["red", "black"], dash=[None, "dash"])
+            y_df = pd.DataFrame(
+                {
+                    "y_forecast": plot_values["y_forecast"].reshape(
+                        -1,
+                    ),
+                    "y_recon": plot_values["y_recon"].reshape(
+                        -1,
+                    ),
+                    "y_true": plot_values["y_true"].reshape(
+                        -1,
+                    ),
+                }
+            )
+
+            e_df = pd.DataFrame(
+                {
+                    "e_s": plot_values["errors"].reshape(
+                        -1,
+                    ),
+                    "threshold": plot_values["threshold"].reshape(
+                        -1,
+                    ),
+                }
+            )
+            data_type = 'Train data' if nr == 0 else 'Test data'
+            y_layout = {
+                "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
+                "shapes": y_shapes,
+                "yaxis": dict(range=[y_min, y_max]),
+                "showlegend": True,
+            }
+
+            e_layout = {
+                "title": f"{data_type} | Total error for all channels" if show_tot_err else f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
+                "shapes": e_shapes,
+                "yaxis": dict(range=[0, e_max]),
+            }
+
+            lines = [
+                go.Scatter(x=y_df["y_true"].index, y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true"),
+                go.Scatter(
+                    x=y_df["y_forecast"].index, y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast"
+                ),
+                go.Scatter(x=y_df["y_recon"].index, y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon"),
+            ]
+
+            fig = go.Figure(data=lines, layout=y_layout)
+            py.offline.iplot(fig)
+
+            if plot_errors:
+                e_df.iplot(kind="scatter", layout=e_layout, colors=["red", "black"], dash=[None, "dash"])
 
     def plot_all_channels(self, start=None, end=None, type="test"):
         if type == "train":
