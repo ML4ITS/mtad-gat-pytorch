@@ -245,6 +245,8 @@ class Plotter:
                 "shapes": y_shapes,
                 "yaxis": dict(range=[y_min, y_max]),
                 "showlegend": True,
+                'height': 400,
+                'width': 1100,
                 #'template': 'simple_white'
             }
 
@@ -252,6 +254,8 @@ class Plotter:
                 "title": f"{data_type} | Total error for all channels" if show_tot_err else f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
                 "shapes": e_shapes,
                 "yaxis": dict(range=[0, e_max]),
+                'height': 400,
+                'width': 1100,
                 #'template': 'simple_white'
             }
 
@@ -297,7 +301,7 @@ class Plotter:
         data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.1), style=colors)
         plt.show()
 
-    def plot_anomaly_segments(self, start=None, end=None, type="test"):
+    def plot_anomaly_segments(self, start=None, end=None, type="test", num_aligned_segments=None):
         if type == "train":
             data_copy = self.train_data.copy()
         elif type == "test":
@@ -317,9 +321,9 @@ class Plotter:
             y_min = values.min()
             y_max = values.max()
             y_min -= 0.1 * y_max
-            y_max += 0.5 * y_max
+            y_max += 2 #0.5 * y_max
 
-            j = i+1
+            j = i + 1
             xref = f'x{j}' if i > 0 else 'x'
             yref = f'y{j}' if i > 0 else 'y'
             anomaly_shape = self.create_shapes(anomaly_sequences, None, y_min, y_max, None, xref=xref, yref=yref)
@@ -335,7 +339,56 @@ class Plotter:
                 showarrow=False, #align='right'
             ))
 
-        fig.update_layout(height=4000, width=1500, shapes=shapes, template='simple_white', annotations=annotations)
+        # colors = ['aliceblue', 'aqua', 'aquamarine', 'azure', 'bisque', 'black', 'blue',
+        #         'blueviolet', 'brown', 'burlywood', 'cadetblue',
+        #         'chartreuse', 'chocolate', 'coral', 'cornflowerblue',
+        #         'cornsilk', 'crimson', 'cyan', 'darkblue', 'darkcyan',
+        #         'darkgoldenrod', 'darkgray', 'darkgrey', 'darkgreen',
+        #         'darkkhaki', 'darkmagenta', 'darkolivegreen', 'darkorange',
+        #         'darkorchid', 'darkred', 'darksalmon', 'darkseagreen',
+        #         'darkslateblue', 'darkslategray', 'darkslategrey',
+        #         'darkturquoise', 'darkviolet', 'deeppink', 'deepskyblue',
+        #         'dimgray', 'dimgrey', 'dodgerblue', 'firebrick',
+        #         'floralwhite', 'forestgreen', 'fuchsia', 'gainsboro',
+        #         'ghostwhite', 'gold', 'goldenrod', 'gray', 'green',
+        #         'greenyellow', 'honeydew', 'hotpink', 'indianred', 'indigo']
+        # colors = ['blue', 'aquamarine', 'green', 'aliceblue', 'black', 'brown', 'orange', 'aqua',  'darkturquoise']
+        colors = ['blue', 'green', 'aquamarine', 'black', 'orange', 'brown', 'aqua', 'hotpink']
+        taken_shapes_i = []
+        keep_segments_i = []
+        corr_segments_count = 0
+        for nr, i in enumerate(range(len(shapes))):
+            corr_shapes = [i]
+            shape = shapes[i]
+            shape['opacity'] = 0.3
+            shape_x = shape['x0']
+
+            for j in range(i+1, len(shapes)):
+                if j not in taken_shapes_i and shapes[j]['x0'] == shape_x:
+                    corr_shapes.append(j)
+
+            if num_aligned_segments is not None:
+                if len(num_aligned_segments) == 2:
+                    num = int(num_aligned_segments[1])
+                    keep_segment = len(corr_shapes) >= num
+                else:
+                    num = int(num_aligned_segments)
+                    keep_segment = len(corr_shapes) == num
+
+                if keep_segment:
+                    keep_segments_i.extend(corr_shapes)
+                    taken_shapes_i.extend(corr_shapes)
+                    if len(corr_shapes) != 1:
+                        for shape_i in corr_shapes:
+                            shapes[shape_i]['fillcolor'] = colors[corr_segments_count % len(colors)]
+                        corr_segments_count += 1
+
+        if num_aligned_segments is not None:
+            shapes = np.array(shapes)
+            shapes = shapes[keep_segments_i].tolist()
+
+        fig.update_layout(height=2000, width=1200, shapes=shapes, template='simple_white',
+                          annotations=annotations, showlegend=False)
         fig.update_yaxes(showticklabels=False)
         py.offline.iplot(fig)
 

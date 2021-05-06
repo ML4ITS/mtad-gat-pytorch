@@ -205,7 +205,7 @@ def find_epsilon(errors):
 
             mean_perc_decrease = (mean_e_s - np.mean(pruned_e_s)) / mean_e_s
             sd_perc_decrease = (sd_e_s - np.std(pruned_e_s)) / sd_e_s
-            score = (mean_perc_decrease + sd_perc_decrease)  # / (len(E_seq) ** 2 + len(i_anom))
+            score = (mean_perc_decrease + sd_perc_decrease)  # / (len(E_seq) ** 2 + len(i_anom)**2)
 
             # sanity checks / guardrails
             if score >= max_score and len(i_anom) < (len(e_s) * 0.5):
