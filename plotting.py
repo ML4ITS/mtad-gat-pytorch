@@ -389,8 +389,8 @@ class Plotter:
 
         fig.update_layout(height=2000, width=1200, shapes=shapes, template='simple_white',
                           annotations=annotations, showlegend=False)
-        fig.update_yaxes(ticks="", showticklabels=False)
-        fig.update_xaxes(ticks="", showticklabels=False)
+        fig.update_yaxes(ticks="", showticklabels=False, showline=True, mirror=True)
+        fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         py.offline.iplot(fig)
 
     def plot_errors(self, channel, type="test"):
