@@ -368,8 +368,8 @@ class Plotter:
                     corr_shapes.append(j)
 
             if num_aligned_segments is not None:
-                if len(num_aligned_segments) == 2:
-                    num = int(num_aligned_segments[1])
+                if num_aligned_segments[0] == '>':
+                    num = int(num_aligned_segments[1:])
                     keep_segment = len(corr_shapes) >= num
                 else:
                     num = int(num_aligned_segments)
