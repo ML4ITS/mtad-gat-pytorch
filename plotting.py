@@ -431,7 +431,8 @@ class Plotter:
                           annotations=annotations, showlegend=False,
                           xaxis_range=[self.start_datetime if not is_test else self.test_start,
                                        self.train_end if not is_test else self.end_datetime])
-        fig.update_yaxes(showticklabels=False)
+        fig.update_yaxes(ticks="", showticklabels=False, showline=True, mirror=True)
+        fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         py.offline.iplot(fig)
 
     def plot_errors(self, channel, type="test"):
