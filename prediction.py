@@ -83,9 +83,9 @@ class Predictor:
                 df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) \
                                     + self.gamma * np.sqrt((recons[:, i] - actual[:, i]) ** 2)
 
-            df_path = f"{self.save_path}/{save_name}.pkl"
-            print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
-            df.to_pickle(f"{df_path}")
+            # df_path = f"{self.save_path}/{save_name}.pkl"
+            # print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
+            # df.to_pickle(f"{df_path}")
 
         anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
 
@@ -139,8 +139,7 @@ class Predictor:
 
             train_pred_df[f'A_Pred_{i}'] = train_feature_anom_preds
             test_pred_df[f'A_Pred_{i}'] = test_feature_anom_preds
-
-        print(f"Saving output to {self.save_path}/")
+        print(f"Saving forecasts, recons, anomaly scores and predictions to {self.save_path}/<train/test>_output.pkl")
         train_pred_df.to_pickle(f"{self.save_path}/train_output.pkl")
         test_pred_df.to_pickle(f"{self.save_path}/test_output.pkl")
 
