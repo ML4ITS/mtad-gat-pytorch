@@ -338,7 +338,7 @@ class Plotter:
         data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.1), style=colors)
         plt.show()
 
-    def plot_anomaly_segments(self, start=None, end=None, type="test", num_aligned_segments=None):
+    def plot_anomaly_segments(self, type="test", num_aligned_segments=None):
         is_test = True
         if type == "train":
             data_copy = self.train_data.copy()
@@ -358,10 +358,10 @@ class Plotter:
             anomaly_preds = (channel_anomaly_scores > channel_error_threshold).astype(int)
             anomaly_sequences = self.get_anomaly_sequences(anomaly_preds)
 
-            y_min = values.min()
-            y_max = values.max()
-            y_min -= 0.1 * y_max
-            y_max += 2 #0.5 * y_max
+            #y_min = values.min()
+            #y_max = values.max()
+            y_min = -0.1
+            y_max = 2 #0.5 * y_max
 
             j = i + 1
             xref = f'x{j}' if i > 0 else 'x'
@@ -370,13 +370,15 @@ class Plotter:
             shapes.extend(anomaly_shape)
 
             fig.append_trace(
-                go.Scatter(x=timestamps, y=values, line=dict(color='gray', width=1)),
+                go.Scatter(x=timestamps, y=values, line=dict(color='black', width=1)),
                 row=i+1, col=1
             )
+            fig.update_yaxes(range=[-0.1, 1.5], row=i+1, col=1)
 
             annotations.append(dict(
                 xref=xref, yref=yref, text=self.pred_cols[i],
-                showarrow=False, #align='right'
+                font=dict(size=10),
+                showarrow=False, align='right', valign='top'
             ))
 
         # colors = ['aliceblue', 'aqua', 'aquamarine', 'azure', 'bisque', 'black', 'blue',
