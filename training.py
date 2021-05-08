@@ -169,7 +169,7 @@ class Trainer:
                     f"total_loss = {total_epoch_loss:.5f}"
 
                 if val_loader is not None:
-                    s = f" ---- val_forecast_loss = {forecast_val_loss:.5f}, "\
+                    s += f" ---- val_forecast_loss = {forecast_val_loss:.5f}, "\
                     f"val_recon_loss = {recon_val_loss:.5f}, "\
                     f"val_total_loss =  {total_val_loss:.5f}  "\
 
