@@ -5,6 +5,7 @@ import json
 import plotly as py
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
+import plotly.express as px
 from plotly.subplots import make_subplots
 import cufflinks as cf
 
@@ -28,11 +29,17 @@ class Plotter:
         self.labels_available = False
         self.pred_cols = None
         self.feature_error_thresholds = []
+        self.start_datetime = None
+        self.end_datetime = None
+        self.lookback = None
 
         if "TELENOR" in result_path:
             path ='../datasets/telenor/site_data/metadata.txt'
             with open(path) as f:
-                input_cols = np.array(json.load(f)["columns"][2:])
+                metadata = json.load(f)
+                input_cols = np.array(metadata["columns"][2:])
+                self.start_datetime = metadata['start']
+                self.end_datetime = metadata['end']
 
             result_summary_path = f'{result_path}/summary.txt'
             with open(result_summary_path) as f:
@@ -41,6 +48,24 @@ class Plotter:
                     self.pred_cols = input_cols
                 else:
                     self.pred_cols = input_cols[target_dims]
+
+            config_path = f'{result_path}/config.txt'
+            with open(config_path) as f:
+               self.lookback = json.load(f)['lookback']
+
+        # Update data with datetimes
+        num_train_points = len(self.train_data) if self.train_data is not None else None
+        num_test_points = len(self.test_data) if self.test_data is not None else None
+        all_timestamps = pd.date_range(self.start_datetime, self.end_datetime, freq="H").tolist()
+        train_timestamps = all_timestamps[self.lookback:self.lookback+num_train_points]
+        test_timestamps = all_timestamps[-num_test_points:]
+
+        self.train_timestamps = train_timestamps
+        self.test_timestamps = test_timestamps
+        self.train_data['timestamp'] = train_timestamps
+        self.test_data['timestamp'] = test_timestamps
+        self.train_end = train_timestamps[-1]
+        self.test_start = test_timestamps[0]
 
         # Make column-wise anomaly predictions (based on column-wise thresholding)
         for i in range(len(self.pred_cols)):
@@ -100,7 +125,7 @@ class Plotter:
         except Exception:
             print('\tNo results because labels are not available')
 
-    def create_shapes(self, ranges, sequence_type, _min, _max, plot_values, xref=None, yref=None):
+    def create_shapes(self, ranges, sequence_type, _min, _max, plot_values, is_test=True, xref=None, yref=None):
         """
         Create shapes for regions to highlight in plotly vizzes (true and
         predicted anomaly sequences). Will plot labeled anomalous ranges if
@@ -130,11 +155,14 @@ class Plotter:
         shapes = []
 
         for r in ranges:
+            w = 5
+            x0 = self.test_timestamps[r[0] - w] if is_test else self.train_timestamps[r[0] - w]
+            x1 = self.test_timestamps[r[0] + w] if is_test else self.train_timestamps[r[0] + w]
             shape = {
                 "type": "rect",
-                "x0": r[0] - 5,  # self.config.l_s,
+                "x0": x0,  # self.config.l_s,
                 "y0": _min,
-                "x1": r[1] + 5,  # self.config.l_s,
+                "x1": x1,  # self.config.l_s,
                 "y1": _max,
                 "fillcolor": color,
                 "opacity": 0.08,
@@ -162,7 +190,7 @@ class Plotter:
 
         return a_seqs
 
-    def plot_channel(self, channel, plot_train=False, type="test", show_tot_err=False, start=None, end=None, plot_errors=True):
+    def plot_channel(self, channel, plot_train=False, show_tot_err=False, start=None, end=None, plot_errors=True):
         """Plot forecasting, reconstruction, true value of a specific channel (feature),
         along with the anomaly score for that channel
         """
@@ -175,6 +203,8 @@ class Plotter:
             plot_data.append(train_copy)
 
         for nr, data_copy in enumerate(plot_data):
+            is_test = nr == 0
+
             if channel < 0 or f"Pred_{channel}" not in data_copy.columns:
                 raise Exception(f"Channel {channel} not present in data.")
 
@@ -188,6 +218,7 @@ class Plotter:
 
             i = channel
             plot_values = {
+                "timestamp": data_copy['timestamp'].values,
                 "y_forecast": data_copy[f"Pred_{i}"].values,
                 "y_recon": data_copy[f"Recon_{i}"].values,
                 "y_true": data_copy[f"True_{i}"].values,
@@ -215,18 +246,19 @@ class Plotter:
 
             # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
             if self.labels_available:
-                y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values)
-                e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values)
+                y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
+                e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
 
-                y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values)
-                e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values)
+                y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
+                e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
             else:
-                y_shapes = self.create_shapes(anomaly_sequences["pred"], None, y_min, y_max, plot_values)
-                e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values)
+                y_shapes = self.create_shapes(anomaly_sequences["pred"], None, y_min, y_max, plot_values, is_test=is_test)
+                e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values, is_test=is_test)
 
             y_df = pd.DataFrame(
                 {
-                    "y_forecast": plot_values["y_forecast"].reshape(-1, ),
+                    "timestamp": plot_values["timestamp"].reshape(-1, ),
+                    "y_forecast": plot_values["y_forecast"].reshape(-1,),
                     "y_recon": plot_values["y_recon"].reshape(-1,),
                     "y_true": plot_values["y_true"].reshape(-1,),
                 }
@@ -234,12 +266,13 @@ class Plotter:
 
             e_df = pd.DataFrame(
                 {
+                    "timestamp": plot_values['timestamp'],
                     "e_s": plot_values["errors"].reshape(-1,),
-                    "threshold": self.feature_error_thresholds[i] #plot_values["threshold"].reshape(-1,),
+                    "threshold": self.feature_error_thresholds[i],
                 }
             )
 
-            data_type = 'Train data' if nr == 1 else 'Test data'
+            data_type = 'Test data' if is_test else 'Train data'
             y_layout = {
                 "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "shapes": y_shapes,
@@ -247,6 +280,8 @@ class Plotter:
                 "showlegend": True,
                 'height': 400,
                 'width': 1100,
+                'xaxis_range': [self.start_datetime if not is_test else self.test_start,
+                                self.train_end if not is_test else self.end_datetime]
                 #'template': 'simple_white'
             }
 
@@ -256,21 +291,23 @@ class Plotter:
                 "yaxis": dict(range=[0, e_max]),
                 'height': 400,
                 'width': 1100,
+                'xaxis_range': [self.start_datetime if not is_test else self.test_start,
+                                self.train_end if not is_test else self.end_datetime]
                 #'template': 'simple_white'
             }
 
             lines = [
-                go.Scatter(x=y_df["y_true"].index, y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true", line=dict(width=2,)),
-                go.Scatter(x=y_df["y_forecast"].index, y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast", line=dict(width=2,)),
-                go.Scatter(x=y_df["y_recon"].index, y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon", line=dict(width=2,)),
+                go.Scatter(x=y_df['timestamp'], y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true", line=dict(width=2,)),
+                go.Scatter(x=y_df['timestamp'], y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast", line=dict(width=2,)),
+                go.Scatter(x=y_df['timestamp'], y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon", line=dict(width=2,)),
             ]
 
             fig = go.Figure(data=lines, layout=y_layout)
             py.offline.iplot(fig)
 
             e_lines = [
-                go.Scatter(x=e_df['e_s'].index, y=e_df["e_s"], name="Error", line=dict(color='red', width=1,)),
-                go.Scatter(x=e_df['threshold'].index, y=e_df["threshold"], name="Threshold", line=dict(color='black', width=1, dash='dash')),
+                go.Scatter(x=e_df['timestamp'], y=e_df["e_s"], name="Error", line=dict(color='red', width=1,)),
+                go.Scatter(x=e_df['timestamp'], y=e_df["threshold"], name="Threshold", line=dict(color='black', width=1, dash='dash')),
             ]
 
             e_fig = go.Figure(data=e_lines, layout=e_layout)
@@ -302,12 +339,15 @@ class Plotter:
         plt.show()
 
     def plot_anomaly_segments(self, start=None, end=None, type="test", num_aligned_segments=None):
+        is_test = True
         if type == "train":
             data_copy = self.train_data.copy()
+            is_test = False
         elif type == "test":
             data_copy = self.test_data.copy()
 
         fig = make_subplots(rows=len(self.pred_cols), cols=1, shared_xaxes=True)
+        timestamps = self.test_timestamps if is_test else self.train_timestamps
         shapes = []
         annotations = []
         for i in range(len(self.pred_cols)):
@@ -326,11 +366,11 @@ class Plotter:
             j = i + 1
             xref = f'x{j}' if i > 0 else 'x'
             yref = f'y{j}' if i > 0 else 'y'
-            anomaly_shape = self.create_shapes(anomaly_sequences, None, y_min, y_max, None, xref=xref, yref=yref)
+            anomaly_shape = self.create_shapes(anomaly_sequences, None, y_min, y_max, None, xref=xref, yref=yref, is_test=is_test)
             shapes.extend(anomaly_shape)
 
             fig.append_trace(
-                go.Scatter(y=values, line=dict(color='gray', width=1)),
+                go.Scatter(x=timestamps, y=values, line=dict(color='gray', width=1)),
                 row=i+1, col=1
             )
 
@@ -353,7 +393,7 @@ class Plotter:
         #         'ghostwhite', 'gold', 'goldenrod', 'gray', 'green',
         #         'greenyellow', 'honeydew', 'hotpink', 'indianred', 'indigo']
         # colors = ['blue', 'aquamarine', 'green', 'aliceblue', 'black', 'brown', 'orange', 'aqua',  'darkturquoise']
-        colors = ['blue', 'green', 'aquamarine', 'black', 'orange', 'brown', 'aqua', 'hotpink']
+        colors = ['blue', 'green', 'red', 'black', 'orange', 'brown', 'aqua', 'hotpink']
         taken_shapes_i = []
         keep_segments_i = []
         corr_segments_count = 0
@@ -388,9 +428,10 @@ class Plotter:
             shapes = shapes[keep_segments_i].tolist()
 
         fig.update_layout(height=2000, width=1200, shapes=shapes, template='simple_white',
-                          annotations=annotations, showlegend=False)
-        fig.update_yaxes(ticks="", showticklabels=False, showline=True, mirror=True)
-        fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
+                          annotations=annotations, showlegend=False,
+                          xaxis_range=[self.start_datetime if not is_test else self.test_start,
+                                       self.train_end if not is_test else self.end_datetime])
+        fig.update_yaxes(showticklabels=False)
         py.offline.iplot(fig)
 
     def plot_errors(self, channel, type="test"):
@@ -413,3 +454,4 @@ class Plotter:
         axs[0].set_ylim([0, 2 * data_copy["threshold"].mean()])
         fig.legend(prop={"size": 20})
         plt.show()
+
