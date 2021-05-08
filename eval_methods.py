@@ -20,11 +20,11 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
         predict = score > threshold
         return predict, None
 
-    if len(score) != len(label):
-        raise ValueError("score and label must have the same length")
-    score = np.asarray(score)
-    label = np.asarray(label)
     if pred is None:
+        if len(score) != len(label):
+            raise ValueError("score and label must have the same length")
+        score = np.asarray(score)
+        label = np.asarray(label)
         predict = score > threshold
     else:
         predict = pred
@@ -36,7 +36,7 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
 
     # Added advance in case model predicts anomaly 'in advance' within a small window
     # Advance should be 0 or small
-    for i in range(len(score)):
+    for i in range(len(predict)):
         if any(actual[max(i - advance, 0) : i + 1]) and predict[i] and not anomaly_state:
             anomaly_state = True
             anomaly_count += 1
