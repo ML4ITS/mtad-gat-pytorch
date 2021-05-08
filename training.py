@@ -146,7 +146,7 @@ class Trainer:
             self.losses["train_total"].append(total_epoch_loss)
 
             # Evaluate on validation set
-            forecast_val_loss, recon_val_loss, total_val_loss = None, None, None
+            forecast_val_loss, recon_val_loss, total_val_loss = 'NA', 'NA', 'NA'
             if val_loader is not None:
                 forecast_val_loss, recon_val_loss, total_val_loss = self.evaluate(val_loader)
                 self.losses["val_forecast"].append(forecast_val_loss)
@@ -162,16 +162,17 @@ class Trainer:
             self.epoch_times.append(epoch_time)
 
             if epoch % self.print_every == 0:
-                print(
-                    f"[Epoch {epoch + 1}] "
-                    f"forecast_loss = {forecast_epoch_loss:.5f}, "
-                    f"recon_loss = {recon_epoch_loss:.5f}, "
+                s = f"[Epoch {epoch + 1}] "\
+                    f"forecast_loss = {forecast_epoch_loss:.5f}, "\
+                    f"recon_loss = {recon_epoch_loss:.5f}, "\
                     f"total_loss = {total_epoch_loss:.5f} ---- "
-                    f"val_forecast_loss = {forecast_val_loss:.5f}, "
-                    f"val_recon_loss = {recon_val_loss:.5f}, "
-                    f"val_total_loss =  {total_val_loss:.5f}  "
+
+                if val_loader is not None:
+                    s = f"val_forecast_loss = {forecast_val_loss:.5f}, "\
+                    f"val_recon_loss = {recon_val_loss:.5f}, "\
+                    f"val_total_loss =  {total_val_loss:.5f}  "\
                     f"[{epoch_time:.1f}s]"
-                )
+                print(s)
 
         # self.save(f"{self.id}-last_model")
         train_time = int(time.time() - train_start)
@@ -244,4 +245,5 @@ class Trainer:
 
     def write_loss(self, epoch):
         for key, value in self.losses.items():
-            self.writer.add_scalar(key, value[-1], epoch)
+            if len(value) != 0:
+                self.writer.add_scalar(key, value[-1], epoch)
