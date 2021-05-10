@@ -158,7 +158,6 @@ class Trainer:
 
             self.write_loss(epoch)
 
-
             epoch_time = time.time() - epoch_start
             self.epoch_times.append(epoch_time)
 
@@ -171,16 +170,16 @@ class Trainer:
                 if val_loader is not None:
                     s += f" ---- val_forecast_loss = {forecast_val_loss:.5f}, "\
                     f"val_recon_loss = {recon_val_loss:.5f}, "\
-                    f"val_total_loss =  {total_val_loss:.5f}  "\
+                    f"val_total_loss = {total_val_loss:.5f}"
 
-                f"[{epoch_time:.1f}s]"
+                s += f" [{epoch_time:.1f}s]"
                 print(s)
 
-        # self.save(f"{self.id}-last_model")
-        train_time = int(time.time() - train_start)
-        self.writer.add_text("total_train_time", str(train_time))
         if val_loader is None:
             self.save(f"model.pt")
+
+        train_time = int(time.time() - train_start)
+        self.writer.add_text("total_train_time", str(train_time))
         print(f"-- Training done in {train_time}s.")
 
     def evaluate(self, data_loader):

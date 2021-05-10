@@ -112,20 +112,13 @@ class Predictor:
             np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
             print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
 
-        # Recommended values for start, end
-        # SMD: 0.01, 0.5
-        # MSL: 0.1, 2
-        # SMAP:
-        if true_anomalies is not None:
-            bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
-            print(f'Results using best f1 score search:\n {bf_eval}')
-
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
         # Find threshold and predict anomalies for each feature
-        for i in range(len(self.target_dims)):
+        out_dim = self.n_features if self.target_dims is None else len(self.target_dims)
+        for i in range(out_dim):
             train_feature_anom_scores = train_pred_df[f'A_Score_{i}'].values
             epsilon = find_epsilon(train_feature_anom_scores)
             test_feature_anom_scores = test_pred_df[f'A_Score_{i}'].values
@@ -133,49 +126,55 @@ class Predictor:
             train_feature_anom_preds = (train_feature_anom_scores >= epsilon).astype(int)
             test_feature_anom_preds = (test_feature_anom_scores >= epsilon).astype(int)
 
-            #if true_anomalies is not None:
-             #   test_feature_anom_preds, p_latency = adjust_predicts(None, true_anomalies, None,
-              #                                                        pred=test_feature_anom_preds, calc_latency=True)
-
             train_pred_df[f'A_Pred_{i}'] = train_feature_anom_preds
             test_pred_df[f'A_Pred_{i}'] = test_feature_anom_preds
-        print(f"Saving forecasts, recons, anomaly scores and predictions to {self.save_path}/<train/test>_output.pkl")
+
+            train_pred_df[f'Thresh_{i}'] = epsilon
+            test_pred_df[f'Thresh_{i}'] = epsilon
+
+        # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
+        # Use validation set to find hyperparams for epsilon method
+        e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies)
+        p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, q=self.q, level=self.level)
+        if true_anomalies is not None:
+            bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
+        else:
+            bf_eval =  {}
+        print(f'Results using epsilon method:\n {e_eval}')
+        print(f'Results using peak-over-threshold method:\n {p_eval}')
+        print(f'Results using best f1 score search:\n {bf_eval}')
+
+        for k, v in e_eval.items():
+            e_eval[k] = float(v)
+        for k, v in p_eval.items():
+            p_eval[k] = float(v)
+        for k, v in bf_eval.items():
+            bf_eval[k] = float(v)
+
+        summary = {'epsilon_results': e_eval,
+                   'pot_result': p_eval,
+                   'bf_result': bf_eval}
+
+        with open(f"{self.save_path}/summary.txt", "w") as f:
+            json.dump(summary, f, indent=2)
+
+        # Make and save predictions using best found epsilon
+        test_pred_df["A_True_Global"] = true_anomalies
+
+        # global_epsilon = find_epsilon(train_anomaly_scores, reg_level=e_eval['best_reg'])
+        global_epsilon = e_eval['threshold']
+        train_pred_df['Thresh_Global'] = global_epsilon
+        test_pred_df['Thresh_Global'] = global_epsilon
+
+        train_pred_df[f'A_Pred_Global'] = (train_anomaly_scores >= global_epsilon).astype(int)
+        test_preds_global = (test_anomaly_scores >= global_epsilon).astype(int)
+        if true_anomalies is not None:
+                test_preds_global = adjust_predicts(test_anomaly_scores, true_anomalies, global_epsilon)
+
+        test_pred_df[f'A_Pred_Global'] = test_preds_global
+
+        print(f"Saving output to {self.save_path}/<train/test>_output.pkl")
         train_pred_df.to_pickle(f"{self.save_path}/train_output.pkl")
         test_pred_df.to_pickle(f"{self.save_path}/test_output.pkl")
-
-        # eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, q=self.q, level=self.level)
-        #
-        # if true_anomalies is not None:
-        #     print_eval = dict(eval)
-        #     del print_eval["pred"]
-        #     del print_eval["thresholds"]
-        #     print(f'Results using peak-over-threshold method:\n {print_eval}')
-        # else:
-        #     print(f'No labels given, not doing evaluation of predictions')
-        #
-        # df = pd.DataFrame()
-        # df["a_score"] = test_anomaly_scores
-        # df["threshold"] = eval["thresholds"]
-        # df["pred_anomaly"] = eval["pred"].astype(int)
-        # df["anomaly"] = true_anomalies
-        #
-        # print(f"Saving output to {self.save_path}/")
-        # df.to_pickle(f"{self.save_path}/anomaly_preds.pkl")
-
-        # if true_anomalies is not None:
-        #     for k, v in print_eval.items():
-        #         print_eval[k] = float(v)
-        #     for k, v in bf_eval.items():
-        #         bf_eval[k] = float(v)
-        # else:
-        #     print_eval = None
-        #     bf_eval = None
-        #
-        # summary = {'pred_args': self.pred_args,
-        #            'pot_result': print_eval,
-        #            'bf_result': bf_eval}
-        #
-        # with open(f"{self.save_path}/summary.txt", "w") as f:
-        #     json.dump(summary, f, indent=2)
 
         print("-- Done.")

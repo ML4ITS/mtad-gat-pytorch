@@ -23,8 +23,6 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
     if pred is None:
         if len(score) != len(label):
             raise ValueError("score and label must have the same length")
-        score = np.asarray(score)
-        label = np.asarray(label)
         predict = score > threshold
     else:
         predict = pred
@@ -115,13 +113,10 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
             "FN": p_t[6],
             "threshold": pot_th,
             "latency": p_latency,
-            "pred": pred,
-            "thresholds": ret["thresholds"],
         }
     else:
         return {
-            'pred': pred,
-            'thresholds': ret["thresholds"],
+            'threshold': ret["thresholds"],
         }
 
 
@@ -175,7 +170,61 @@ def calc_seq(score, label, threshold):
     return calc_point2point(predict, label), latency
 
 
-def find_epsilon(errors):
+def epsilon_eval(train_score, test_score, label):
+    val_split = 0.2 if label is not None else 0.0
+    val_end = int(val_split * len(test_score))
+    val_score = test_score[:val_end]
+    val_label = label[:val_end]
+    test_score = test_score[val_end:]
+    test_label = label[val_end:]
+    best_reg = 0
+
+    if label is None:
+        best_epsilon = find_epsilon(train_score)
+    else:
+        reg_levels = [0, 1, 2]
+        best_epsilon = None
+        best_f1 = -1
+        best_acc = -1
+        for reg in reg_levels:
+            epsilon = find_epsilon(train_score, reg_level=reg)
+            val_pred = adjust_predicts(val_score, val_label, epsilon, calc_latency=False)
+            p_t = calc_point2point(val_pred, val_label)
+            acc = ( p_t[3] + p_t[4]) / (p_t[3] + p_t[4] + p_t[5] + p_t[6])
+            f1 = p_t[0]
+            if 1 in val_label:
+                if f1 > best_f1:
+                    best_f1 = f1
+                    best_epsilon = epsilon
+                    best_reg = reg
+            else:
+                if acc > best_acc:
+                    best_acc = acc
+                    best_epsilon = epsilon
+                    best_reg = reg
+
+    pred, p_latency = adjust_predicts(test_score, test_label, best_epsilon, calc_latency=True)
+    if label is not None:
+        p_t = calc_point2point(pred, test_label)
+        return {
+            "f1": p_t[0],
+            "precision": p_t[1],
+            "recall": p_t[2],
+            "TP": p_t[3],
+            "TN": p_t[4],
+            "FP": p_t[5],
+            "FN": p_t[6],
+            "threshold": best_epsilon,
+            "latency": p_latency,
+            'reg_level': best_reg
+        }
+    else:
+        return {
+            'threshold': best_epsilon,
+            'reg_level': best_reg
+        }
+
+def find_epsilon(errors, reg_level=0):
     e_s = errors
 
     sd_threshold = None
@@ -205,7 +254,14 @@ def find_epsilon(errors):
 
             mean_perc_decrease = (mean_e_s - np.mean(pruned_e_s)) / mean_e_s
             sd_perc_decrease = (sd_e_s - np.std(pruned_e_s)) / sd_e_s
-            score = (mean_perc_decrease + sd_perc_decrease)  # / (len(E_seq) ** 2 + len(i_anom)**2)
+            if reg_level == 0:
+                denom = 1
+            elif reg_level == 1:
+                denom = len(i_anom)**2
+            elif reg_level == 2:
+                denom = (len(E_seq) ** 2 + len(i_anom)**2)
+
+            score = (mean_perc_decrease + sd_perc_decrease) / denom
 
             # sanity checks / guardrails
             if score >= max_score and len(i_anom) < (len(e_s) * 0.5):

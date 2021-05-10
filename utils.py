@@ -216,7 +216,7 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
 	return train_loader, val_loader, test_loader
 
 
-def plot_losses(losses, save_path=""):
+def plot_losses(losses, save_path="", plot=True):
 	"""
 	:param losses: dict with losses
 	:param save_path: path where plots get saved
@@ -230,7 +230,8 @@ def plot_losses(losses, save_path=""):
 	plt.ylabel("RMSE")
 	plt.legend()
 	plt.savefig(f"{save_path}/train_losses.png", bbox_inches="tight")
-	plt.show()
+	if plot:
+		plt.show()
 	plt.close()
 
 	plt.plot(losses["val_forecast"], label="Forecast loss")
@@ -241,7 +242,8 @@ def plot_losses(losses, save_path=""):
 	plt.ylabel("RMSE")
 	plt.legend()
 	plt.savefig(f"{save_path}/validation_losses.png", bbox_inches="tight")
-	plt.show()
+	if plot:
+		plt.show()
 	plt.close()
 
 
