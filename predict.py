@@ -26,9 +26,16 @@ if __name__ == "__main__":
     if args.level is not None:
         level = args.level
     else:
-        level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
-        key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
-        level = level_dict[key]
+        level_dict = {
+            "SMAP": 0.93,
+            "MSL": 0.99,
+            "SMD-1": 0.9950,
+            "SMD-2": 0.9925,
+            "SMD-3": 0.9999,
+            "TELENOR": 0.99
+        }
+    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level = level_dict[key]
 
     pre_trained_model_path = f"models/{model}/{model}"
     # Check that model exist
@@ -48,10 +55,16 @@ if __name__ == "__main__":
     if args.dataset.lower() != model_args.dataset.lower():
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
-    if args.dataset == "SMD" and args.group != model_args.group:
+    elif args.dataset == "TELENOR" and args.site != model_args.site:
+        raise Warning(f"Model trained on Telenor site {model_args.site}, but asked to predict Telenor site {args.site}.")
+
+    elif args.dataset == "SMD" and args.group != model_args.group:
         raise Warning(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
-    if args.dataset == "SMD":
+    if args.dataset == "TELENOR":
+        output_path = f"output/TELENOR/{args.site}"
+
+    elif args.dataset == "SMD":
         output_path = f"output/SMD/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
@@ -59,7 +72,9 @@ if __name__ == "__main__":
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    if args.dataset == "SMD":
+    if args.dataset == "TELENOR":
+        x_train, x_test = get_telenor_data(args.site, test_split=0.1, do_preprocess=args.do_preprocess)
+    elif args.dataset == "SMD":
         group_index = args.group[0]
         index = args.group[2:]
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")

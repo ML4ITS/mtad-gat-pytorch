@@ -39,7 +39,7 @@ class Trainer:
         forecast_criterion=nn.MSELoss(),
         recon_criterion=nn.MSELoss(),
         use_cuda=True,
-        dload="models/",
+        dload="",
         log_dir="output/",
         print_every=1,
         args_summary="",
@@ -56,6 +56,7 @@ class Trainer:
         self.forecast_criterion = forecast_criterion
         self.recon_criterion = recon_criterion
         self.device = "cuda" if use_cuda and torch.cuda.is_available() else "cpu"
+        self.dload = dload
         self.log_dir = log_dir
         self.print_every = print_every
 
@@ -69,13 +70,15 @@ class Trainer:
         }
         self.epoch_times = []
 
+
         if self.device == "cuda":
             self.model.cuda()
 
-        self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
-        self.dload = f"{dload}/{self.id}"
+        # self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
+        # self.dload = dload
 
-        self.writer = SummaryWriter(f"{log_dir}/{self.id}")
+
+        self.writer = SummaryWriter(f"{log_dir}")
         self.writer.add_text("args_summary", args_summary)
 
     def __repr__(self):
@@ -90,11 +93,11 @@ class Trainer:
         """
 
         init_train_loss = self.evaluate(train_loader)
-        print(f"Init total train loss: {init_train_loss[2]:5f}")
+        print(f'Init total train loss: {init_train_loss[2]:5f}')
 
         if val_loader is not None:
-            init_val_loss = self.evaluate(val_loader)
-            print(f"Init total val loss: {init_val_loss[2]:.5f}")
+        	init_val_loss = self.evaluate(val_loader)
+        	print(f'Init total val loss: {init_val_loss[2]:.5f}')
 
         print(f"Training model for {self.n_epochs} epochs..")
         train_start = time.time()
@@ -143,34 +146,38 @@ class Trainer:
             self.losses["train_total"].append(total_epoch_loss)
 
             # Evaluate on validation set
-            forecast_val_loss, recon_val_loss, total_val_loss = None, None, None
+            forecast_val_loss, recon_val_loss, total_val_loss = 'NA', 'NA', 'NA'
             if val_loader is not None:
                 forecast_val_loss, recon_val_loss, total_val_loss = self.evaluate(val_loader)
                 self.losses["val_forecast"].append(forecast_val_loss)
                 self.losses["val_recon"].append(recon_val_loss)
                 self.losses["val_total"].append(total_val_loss)
 
-            self.write_loss(epoch)
+                if total_val_loss <= self.losses["val_total"][-1]:
+                    self.save(f"model.pt")
 
-            if total_val_loss <= self.losses["val_total"][-1]:
-                self.save(f"{self.id}_model.pt")
+            self.write_loss(epoch)
 
             epoch_time = time.time() - epoch_start
             self.epoch_times.append(epoch_time)
 
             if epoch % self.print_every == 0:
-                print(
-                    f"[Epoch {epoch + 1}] "
-                    f"forecast_loss = {forecast_epoch_loss:.5f}, "
-                    f"recon_loss = {recon_epoch_loss:.5f}, "
-                    f"total_loss = {total_epoch_loss:.5f} ---- "
-                    f"val_forecast_loss = {forecast_val_loss:.5f}, "
-                    f"val_recon_loss = {recon_val_loss:.5f}, "
-                    f"val_total_loss =  {total_val_loss:.5f}  "
-                    f"[{epoch_time:.1f}s]"
-                )
+                s = f"[Epoch {epoch + 1}] "\
+                    f"forecast_loss = {forecast_epoch_loss:.5f}, "\
+                    f"recon_loss = {recon_epoch_loss:.5f}, "\
+                    f"total_loss = {total_epoch_loss:.5f}"
 
-        # self.save(f"{self.id}-last_model")
+                if val_loader is not None:
+                    s += f" ---- val_forecast_loss = {forecast_val_loss:.5f}, "\
+                    f"val_recon_loss = {recon_val_loss:.5f}, "\
+                    f"val_total_loss = {total_val_loss:.5f}"
+
+                s += f" [{epoch_time:.1f}s]"
+                print(s)
+
+        if val_loader is None:
+            self.save(f"model.pt")
+
         train_time = int(time.time() - train_start)
         self.writer.add_text("total_train_time", str(train_time))
         print(f"-- Training done in {train_time}s.")
@@ -188,10 +195,7 @@ class Trainer:
         recon_losses = []
 
         with torch.no_grad():
-            for (
-                x,
-                y,
-            ) in data_loader:
+            for x, y, in data_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
 
@@ -244,4 +248,5 @@ class Trainer:
 
     def write_loss(self, epoch):
         for key, value in self.losses.items():
-            self.writer.add_scalar(key, value[-1], epoch)
+            if len(value) != 0:
+                self.writer.add_scalar(key, value[-1], epoch)

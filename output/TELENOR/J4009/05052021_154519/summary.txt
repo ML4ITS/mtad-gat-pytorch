@@ -1,0 +1,16 @@
+{
+  "pred_args": {
+    "target_dims": [
+      4,
+      15,
+      26
+    ],
+    "level": 0.99,
+    "q": 0.001,
+    "use_mov_av": false,
+    "gamma": 1,
+    "save_path": "output/TELENOR/J4009/05052021_154519"
+  },
+  "pot_result": null,
+  "bf_result": null
+}

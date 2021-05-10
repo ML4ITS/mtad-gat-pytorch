@@ -12,3 +12,4 @@ models/
 **/logs
 *.pkl
 *.npy
+*.pt
