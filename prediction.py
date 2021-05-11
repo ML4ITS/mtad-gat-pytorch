@@ -21,7 +21,7 @@ class Predictor:
 
     """
 
-    def __init__(self, model, window_size, n_features, pred_args):
+    def __init__(self, model, window_size, n_features, pred_args, summary_file_name="summary.txt"):
         self.model = model
         self.window_size = window_size
         self.n_features = n_features
@@ -34,15 +34,15 @@ class Predictor:
         self.batch_size = 256
         self.use_cuda = True
         self.pred_args = pred_args
+        self.summary_file_name = summary_file_name
 
         self.preds_train = None
         self.preds_test = None
 
-    def get_score(self, values, save_forecasts_and_recons=False, save_name=""):
+    def get_score(self, values):
         """Method that calculates anomaly score using given model and data
         :param values: 2D array of multivariate time series data, shape (N, k)
-        :param save_forecasts_and_recons: if True, saves forecasts and
-        reconstructions together with anomaly score for each feature
+        :return np array of anomaly scores + dataframe with prediction for each channel and global anomalies
         """
 
         print("Predicting and calculating anomaly scores..")
@@ -74,43 +74,41 @@ class Predictor:
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
 
-        if save_forecasts_and_recons:
-            df = pd.DataFrame()
-            for i in range(preds.shape[1]):
-                df[f"Forecast_{i}"] = preds[:, i]
-                df[f"Recon_{i}"] = recons[:, i]
-                df[f"True_{i}"] = actual[:, i]
-                df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
-                    (recons[:, i] - actual[:, i]) ** 2
-                )
-
-            # df_path = f"{self.save_path}/{save_name}.pkl"
-            # print(f"Saving feature forecasts, reconstructions and anomaly scores to {df_path}")
-            # df.to_pickle(f"{df_path}")
-
+        df = pd.DataFrame()
+        for i in range(preds.shape[1]):
+            df[f"Forecast_{i}"] = preds[:, i]
+            df[f"Recon_{i}"] = recons[:, i]
+            df[f"True_{i}"] = actual[:, i]
+            df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
+                (recons[:, i] - actual[:, i]) ** 2
+            )
         anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
 
         return anomaly_scores, df
 
-    def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False):
+    def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False, save_output=True):
         """Predicts anomalies for given test set.
         Train data needed to set threshold
 
         :param train: 2D array of train multivariate time series data
         :param test: 2D array of test multivariate time series data
+        :param true_anomalies: true anomalies of testset, None if not available
+        :param save_scores: Whether to save anomaly scores of train and test
+        :param load_scores: Whether to load anomaly scores instead of calculating them
+        :param save_output: Whether to save output dataframe
         """
 
         if load_scores:
             print("Loading anomaly scores")
             train_anomaly_scores = np.load(f"{self.save_path}/train_scores.npy")
             test_anomaly_scores = np.load(f"{self.save_path}/test_scores.npy")
+
+            train_pred_df = pd.read_pickle(f"{self.save_path}/train_output.pkl")
+            test_pred_df = pd.read_pickle(f"{self.save_path}/test_output.pkl")
+
         else:
-            train_anomaly_scores, train_pred_df = self.get_score(
-                train, save_forecasts_and_recons=True, save_name="preds_train"
-            )
-            test_anomaly_scores, test_pred_df = self.get_score(
-                test, save_forecasts_and_recons=True, save_name="preds_test"
-            )
+            train_anomaly_scores, train_pred_df = self.get_score(train)
+            test_anomaly_scores, test_pred_df = self.get_score(test)
 
         if save_scores:
             np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
@@ -122,11 +120,13 @@ class Predictor:
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
         # Find threshold and predict anomalies for each feature
+
         out_dim = self.n_features if self.target_dims is None else len(self.target_dims)
+        all_preds = np.zeros((len(test_pred_df), out_dim))  # 1 row is 1 timestamp, preds for all cols
         for i in range(out_dim):
             train_feature_anom_scores = train_pred_df[f"A_Score_{i}"].values
-            epsilon = find_epsilon(train_feature_anom_scores)
             test_feature_anom_scores = test_pred_df[f"A_Score_{i}"].values
+            epsilon = find_epsilon(train_feature_anom_scores, reg_level=2)
 
             train_feature_anom_preds = (train_feature_anom_scores >= epsilon).astype(int)
             test_feature_anom_preds = (test_feature_anom_scores >= epsilon).astype(int)
@@ -137,6 +137,8 @@ class Predictor:
             train_pred_df[f"Thresh_{i}"] = epsilon
             test_pred_df[f"Thresh_{i}"] = epsilon
 
+            all_preds[:, i] = test_feature_anom_preds
+
         # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
         # Use validation set to find hyperparams for epsilon method
         e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies)
@@ -145,39 +147,53 @@ class Predictor:
             bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
         else:
             bf_eval = {}
+
+        global_epsilon = e_eval["threshold"]
+        # In case of multiple thresholds (one for each split)
+        if type(e_eval["threshold"]) == list:
+            train_global_epsilon = global_epsilon[0]
+            e_eval["threshold"] = np.unique(e_eval["threshold"]).tolist()
+        else:
+            train_global_epsilon = global_epsilon
+
+        if type(p_eval["threshold"]) == list:
+            p_eval["threshold"] = np.unique(p_eval["threshold"]).tolist()
+
         print(f"Results using epsilon method:\n {e_eval}")
         print(f"Results using peak-over-threshold method:\n {p_eval}")
         print(f"Results using best f1 score search:\n {bf_eval}")
 
         for k, v in e_eval.items():
-            e_eval[k] = float(v)
+            if not type(e_eval[k]) == list:
+                e_eval[k] = float(v)
         for k, v in p_eval.items():
-            p_eval[k] = float(v)
+            if not type(p_eval[k]) == list:
+                p_eval[k] = float(v)
         for k, v in bf_eval.items():
             bf_eval[k] = float(v)
 
         summary = {"epsilon_results": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
 
-        with open(f"{self.save_path}/summary.txt", "w") as f:
+        with open(f"{self.save_path}/{self.summary_file_name}", "w") as f:
             json.dump(summary, f, indent=2)
 
         # Make and save predictions using best found epsilon
         test_pred_df["A_True_Global"] = true_anomalies
 
-        # global_epsilon = find_epsilon(train_anomaly_scores, reg_level=e_eval['best_reg'])
-        global_epsilon = e_eval["threshold"]
-        train_pred_df["Thresh_Global"] = global_epsilon
+        train_pred_df["Thresh_Global"] = train_global_epsilon
         test_pred_df["Thresh_Global"] = global_epsilon
 
-        train_pred_df[f"A_Pred_Global"] = (train_anomaly_scores >= global_epsilon).astype(int)
+        train_pred_df[f"A_Pred_Global"] = (train_anomaly_scores >= train_global_epsilon).astype(int)
         test_preds_global = (test_anomaly_scores >= global_epsilon).astype(int)
         if true_anomalies is not None:
-            test_preds_global = adjust_predicts(test_anomaly_scores, true_anomalies, global_epsilon)
+            # test_preds_global = adjust_predicts(test_anomaly_scores, true_anomalies, global_epsilon)
+            test_preds_global = adjust_predicts(None, true_anomalies, global_epsilon, pred=test_preds_global)
 
         test_pred_df[f"A_Pred_Global"] = test_preds_global
 
-        print(f"Saving output to {self.save_path}/<train/test>_output.pkl")
-        train_pred_df.to_pickle(f"{self.save_path}/train_output.pkl")
-        test_pred_df.to_pickle(f"{self.save_path}/test_output.pkl")
+        if save_output:
+            print(f"Saving output to {self.save_path}/<train/test>_output.pkl")
+            train_pred_df.to_pickle(f"{self.save_path}/train_output.pkl")
+            test_pred_df.to_pickle(f"{self.save_path}/test_output.pkl")
 
         print("-- Done.")

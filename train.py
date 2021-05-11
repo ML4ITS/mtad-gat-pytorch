@@ -130,7 +130,7 @@ if __name__ == "__main__":
         print_every,
         args_summary,
         site,
-        args.pretrained
+        args.pretrained,
     )
 
     trainer.fit(train_loader, val_loader)

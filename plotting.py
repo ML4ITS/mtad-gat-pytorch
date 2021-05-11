@@ -152,11 +152,11 @@ class Plotter:
             color = "red" if sequence_type == "true" else "blue"
         shapes = []
 
-        n_train = len(self.train_timestamps)
-        n_test = len(self.test_timestamps)
         for r in ranges:
             w = 5
             if self.use_timestamps:
+                n_train = len(self.train_timestamps)
+                n_test = len(self.test_timestamps)
                 x0 = self.test_timestamps[max(0, r[0] - w)] if is_test else self.train_timestamps[max(0, r[0] - w)]
                 x1 = (
                     self.test_timestamps[min(n_test - 1, r[1] + w)]
@@ -416,7 +416,7 @@ class Plotter:
                 y = df[f"True_{i}"].values
                 if np.average(y) >= 0.95 or np.average(y) == 0.0:
                     pred_cols_to_remove.append(col)
-                    cols = list(df.columns[4*i:4*i+4])
+                    cols = list(df.columns[4 * i : 4 * i + 4])
                     col_names_to_remove.extend(cols)
 
             # print("Col_idxs_to_drop:")
@@ -426,10 +426,14 @@ class Plotter:
             df.drop(col_names_to_remove, axis=1, inplace=True)
             return [x for x in self.pred_cols if x not in pred_cols_to_remove]
 
-
         non_constant_pred_cols = self.pred_cols if show_boring_series else get_pred_cols(data_copy)
 
-        fig = make_subplots(rows=len(non_constant_pred_cols), cols=1, vertical_spacing=0.4/len(non_constant_pred_cols), shared_xaxes=True)
+        fig = make_subplots(
+            rows=len(non_constant_pred_cols),
+            cols=1,
+            vertical_spacing=0.4 / len(non_constant_pred_cols),
+            shared_xaxes=True,
+        )
         if self.use_timestamps:
             timestamps = self.test_timestamps if is_test else self.train_timestamps
         else:
@@ -438,7 +442,7 @@ class Plotter:
         shapes = []
         annotations = []
         for i in range(len(non_constant_pred_cols)):
-            new_idx = int(data_copy.columns[4*i].split("_")[-1])
+            new_idx = int(data_copy.columns[4 * i].split("_")[-1])
             values = data_copy[f"True_{new_idx}"].values
 
             anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_{new_idx}"].values)
@@ -454,12 +458,14 @@ class Plotter:
             )
             shapes.extend(anomaly_shape)
 
-            fig.append_trace(go.Scatter(x=timestamps, y=values, line=dict(color=get_series_color(values), width=1)), row=i + 1, col=1)
+            fig.append_trace(
+                go.Scatter(x=timestamps, y=values, line=dict(color=get_series_color(values), width=1)), row=i + 1, col=1
+            )
             fig.update_yaxes(range=[-0.1, get_y_height(values)], row=i + 1, col=1)
 
             annotations.append(
                 dict(
-                    #xref="paper",
+                    # xref="paper",
                     xanchor="left",
                     yref=yref,
                     text=f"<b>{non_constant_pred_cols[i].upper()}</b>",
