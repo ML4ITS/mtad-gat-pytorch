@@ -26,14 +26,7 @@ if __name__ == "__main__":
     if args.level is not None:
         level = args.level
     else:
-        level_dict = {
-            "SMAP": 0.93,
-            "MSL": 0.99,
-            "SMD-1": 0.9950,
-            "SMD-2": 0.9925,
-            "SMD-3": 0.9999,
-            "TELENOR": 0.99
-        }
+        level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
 
@@ -56,7 +49,9 @@ if __name__ == "__main__":
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
     elif args.dataset == "TELENOR" and args.site != model_args.site:
-        raise Warning(f"Model trained on Telenor site {model_args.site}, but asked to predict Telenor site {args.site}.")
+        raise Warning(
+            f"Model trained on Telenor site {model_args.site}, but asked to predict Telenor site {args.site}."
+        )
 
     elif args.dataset == "SMD" and args.group != model_args.group:
         raise Warning(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
