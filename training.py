@@ -43,8 +43,10 @@ class Trainer:
         log_dir="output/",
         print_every=1,
         args_summary="",
+        site=""
     ):
 
+        self.site = site
         self.model = model
         self.optimizer = optimizer
         self.window_size = window_size
@@ -177,6 +179,10 @@ class Trainer:
 
         if val_loader is None:
             self.save(f"model.pt")
+
+            # Experimental
+            now = datetime.now().strftime("%d%m%y")
+            torch.save(self.model.state_dict(), f"./models/{now}/model_{self.site}.pt")
 
         train_time = int(time.time() - train_start)
         self.writer.add_text("total_train_time", str(train_time))

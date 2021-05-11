@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from os import listdir, makedirs
 
 import torch.nn as nn
 
@@ -81,6 +82,8 @@ if __name__ == "__main__":
 		train_dataset, batch_size, val_split, shuffle_dataset, test_dataset=test_dataset
 	)
 
+
+
 	model = MTAD_GAT(
 		n_features,
 		window_size,
@@ -97,6 +100,15 @@ if __name__ == "__main__":
 		forecast_hid_dim=args.fc_hid_dim,
 		use_cuda=args.use_cuda,
 	)
+
+	now = datetime.now().strftime("%d%m%y")
+	os.makedirs(f"./models/{now}", exist_ok=True)
+	PATH_TO_MODELS = f"./models/{now}"
+	models = listdir(PATH_TO_MODELS)
+
+	if len(models) != 0 and models[-1].endswith(".pt"):
+			print(f"Loading pretrained model:\t{models[-1]}")
+			model.load_state_dict(torch.load(f"{PATH_TO_MODELS}/{models[-1]}"))
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.init_lr)
 	forecast_criterion = nn.MSELoss()
@@ -118,6 +130,7 @@ if __name__ == "__main__":
 		log_dir,
 		print_every,
 		args_summary,
+		site
 	)
 
 	trainer.fit(train_loader, val_loader)
