@@ -98,8 +98,8 @@ class Trainer:
         print(f'Init total train loss: {init_train_loss[2]:5f}')
 
         if val_loader is not None:
-        	init_val_loss = self.evaluate(val_loader)
-        	print(f'Init total val loss: {init_val_loss[2]:.5f}')
+            init_val_loss = self.evaluate(val_loader)
+            print(f'Init total val loss: {init_val_loss[2]:.5f}')
 
         print(f"Training model for {self.n_epochs} epochs..")
         train_start = time.time()
