@@ -151,11 +151,11 @@ class Plotter:
             color = "red" if sequence_type == "true" else "blue"
         shapes = []
 
-        n_train = len(self.train_timestamps)
-        n_test = len(self.test_timestamps)
         for r in ranges:
             w = 5
             if self.use_timestamps:
+                n_train = len(self.train_timestamps)
+                n_test = len(self.test_timestamps)
                 x0 = self.test_timestamps[max(0, r[0] - w)] if is_test else self.train_timestamps[max(0, r[0] - w)]
                 x1 = self.test_timestamps[min(n_test-1, r[1] + w)] if is_test else self.train_timestamps[min(n_train-1, r[1] + w)]
             else:
