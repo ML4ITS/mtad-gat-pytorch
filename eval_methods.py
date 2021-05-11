@@ -116,7 +116,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
         }
     else:
         return {
-            'threshold': ret["thresholds"],
+            "threshold": pot_th,
         }
 
 
@@ -171,26 +171,28 @@ def calc_seq(score, label, threshold):
 
 
 def epsilon_eval(train_score, test_score, label):
-    val_split = 0.2 if label is not None else 0.0
-    val_end = int(val_split * len(test_score))
-    val_score = test_score[:val_end]
-    val_label = label[:val_end]
-    test_score = test_score[val_end:]
-    test_label = label[val_end:]
     best_reg = 0
 
     if label is None:
-        best_epsilon = find_epsilon(train_score)
+        test_label = label
+        best_epsilon = find_epsilon(test_score)
     else:
+        val_split = 0.2 if label is not None else 0.0
+        val_end = int(val_split * len(test_score))
+        val_score = test_score[:val_end]
+        val_label = label[:val_end]
+        test_score = test_score[val_end:]
+        test_label = label[val_end:]
+
         reg_levels = [0, 1, 2]
         best_epsilon = None
         best_f1 = -1
         best_acc = -1
         for reg in reg_levels:
-            epsilon = find_epsilon(train_score, reg_level=reg)
+            epsilon = find_epsilon(test_score, reg_level=reg)
             val_pred = adjust_predicts(val_score, val_label, epsilon, calc_latency=False)
             p_t = calc_point2point(val_pred, val_label)
-            acc = ( p_t[3] + p_t[4]) / (p_t[3] + p_t[4] + p_t[5] + p_t[6])
+            acc = (p_t[3] + p_t[4]) / (p_t[3] + p_t[4] + p_t[5] + p_t[6])
             f1 = p_t[0]
             if 1 in val_label:
                 if f1 > best_f1:
@@ -216,13 +218,11 @@ def epsilon_eval(train_score, test_score, label):
             "FN": p_t[6],
             "threshold": best_epsilon,
             "latency": p_latency,
-            'reg_level': best_reg
+            "reg_level": best_reg,
         }
     else:
-        return {
-            'threshold': best_epsilon,
-            'reg_level': best_reg
-        }
+        return {"threshold": best_epsilon, "reg_level": best_reg}
+
 
 def find_epsilon(errors, reg_level=0):
     e_s = errors
@@ -238,13 +238,19 @@ def find_epsilon(errors, reg_level=0):
         epsilon = mean_e_s + sd_e_s * z
         pruned_e_s = e_s[e_s < epsilon]
 
-        i_anom = np.argwhere(e_s >= epsilon).reshape(-1, )
+        i_anom = np.argwhere(e_s >= epsilon).reshape(
+            -1,
+        )
         buffer = np.arange(1, 50)
-        i_anom = np.sort(np.concatenate((i_anom,
-                                         np.array([i + buffer for i in i_anom])
-                                         .flatten(),
-                                         np.array([i - buffer for i in i_anom])
-                                         .flatten())))
+        i_anom = np.sort(
+            np.concatenate(
+                (
+                    i_anom,
+                    np.array([i + buffer for i in i_anom]).flatten(),
+                    np.array([i - buffer for i in i_anom]).flatten(),
+                )
+            )
+        )
         i_anom = i_anom[(i_anom < len(e_s)) & (i_anom >= 0)]
         i_anom = np.sort(np.unique(i_anom))
 
@@ -257,9 +263,9 @@ def find_epsilon(errors, reg_level=0):
             if reg_level == 0:
                 denom = 1
             elif reg_level == 1:
-                denom = len(i_anom)**2
+                denom = len(i_anom) ** 2
             elif reg_level == 2:
-                denom = (len(E_seq) ** 2 + len(i_anom)**2)
+                denom = len(E_seq) ** 2 + len(i_anom) ** 2
 
             score = (mean_perc_decrease + sd_perc_decrease) / denom
 

@@ -43,8 +43,10 @@ class Trainer:
         log_dir="output/",
         print_every=1,
         args_summary="",
+        site="",
     ):
 
+        self.site = site
         self.model = model
         self.optimizer = optimizer
         self.window_size = window_size
@@ -70,13 +72,11 @@ class Trainer:
         }
         self.epoch_times = []
 
-
         if self.device == "cuda":
             self.model.cuda()
 
         # self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
         # self.dload = dload
-
 
         self.writer = SummaryWriter(f"{log_dir}")
         self.writer.add_text("args_summary", args_summary)
@@ -93,11 +93,11 @@ class Trainer:
         """
 
         init_train_loss = self.evaluate(train_loader)
-        print(f'Init total train loss: {init_train_loss[2]:5f}')
+        print(f"Init total train loss: {init_train_loss[2]:5f}")
 
         if val_loader is not None:
-        	init_val_loss = self.evaluate(val_loader)
-        	print(f'Init total val loss: {init_val_loss[2]:.5f}')
+            init_val_loss = self.evaluate(val_loader)
+            print(f"Init total val loss: {init_val_loss[2]:.5f}")
 
         print(f"Training model for {self.n_epochs} epochs..")
         train_start = time.time()
@@ -146,7 +146,7 @@ class Trainer:
             self.losses["train_total"].append(total_epoch_loss)
 
             # Evaluate on validation set
-            forecast_val_loss, recon_val_loss, total_val_loss = 'NA', 'NA', 'NA'
+            forecast_val_loss, recon_val_loss, total_val_loss = "NA", "NA", "NA"
             if val_loader is not None:
                 forecast_val_loss, recon_val_loss, total_val_loss = self.evaluate(val_loader)
                 self.losses["val_forecast"].append(forecast_val_loss)
@@ -162,21 +162,29 @@ class Trainer:
             self.epoch_times.append(epoch_time)
 
             if epoch % self.print_every == 0:
-                s = f"[Epoch {epoch + 1}] "\
-                    f"forecast_loss = {forecast_epoch_loss:.5f}, "\
-                    f"recon_loss = {recon_epoch_loss:.5f}, "\
+                s = (
+                    f"[Epoch {epoch + 1}] "
+                    f"forecast_loss = {forecast_epoch_loss:.5f}, "
+                    f"recon_loss = {recon_epoch_loss:.5f}, "
                     f"total_loss = {total_epoch_loss:.5f}"
+                )
 
                 if val_loader is not None:
-                    s += f" ---- val_forecast_loss = {forecast_val_loss:.5f}, "\
-                    f"val_recon_loss = {recon_val_loss:.5f}, "\
-                    f"val_total_loss = {total_val_loss:.5f}"
+                    s += (
+                        f" ---- val_forecast_loss = {forecast_val_loss:.5f}, "
+                        f"val_recon_loss = {recon_val_loss:.5f}, "
+                        f"val_total_loss = {total_val_loss:.5f}"
+                    )
 
                 s += f" [{epoch_time:.1f}s]"
                 print(s)
 
         if val_loader is None:
             self.save(f"model.pt")
+
+            # Experimental
+            now = datetime.now().strftime("%d%m%y")
+            torch.save(self.model.state_dict(), f"./models/{now}/model_{self.site}.pt")
 
         train_time = int(time.time() - train_start)
         self.writer.add_text("total_train_time", str(train_time))
@@ -195,7 +203,10 @@ class Trainer:
         recon_losses = []
 
         with torch.no_grad():
-            for x, y, in data_loader:
+            for (
+                x,
+                y,
+            ) in data_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
 

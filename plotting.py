@@ -11,6 +11,7 @@ import cufflinks as cf
 
 from utils import get_data_dim
 from eval_methods import find_epsilon
+
 cf.go_offline()
 
 
@@ -36,52 +37,52 @@ class Plotter:
         self.use_timestamps = False
 
         if "TELENOR" in result_path:
-            path ='../datasets/telenor/site_data/vol2/metadata.txt'
+            path = "../datasets/telenor/site_data/vol2/metadata.txt"
             with open(path) as f:
                 metadata = json.load(f)
                 input_cols = np.array(metadata["columns"][2:])
-                self.start_datetime = metadata['start']
-                self.end_datetime = metadata['end']
+                self.start_datetime = metadata["start"]
+                self.end_datetime = metadata["end"]
 
             self.pred_cols = input_cols
-            config_path = f'{result_path}/config.txt'
+            config_path = f"{result_path}/config.txt"
             with open(config_path) as f:
-               self.lookback = json.load(f)['lookback']
+                self.lookback = json.load(f)["lookback"]
 
             # Update data with datetimes
             self.use_timestamps = True
             num_train_points = len(self.train_output) if self.train_output is not None else None
             num_test_points = len(self.test_output) if self.test_output is not None else None
             all_timestamps = pd.date_range(self.start_datetime, self.end_datetime, freq="H").tolist()
-            train_timestamps = all_timestamps[self.lookback:self.lookback+num_train_points]
+            train_timestamps = all_timestamps[self.lookback : self.lookback + num_train_points]
             test_timestamps = all_timestamps[-num_test_points:]
 
             self.train_timestamps = train_timestamps
             self.test_timestamps = test_timestamps
-            self.train_output['timestamp'] = train_timestamps
-            self.test_output['timestamp'] = test_timestamps
+            self.train_output["timestamp"] = train_timestamps
+            self.test_output["timestamp"] = test_timestamps
             self.train_end = train_timestamps[-1]
             self.test_start = test_timestamps[0]
 
             # TODO: threshold now saved as part of output df, load them from there instead of calculating them again
             # Make column-wise anomaly predictions (based on column-wise thresholding)
             for i in range(len(self.pred_cols)):
-                feature_anomaly_scores = self.train_output[f'A_Score_{i}'].values
+                feature_anomaly_scores = self.train_output[f"A_Score_{i}"].values
                 epsilon = find_epsilon(feature_anomaly_scores, reg_level=0)
                 self.feature_error_thresholds.append(epsilon)
 
         else:
             self.labels_available = True
-            self.train_output['timestamp'] = self.train_output.index
-            self.test_output['timestamp'] = self.test_output.index
-            if 'SMD' in result_path:
-                self.pred_cols = [f'feat_{i}' for i in range(get_data_dim('machine'))]
-            elif 'SMAP' in result_path or 'MSL' in result_path:
-                self.pred_cols = ['feat_1']
+            self.train_output["timestamp"] = self.train_output.index
+            self.test_output["timestamp"] = self.test_output.index
+            if "SMD" in result_path:
+                self.pred_cols = [f"feat_{i}" for i in range(get_data_dim("machine"))]
+            elif "SMAP" in result_path or "MSL" in result_path:
+                self.pred_cols = ["feat_1"]
 
             # TODO: threshold now saved as part of output df, load them from there instead of calculating them again
             for i in range(len(self.pred_cols)):
-                feature_anomaly_scores = self.train_output[f'A_Score_{i}'].values
+                feature_anomaly_scores = self.train_output[f"A_Score_{i}"].values
                 epsilon = find_epsilon(feature_anomaly_scores)
                 self.feature_error_thresholds.append(epsilon)
 
@@ -120,7 +121,7 @@ class Plotter:
         except FileNotFoundError as e:
             print(e)
         except Exception:
-            print('\tNo results because labels are not available')
+            print("\tNo results because labels are not available")
 
     def create_shapes(self, ranges, sequence_type, _min, _max, plot_values, is_test=True, xref=None, yref=None):
         """
@@ -146,7 +147,7 @@ class Plotter:
             _max = max(plot_values["errors"])
 
         if sequence_type is None:
-            color = 'blue'
+            color = "blue"
         else:
             color = "red" if sequence_type == "true" else "blue"
         shapes = []
@@ -157,7 +158,11 @@ class Plotter:
                 n_train = len(self.train_timestamps)
                 n_test = len(self.test_timestamps)
                 x0 = self.test_timestamps[max(0, r[0] - w)] if is_test else self.train_timestamps[max(0, r[0] - w)]
-                x1 = self.test_timestamps[min(n_test-1, r[1] + w)] if is_test else self.train_timestamps[min(n_train-1, r[1] + w)]
+                x1 = (
+                    self.test_timestamps[min(n_test - 1, r[1] + w)]
+                    if is_test
+                    else self.train_timestamps[min(n_train - 1, r[1] + w)]
+                )
             else:
                 x0 = r[0] - w
                 x1 = r[1] + w
@@ -174,8 +179,8 @@ class Plotter:
                 },
             }
             if xref is not None:
-                shape['xref'] = xref
-                shape['yref'] = yref
+                shape["xref"] = xref
+                shape["yref"] = yref
 
             shapes.append(shape)
 
@@ -222,14 +227,17 @@ class Plotter:
 
             i = channel
             plot_values = {
-                "timestamp": data_copy['timestamp'].values,
+                "timestamp": data_copy["timestamp"].values,
                 "y_forecast": data_copy[f"Forecast_{i}"].values,
                 "y_recon": data_copy[f"Recon_{i}"].values,
                 "y_true": data_copy[f"True_{i}"].values,
                 "errors": data_copy[f"A_Score_Global"].values if show_tot_err else data_copy[f"A_Score_{i}"].values,
                 # "threshold": self.feature_error_thresholds[i] if not show_tot_err else data_copy["Thresh_Global"].values,
-                "threshold": (data_copy[f'Thresh_{i}'] if f'Thresh{i}' in data_copy.columns else self.feature_error_thresholds[i])
-                if not show_tot_err else data_copy["Thresh_Global"].values
+                "threshold": (
+                    data_copy[f"Thresh_{i}"] if f"Thresh{i}" in data_copy.columns else self.feature_error_thresholds[i]
+                )
+                if not show_tot_err
+                else data_copy["Thresh_Global"].values,
             }
 
             anomaly_sequences = {
@@ -252,69 +260,125 @@ class Plotter:
 
             # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
             if self.labels_available:
-                y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
+                y_shapes = self.create_shapes(
+                    anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test
+                )
                 e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
 
-                y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
-                e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
+                y_shapes += self.create_shapes(
+                    anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test
+                )
+                e_shapes += self.create_shapes(
+                    anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test
+                )
             else:
-                y_shapes = self.create_shapes(anomaly_sequences["pred"], None, y_min, y_max, plot_values, is_test=is_test)
+                y_shapes = self.create_shapes(
+                    anomaly_sequences["pred"], None, y_min, y_max, plot_values, is_test=is_test
+                )
                 e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values, is_test=is_test)
 
             y_df = pd.DataFrame(
                 {
-                    "timestamp": plot_values["timestamp"].reshape(-1, ),
-                    "y_forecast": plot_values["y_forecast"].reshape(-1,),
-                    "y_recon": plot_values["y_recon"].reshape(-1,),
-                    "y_true": plot_values["y_true"].reshape(-1,),
+                    "timestamp": plot_values["timestamp"].reshape(
+                        -1,
+                    ),
+                    "y_forecast": plot_values["y_forecast"].reshape(
+                        -1,
+                    ),
+                    "y_recon": plot_values["y_recon"].reshape(
+                        -1,
+                    ),
+                    "y_true": plot_values["y_true"].reshape(
+                        -1,
+                    ),
                 }
             )
 
             e_df = pd.DataFrame(
                 {
-                    "timestamp": plot_values['timestamp'],
-                    "e_s": plot_values["errors"].reshape(-1,),
-                    "threshold": plot_values['threshold'],
+                    "timestamp": plot_values["timestamp"],
+                    "e_s": plot_values["errors"].reshape(
+                        -1,
+                    ),
+                    "threshold": plot_values["threshold"],
                 }
             )
 
-            data_type = 'Test data' if is_test else 'Train data'
+            data_type = "Test data" if is_test else "Train data"
             y_layout = {
                 "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "shapes": y_shapes,
                 "yaxis": dict(range=[y_min, y_max]),
                 "showlegend": True,
-                'height': 400,
-                'width': 1100,
+                "height": 400,
+                "width": 1100,
                 #'template': 'simple_white'
             }
 
             e_layout = {
-                "title": f"{data_type} | Total error for all channels" if show_tot_err else f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
+                "title": f"{data_type} | Total error for all channels"
+                if show_tot_err
+                else f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
                 "shapes": e_shapes,
                 "yaxis": dict(range=[0, e_max]),
-                'height': 400,
-                'width': 1100,
+                "height": 400,
+                "width": 1100,
                 #'template': 'simple_white'
             }
 
             lines = [
-                go.Scatter(x=y_df['timestamp'], y=y_df["y_true"], line_color="rgb(0, 204, 150, 0.5)", name="y_true", line=dict(width=2,)),
-                go.Scatter(x=y_df['timestamp'], y=y_df["y_forecast"], line_color="rgb(255, 127, 14, 1)", name="y_forecast", line=dict(width=2,)),
-                go.Scatter(x=y_df['timestamp'], y=y_df["y_recon"], line_color="rgb(31, 119, 180, 1)", name="y_recon", line=dict(width=2,)),
+                go.Scatter(
+                    x=y_df["timestamp"],
+                    y=y_df["y_true"],
+                    line_color="rgb(0, 204, 150, 0.5)",
+                    name="y_true",
+                    line=dict(
+                        width=2,
+                    ),
+                ),
+                go.Scatter(
+                    x=y_df["timestamp"],
+                    y=y_df["y_forecast"],
+                    line_color="rgb(255, 127, 14, 1)",
+                    name="y_forecast",
+                    line=dict(
+                        width=2,
+                    ),
+                ),
+                go.Scatter(
+                    x=y_df["timestamp"],
+                    y=y_df["y_recon"],
+                    line_color="rgb(31, 119, 180, 1)",
+                    name="y_recon",
+                    line=dict(
+                        width=2,
+                    ),
+                ),
             ]
 
             fig = go.Figure(data=lines, layout=y_layout)
             py.offline.iplot(fig)
 
             e_lines = [
-                go.Scatter(x=e_df['timestamp'], y=e_df["e_s"], name="Error", line=dict(color='red', width=1,)),
-                go.Scatter(x=e_df['timestamp'], y=e_df["threshold"], name="Threshold", line=dict(color='black', width=1, dash='dash')),
+                go.Scatter(
+                    x=e_df["timestamp"],
+                    y=e_df["e_s"],
+                    name="Error",
+                    line=dict(
+                        color="red",
+                        width=1,
+                    ),
+                ),
+                go.Scatter(
+                    x=e_df["timestamp"],
+                    y=e_df["threshold"],
+                    name="Threshold",
+                    line=dict(color="black", width=1, dash="dash"),
+                ),
             ]
 
             e_fig = go.Figure(data=e_lines, layout=e_layout)
             py.offline.iplot(e_fig)
-
 
     def plot_all_channels(self, start=None, end=None, type="test"):
         if type == "train":
@@ -353,29 +417,34 @@ class Plotter:
         shapes = []
         annotations = []
         for i in range(len(self.pred_cols)):
-            values = data_copy[f'True_{i}'].values
+            values = data_copy[f"True_{i}"].values
             anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_{i}"].values)
 
             y_min = -0.1
-            y_max = 2 #0.5 * y_max
+            y_max = 2  # 0.5 * y_max
 
             j = i + 1
-            xref = f'x{j}' if i > 0 else 'x'
-            yref = f'y{j}' if i > 0 else 'y'
-            anomaly_shape = self.create_shapes(anomaly_sequences, None, y_min, y_max, None, xref=xref, yref=yref, is_test=is_test)
+            xref = f"x{j}" if i > 0 else "x"
+            yref = f"y{j}" if i > 0 else "y"
+            anomaly_shape = self.create_shapes(
+                anomaly_sequences, None, y_min, y_max, None, xref=xref, yref=yref, is_test=is_test
+            )
             shapes.extend(anomaly_shape)
 
-            fig.append_trace(
-                go.Scatter(x=timestamps, y=values, line=dict(color='black', width=1)),
-                row=i+1, col=1
-            )
-            fig.update_yaxes(range=[-0.1, 1.5], row=i+1, col=1)
+            fig.append_trace(go.Scatter(x=timestamps, y=values, line=dict(color="black", width=1)), row=i + 1, col=1)
+            fig.update_yaxes(range=[-0.1, 1.5], row=i + 1, col=1)
 
-            annotations.append(dict(
-                xref=xref, yref=yref, text=self.pred_cols[i],
-                font=dict(size=10),
-                showarrow=False, align='right', valign='top'
-            ))
+            annotations.append(
+                dict(
+                    xref=xref,
+                    yref=yref,
+                    text=self.pred_cols[i],
+                    font=dict(size=10),
+                    showarrow=False,
+                    align="right",
+                    valign="top",
+                )
+            )
 
         # colors = ['aliceblue', 'aqua', 'aquamarine', 'azure', 'bisque', 'black', 'blue',
         #         'blueviolet', 'brown', 'burlywood', 'cadetblue',
@@ -391,22 +460,22 @@ class Plotter:
         #         'ghostwhite', 'gold', 'goldenrod', 'gray', 'green',
         #         'greenyellow', 'honeydew', 'hotpink', 'indianred', 'indigo']
         # colors = ['blue', 'aquamarine', 'green', 'aliceblue', 'black', 'brown', 'orange', 'aqua',  'darkturquoise']
-        colors = ['blue', 'green', 'red', 'black', 'orange', 'brown', 'aqua', 'hotpink']
+        colors = ["blue", "green", "red", "black", "orange", "brown", "aqua", "hotpink"]
         taken_shapes_i = []
         keep_segments_i = []
         corr_segments_count = 0
         for nr, i in enumerate(range(len(shapes))):
             corr_shapes = [i]
             shape = shapes[i]
-            shape['opacity'] = 0.3
-            shape_x = shape['x0']
+            shape["opacity"] = 0.3
+            shape_x = shape["x0"]
 
-            for j in range(i+1, len(shapes)):
-                if j not in taken_shapes_i and shapes[j]['x0'] == shape_x:
+            for j in range(i + 1, len(shapes)):
+                if j not in taken_shapes_i and shapes[j]["x0"] == shape_x:
                     corr_shapes.append(j)
 
             if num_aligned_segments is not None:
-                if num_aligned_segments[0] == '>':
+                if num_aligned_segments[0] == ">":
                     num = int(num_aligned_segments[1:])
                     keep_segment = len(corr_shapes) >= num
                 else:
@@ -418,17 +487,27 @@ class Plotter:
                     taken_shapes_i.extend(corr_shapes)
                     if len(corr_shapes) != 1:
                         for shape_i in corr_shapes:
-                            shapes[shape_i]['fillcolor'] = colors[corr_segments_count % len(colors)]
+                            shapes[shape_i]["fillcolor"] = colors[corr_segments_count % len(colors)]
                         corr_segments_count += 1
 
         if num_aligned_segments is not None:
             shapes = np.array(shapes)
             shapes = shapes[keep_segments_i].tolist()
 
-        fig.update_layout(height=2000, width=1200, shapes=shapes, template='simple_white',
-                          annotations=annotations, showlegend=False,
-                          xaxis_range=[self.start_datetime if not is_test else self.test_start,
-                                       self.train_end if not is_test else self.end_datetime] if self.use_timestamps else None)
+        fig.update_layout(
+            height=2000,
+            width=1200,
+            shapes=shapes,
+            template="simple_white",
+            annotations=annotations,
+            showlegend=False,
+            xaxis_range=[
+                self.start_datetime if not is_test else self.test_start,
+                self.train_end if not is_test else self.end_datetime,
+            ]
+            if self.use_timestamps
+            else None,
+        )
         fig.update_yaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         py.offline.iplot(fig)
@@ -448,7 +527,10 @@ class Plotter:
         axs[0].plot(data_copy["Thresh_Global"], linestyle="dashed", c="black", label="threshold")
         axs[1].plot(data_copy["A_Pred_Global"], label="predicted anomalies", c="orange")
         if self.labels_available and type == "test":
-            axs[2].plot(data_copy["A_True_Global"], label="actual anomalies",)
+            axs[2].plot(
+                data_copy["A_True_Global"],
+                label="actual anomalies",
+            )
         axs[0].set_ylim([None, 2 * data_copy["Thresh_Global"].mean()])
         fig.legend(prop={"size": 20})
         plt.show()
@@ -465,20 +547,23 @@ class Plotter:
         pred_anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_Global"].values)
         y_min = -0.1
         y_max = 1.1 * np.max(tot_anomaly_scores)
-        shapes = self.create_shapes(pred_anomaly_sequences, 'pred', y_min, y_max, None, is_test=is_test)
+        shapes = self.create_shapes(pred_anomaly_sequences, "pred", y_min, y_max, None, is_test=is_test)
         if self.labels_available and is_test:
             true_anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_True_Global"].values)
-            shapes2 = self.create_shapes(true_anomaly_sequences, 'true', y_min, y_max, None, is_test=is_test)
+            shapes2 = self.create_shapes(true_anomaly_sequences, "true", y_min, y_max, None, is_test=is_test)
             shapes.extend(shapes2)
 
         layout = {
             "title": f"{type} | Total error, predicted (blue) and true anomalies (red if available)",
             "shapes": shapes,
             "yaxis": dict(range=[0, y_max]),
-            'height': 400,
-            'width': 1500,
+            "height": 400,
+            "width": 1500,
             # 'template': 'simple_white'
         }
 
-        fig = go.Figure(data=[go.Scatter(x=data_copy['timestamp'], y=tot_anomaly_scores, line=dict(width=1, color='red'))], layout=layout)
+        fig = go.Figure(
+            data=[go.Scatter(x=data_copy["timestamp"], y=tot_anomaly_scores, line=dict(width=1, color="red"))],
+            layout=layout,
+        )
         py.offline.iplot(fig)
