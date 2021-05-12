@@ -9,7 +9,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import cufflinks as cf
 
-from utils import get_data_dim
+from utils import get_data_dim, get_series_color, get_y_height
 from eval_methods import find_epsilon
 
 cf.go_offline()
@@ -409,16 +409,39 @@ class Plotter:
         elif type == "test":
             data_copy = self.test_output.copy()
 
-        fig = make_subplots(rows=len(self.pred_cols), cols=1, shared_xaxes=True)
+        def get_pred_cols(df):
+            pred_cols_to_remove = []
+            col_names_to_remove = []
+            for i, col in enumerate(self.pred_cols):
+                y = df[f"True_{i}"].values
+                if np.average(y) >= 0.95 or np.average(y) == 0.0:
+                    pred_cols_to_remove.append(col)
+                    cols = list(df.columns[4*i:4*i+4])
+                    col_names_to_remove.extend(cols)
+
+            # print("Col_idxs_to_drop:")
+            # for col in col_names_to_remove:
+            #     print(col)
+
+            df.drop(col_names_to_remove, axis=1, inplace=True)
+            return [x for x in self.pred_cols if x not in pred_cols_to_remove]
+
+
+        non_constant_pred_cols = get_pred_cols(data_copy)
+
+        fig = make_subplots(rows=len(non_constant_pred_cols), cols=1, vertical_spacing=0.4/len(non_constant_pred_cols), shared_xaxes=True)
         if self.use_timestamps:
             timestamps = self.test_timestamps if is_test else self.train_timestamps
         else:
             timestamps = None
+
         shapes = []
         annotations = []
-        for i in range(len(self.pred_cols)):
-            values = data_copy[f"True_{i}"].values
-            anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_{i}"].values)
+        for i in range(len(non_constant_pred_cols)):
+            new_idx = int(data_copy.columns[4*i].split("_")[-1])
+            values = data_copy[f"True_{new_idx}"].values
+
+            anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_{new_idx}"].values)
 
             y_min = -0.1
             y_max = 2  # 0.5 * y_max
@@ -431,18 +454,19 @@ class Plotter:
             )
             shapes.extend(anomaly_shape)
 
-            fig.append_trace(go.Scatter(x=timestamps, y=values, line=dict(color="black", width=1)), row=i + 1, col=1)
-            fig.update_yaxes(range=[-0.1, 1.5], row=i + 1, col=1)
+            fig.append_trace(go.Scatter(x=timestamps, y=values, line=dict(color=get_series_color(values), width=1)), row=i + 1, col=1)
+            fig.update_yaxes(range=[-0.1, get_y_height(values)], row=i + 1, col=1)
 
             annotations.append(
                 dict(
-                    xref=xref,
+                    #xref="paper",
+                    xanchor="left",
                     yref=yref,
-                    text=self.pred_cols[i],
+                    text=f"<b>{non_constant_pred_cols[i].upper()}</b>",
                     font=dict(size=10),
                     showarrow=False,
-                    align="right",
-                    valign="top",
+                    yshift=35,
+                    xshift=(-523),
                 )
             )
 
@@ -495,7 +519,7 @@ class Plotter:
             shapes = shapes[keep_segments_i].tolist()
 
         fig.update_layout(
-            height=2000,
+            height=1800,
             width=1200,
             shapes=shapes,
             template="simple_white",

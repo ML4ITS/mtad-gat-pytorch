@@ -253,3 +253,21 @@ def load(model, PATH, device="cpu"):
     :param PATH: Should contain pickle file
     """
     model.load_state_dict(torch.load(PATH, map_location=device))
+
+
+def get_series_color(y):
+    if np.average(y) >= 0.95:
+        return "forestgreen"
+    elif np.average(y) == 0.0:
+        return "firebrick"
+    else:
+        return "black"
+
+
+def get_y_height(y):
+    if np.average(y) >= 0.95:
+        return 1.5
+    elif np.average(y) == 0.0:
+        return 0.1
+    else:
+        return max(y) + 0.1
