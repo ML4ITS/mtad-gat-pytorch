@@ -234,7 +234,7 @@ class Plotter:
                 "errors": data_copy[f"A_Score_Global"].values if show_tot_err else data_copy[f"A_Score_{i}"].values,
                 # "threshold": self.feature_error_thresholds[i] if not show_tot_err else data_copy["Thresh_Global"].values,
                 "threshold": (
-                    data_copy[f"Thresh_{i}"] if f"Thresh{i}" in data_copy.columns else self.feature_error_thresholds[i]
+                    data_copy[f"Thresh_{i}"] if f"Thresh_{i}" in data_copy.columns else self.feature_error_thresholds[i]
                 )
                 if not show_tot_err
                 else data_copy["Thresh_Global"].values,
@@ -401,7 +401,7 @@ class Plotter:
         data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.1), style=colors)
         plt.show()
 
-    def plot_anomaly_segments(self, type="test", num_aligned_segments=None):
+    def plot_anomaly_segments(self, type="test", num_aligned_segments=None, show_boring_series=False):
         is_test = True
         if type == "train":
             data_copy = self.train_output.copy()
@@ -427,7 +427,7 @@ class Plotter:
             return [x for x in self.pred_cols if x not in pred_cols_to_remove]
 
 
-        non_constant_pred_cols = get_pred_cols(data_copy)
+        non_constant_pred_cols = self.pred_cols if show_boring_series else get_pred_cols(data_copy)
 
         fig = make_subplots(rows=len(non_constant_pred_cols), cols=1, vertical_spacing=0.4/len(non_constant_pred_cols), shared_xaxes=True)
         if self.use_timestamps:

@@ -257,9 +257,9 @@ def load(model, PATH, device="cpu"):
 
 def get_series_color(y):
     if np.average(y) >= 0.95:
-        return "forestgreen"
+        return "black"
     elif np.average(y) == 0.0:
-        return "firebrick"
+        return "black"
     else:
         return "black"
 
