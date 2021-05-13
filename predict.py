@@ -15,9 +15,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    if args.model_id is None:
+    if args.model_id is None and not args.site_independent:
         # Use latest model
-        dir_path = f"./output/{args.dataset}/{args.group}"
+        group = args.site if args.dataset == "TELENOR" else args.group
+        dir_path = f"./output/{args.dataset}/{group}"
         dir_content = os.listdir(dir_path)
         subfolders = [subf for subf in dir_content if os.path.isdir(f"{dir_path}/{subf}") and subf != "logs"]
         subfolders.sort()
@@ -30,6 +31,8 @@ if __name__ == "__main__":
         model_path = f"./output/{args.dataset}/{args.group}/{model_id}"
     elif args.dataset == "TELENOR":
         model_path = f"./output/{args.dataset}/{args.site}/{model_id}"
+        if args.site_independent:
+            model_path = f"./models/beast"
     else:
         model_path = f"./output/{args.dataset}/{model_id}"
 
@@ -38,6 +41,7 @@ if __name__ == "__main__":
         raise Exception(f"<{model_path}/model.pt> does not exist.")
 
     # Get configs of model
+    print(model_path)
     model_parser = argparse.ArgumentParser()
     model_args, unknown = model_parser.parse_known_args()
     model_args_path = f"{model_path}/config.txt"
@@ -51,28 +55,28 @@ if __name__ == "__main__":
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
     elif args.dataset == "TELENOR" and args.site != model_args.site:
-        raise Warning(
+        print(
             f"Model trained on Telenor site {model_args.site}, but asked to predict Telenor site {args.site}."
         )
 
     elif args.dataset == "SMD" and args.group != model_args.group:
-        raise Warning(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
+        print(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
     site = args.site
-    do_preprocess = args.do_preprocess
-    window_size = args.lookback
-    horizon = args.horizon
-    n_epochs = args.epochs
-    batch_size = args.bs
-    init_lr = args.init_lr
-    val_split = args.val_split
-    test_split = args.test_size
-    shuffle_dataset = args.shuffle_dataset
-    use_cuda = args.use_cuda
-    print_every = args.print_every
-    group_index = args.group[0]
-    index = args.group[2:]
-    args_summary = str(args.__dict__)
+    do_preprocess = model_args.do_preprocess
+    window_size = model_args.lookback
+    horizon = model_args.horizon
+    n_epochs = model_args.epochs
+    batch_size = model_args.bs
+    init_lr = model_args.init_lr
+    val_split = model_args.val_split
+    test_split = model_args.test_size
+    shuffle_dataset = model_args.shuffle_dataset
+    use_cuda = model_args.use_cuda
+    print_every = model_args.print_every
+    group_index = model_args.group[0]
+    index = model_args.group[2:]
+    args_summary = str(model_args.__dict__)
     print(args_summary)
 
     if args.dataset == "TELENOR":
@@ -136,7 +140,7 @@ if __name__ == "__main__":
         "q": args.q,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
-        "save_path": model_path,
+        "save_path": f"{model_path}",
     }
 
     count = 0
@@ -149,5 +153,5 @@ if __name__ == "__main__":
         summary_file_name = f"summary_{count}.txt"
 
     label = y_test[window_size:] if y_test is not None else None
-    predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name="summary_1.txt")
+    predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
     predictor.predict_anomalies(x_train, x_test, label, save_scores=False, load_scores=True, save_output=True)

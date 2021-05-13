@@ -43,7 +43,7 @@ def get_parser():
     parser.add_argument("--use_cuda", type=str2bool, default=True)
     parser.add_argument("--model_path", type=str, default="models")
     parser.add_argument("--print_every", type=int, default=1)
-    parser.add_argument("--pretrained", type=int, default=False)
+    parser.add_argument("--site_independent", type=str2bool, default=False)
 
     # Predictor args
     parser.add_argument("--save_scores", type=str2bool, default=True, help="To save anomaly scores predicted.")

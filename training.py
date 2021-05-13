@@ -44,9 +44,9 @@ class Trainer:
         print_every=1,
         args_summary="",
         site="",
-        pretrained=False,
+        site_independent=False,
     ):
-        self.pretrained = pretrained
+        self.site_independent = site_independent
         self.site = site
         self.model = model
         self.optimizer = optimizer
@@ -184,7 +184,7 @@ class Trainer:
             self.save(f"model.pt")
 
             # Experimental Pre-trained Models
-            if self.pretrained:
+            if self.site_independent:
                 now = datetime.now().strftime("%d%m%y")
                 torch.save(self.model.state_dict(), f"./models/{now}/model_{self.site}.pt")
 

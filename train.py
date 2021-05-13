@@ -99,7 +99,7 @@ if __name__ == "__main__":
         use_cuda=args.use_cuda,
     )
 
-    if args.pretrained:
+    if args.site_independent:
         today = datetime.now().strftime("%d%m%y")
         os.makedirs(f"./models/{today}", exist_ok=True)
         PATH_TO_MODELS = f"./models/{today}"
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         print_every,
         args_summary,
         site,
-        args.pretrained,
+        args.site_independent,
     )
 
     trainer.fit(train_loader, val_loader)
