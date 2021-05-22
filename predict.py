@@ -9,36 +9,38 @@ from utils import *
 if __name__ == "__main__":
 
     parser = get_parser()
-    parser.add_argument("--model", type=str, required=True, help="Name of model to use")
+    parser.add_argument(
+        "--model_id", type=str, default=None, help="ID (datetime) of pretrained model to use, '-1' for latest"
+    )
     args = parser.parse_args()
     print(args)
 
-    model = args.model
+    if args.model_id is None:
+        # Use latest model
+        dir_path = f"./output/{args.dataset}/{args.group}"
+        dir_content = os.listdir(dir_path)
+        subfolders = [subf for subf in dir_content if os.path.isdir(f"{dir_path}/{subf}") and subf != "logs"]
+        subfolders.sort()
+        model_id = subfolders[-1]
 
-    # Peak-Over-Threshold args
-    # Recommend values for `level`:
-    # SMAP: 0.93
-    # MSL: 0.99
-    # SMD group 1: 0.9950
-    # SMD group 2: 0.9925
-    # SMD group 3: 0.9999
-
-    if args.level is not None:
-        level = args.level
     else:
-        level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
-    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
-    level = level_dict[key]
+        model_id = args.model_id
 
-    pre_trained_model_path = f"models/{model}/{model}"
+    if args.dataset == "SMD":
+        model_path = f"./output/{args.dataset}/{args.group}/{model_id}"
+    elif args.dataset == "TELENOR":
+        model_path = f"./output/{args.dataset}/{args.site}/{model_id}"
+    else:
+        model_path = f"./output/{args.dataset}/{model_id}"
+
     # Check that model exist
-    if not os.path.isfile(f"{pre_trained_model_path}_model.pt"):
-        raise Exception(f"Model <{pre_trained_model_path}_model.pt> does not exist.")
+    if not os.path.isfile(f"{model_path}/model.pt"):
+        raise Exception(f"<{model_path}/model.pt> does not exist.")
 
     # Get configs of model
     model_parser = argparse.ArgumentParser()
     model_args, unknown = model_parser.parse_known_args()
-    model_args_path = f"{pre_trained_model_path}_config.txt"
+    model_args_path = f"{model_path}/config.txt"
 
     with open(model_args_path, "r") as f:
         model_args.__dict__ = json.load(f)
@@ -56,30 +58,31 @@ if __name__ == "__main__":
     elif args.dataset == "SMD" and args.group != model_args.group:
         raise Warning(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
+    site = args.site
+    do_preprocess = args.do_preprocess
+    window_size = args.lookback
+    horizon = args.horizon
+    n_epochs = args.epochs
+    batch_size = args.bs
+    init_lr = args.init_lr
+    val_split = args.val_split
+    test_split = args.test_size
+    shuffle_dataset = args.shuffle_dataset
+    use_cuda = args.use_cuda
+    print_every = args.print_every
+    group_index = args.group[0]
+    index = args.group[2:]
+    args_summary = str(args.__dict__)
+    print(args_summary)
+
     if args.dataset == "TELENOR":
-        output_path = f"output/TELENOR/{args.site}"
-
+        x_train, x_test = get_telenor_data(site, test_split=test_split, do_preprocess=do_preprocess)
+        y_test = None
     elif args.dataset == "SMD":
-        output_path = f"output/SMD/{args.group}"
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
     else:
-        output_path = f"output/{args.dataset}"
+        (x_train, _), (x_test, y_test) = get_data(args.dataset, do_preprocess=do_preprocess)
 
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-
-    if args.dataset == "TELENOR":
-        x_train, x_test = get_telenor_data(args.site, test_split=0.1, do_preprocess=args.do_preprocess)
-    elif args.dataset == "SMD":
-        group_index = args.group[0]
-        index = args.group[2:]
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}")
-    else:
-        (x_train, _), (x_test, y_test) = get_data(args.dataset)
-
-    save_scores = args.save_scores
-    load_scores = args.load_scores
-
-    label = y_test[window_size:] if y_test is not None else None
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
@@ -91,6 +94,13 @@ if __name__ == "__main__":
         out_dim = 1
     else:
         out_dim = len(target_dims)
+
+    train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
+    test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
+
+    train_loader, val_loader, test_loader = create_data_loaders(
+        train_dataset, batch_size, val_split, shuffle_dataset, test_dataset=test_dataset
+    )
 
     train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
     test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
@@ -113,17 +123,31 @@ if __name__ == "__main__":
     )
 
     device = "cuda" if args.use_cuda and torch.cuda.is_available() else "cpu"
-    load(model, f"{pre_trained_model_path}_model.pt", device=device)
+    load(model, f"{model_path}/model.pt", device=device)
     model.to(device)
 
+    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
+    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level = level_dict[key]
     prediction_args = {
-        "model_name": args.model,
+        "model_name": model_id,
         "target_dims": target_dims,
         "level": level,
         "q": args.q,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
-        "save_path": output_path,
+        "save_path": model_path,
     }
-    predictor = Predictor(model, window_size, n_features, prediction_args)
-    predictor.predict_anomalies(x_train, x_test, label, save_scores=save_scores, load_scores=load_scores)
+
+    count = 0
+    for filename in os.listdir(model_path):
+        if filename.startswith("summary"):
+            count += 1
+    if count == 0:
+        summary_file_name = "summary.txt"
+    else:
+        summary_file_name = f"summary_{count}.txt"
+
+    label = y_test[window_size:] if y_test is not None else None
+    predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name="summary_1.txt")
+    predictor.predict_anomalies(x_train, x_test, label, save_scores=False, load_scores=True, save_output=True)

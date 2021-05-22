@@ -175,7 +175,7 @@ def epsilon_eval(train_score, test_score, label):
 
     if label is None:
         test_label = label
-        best_epsilon = find_epsilon(test_score)
+        best_epsilon = find_epsilon(train_score)
     else:
         val_split = 0.2 if label is not None else 0.0
         val_end = int(val_split * len(test_score))
@@ -189,7 +189,7 @@ def epsilon_eval(train_score, test_score, label):
         best_f1 = -1
         best_acc = -1
         for reg in reg_levels:
-            epsilon = find_epsilon(test_score, reg_level=reg)
+            epsilon = find_epsilon(train_score, reg_level=reg)
             val_pred = adjust_predicts(val_score, val_label, epsilon, calc_latency=False)
             p_t = calc_point2point(val_pred, val_label)
             acc = (p_t[3] + p_t[4]) / (p_t[3] + p_t[4] + p_t[5] + p_t[6])
