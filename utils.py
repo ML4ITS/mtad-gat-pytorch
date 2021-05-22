@@ -88,7 +88,7 @@ def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
         test = test[:, :, 2:]
 
     else:
-        data = np.load(f"datasets/telenor/site_data/vol2/{site}.npy", allow_pickle=True)
+        data = np.load(f"datasets/telenor/site_data/cph/{site}.npy", allow_pickle=True)
         print(f"Loading data for site: {site}")
         print(f"Data shape: {data.shape}")
         print(f"Data start-end: {data[0, 0]} - {data[-1, 0]}")

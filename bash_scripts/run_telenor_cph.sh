@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0142
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0185
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0260
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0278
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0361
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0362
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0405
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S0453
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1076
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1079
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1084
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1117
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1222
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1285
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1336
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1377
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1693
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S1950
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S2126
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3005
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3009
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3145
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3285
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3375
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3376
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3379
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3539
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3562
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S3686
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S4002
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S4093
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S4097
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S4328
+python train.py --dataset telenor --epochs 50 --lookback 168 --val_split 0.0 --shuffle_dataset False --gru_hid_dim 300 --fc_hid_dim 300 --do_preprocess True --site S4727
