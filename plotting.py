@@ -36,7 +36,7 @@ class Plotter:
         self.lookback = None
         self.use_timestamps = False
 
-        if "TELENOR" in result_path:
+        if "TELENOR" in result_path or "beast" in result_path:
             path = "../datasets/telenor/site_data/vol2/metadata.txt"
             with open(path) as f:
                 metadata = json.load(f)
