@@ -91,7 +91,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     s = SPOT(q)  # SPOT object
     s.fit(init_score, score)
     s.initialize(level=level, min_extrema=False)  # Calibration step
-    ret = s.run(dynamic=False, with_alarm=True)
+    ret = s.run(dynamic=True, with_alarm=False)
 
     print(len(ret["alarms"]))
     print(len(ret["thresholds"]))
