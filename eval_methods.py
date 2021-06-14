@@ -183,7 +183,7 @@ def epsilon_eval(train_scores, test_scores, test_labels, reg_level=0):
         return {"threshold": best_epsilon, "reg_level": reg_level}
 
 
-def find_epsilon(errors, reg_level=0):
+def find_epsilon(errors, reg_level=2):
     """
     Threshold method proposed by Hundman et. al. (https://arxiv.org/abs/1802.04431)
     Code from TelemAnom (https://github.com/khundman/telemanom)
