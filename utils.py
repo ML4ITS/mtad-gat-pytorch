@@ -96,6 +96,11 @@ def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=Fal
     except (KeyError, FileNotFoundError):
         test_label = None
 
+    train_min = np.min(train_data, 0)
+    train_max = np.max(train_data, 0)
+
+    test_data[test_data < train_min] = train_min
+    test_data[test_data > train_max] = train_max
     if do_preprocess:
         train_data, scaler = normalize(train_data, scaler=None)
         test_data, _ = normalize(test_data, scaler=scaler)

@@ -470,7 +470,6 @@ class SPOT:
                     self.n += 1
 
             th.append(self.extreme_quantile)  # thresholds record
-            self.data = data_copy[max(0, i-5000), max(5000, min(i+5000, len(data_copy)-1))]
 
         return {"thresholds": th, "alarms": alarm}
 
