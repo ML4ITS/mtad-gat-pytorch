@@ -15,21 +15,6 @@ if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
 
-    if args.dataset == "SMD":
-        output_path = f"output/SMD/{args.group}"
-    else:
-        output_path = f"output/{args.dataset}"
-
-    log_dir = f"{output_path}/logs"
-
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    save_path = f"{output_path}/{id}"
-
     dataset = args.dataset
     do_preprocess = args.do_preprocess
     window_size = args.lookback
@@ -46,14 +31,28 @@ if __name__ == "__main__":
     args_summary = str(args.__dict__)
     print(args_summary)
 
-    if dataset == "SMD":
+    if dataset == 'SMD':
+        output_path = f'output/SMD/{args.group}'
+    elif dataset in ['MSL', 'SMAP']:
+        output_path = f'output/{dataset}'
+    else:
+        raise Exception(f'Dataset "{dataset}" not available.')
+
+    log_dir = f'{output_path}/logs'
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    save_path = f"{output_path}/{id}"
+
+    if dataset == 'SMD':
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
-    elif dataset == "MSL" or dataset == "SMAP":
+    elif dataset in ['MSL', 'SMAP']:
         (x_train, _), (x_test, y_test) = get_data(dataset, do_preprocess=do_preprocess)
 
-    x_train = torch.from_numpy(x_train).float()[:1000]
-    x_test = torch.from_numpy(x_test).float()[:1000]
-    y_test = y_test[:1000]
+    x_train = torch.from_numpy(x_train).float()
+    x_test = torch.from_numpy(x_test).float()
+    # y_test = y_test[:1000]
     n_features = x_train.shape[1]
 
     target_dims = get_target_dims(dataset)

@@ -13,7 +13,7 @@ class Trainer:
     :param optimizer: Optimizer used to minimize the loss function
     :param window_size: Length of the input sequence
     :param n_features: Number of input features
-        :param n_epochs: Number of iterations/epochs
+    :param n_epochs: Number of iterations/epochs
     :param batch_size: Number of windows in a single batch
     :param init_lr: Initial learning rate of the module
     :param forecast_criterion: Loss to be used for forecasting.

@@ -7,18 +7,19 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
-def normalize(df, scaler=None):
-    # df = np.asarray(df, dtype=np.float32)
-    if np.any(sum(np.isnan(df)) != 0):
-        df = np.nan_to_num()
+def normalize(data, scaler=None):
+
+    data = np.asarray(data, dtype=np.float32)
+    if np.any(sum(np.isnan(data))):
+        data = np.nan_to_num(data)
 
     if scaler is None:
         scaler = MinMaxScaler()
-        scaler.fit(df)
-    df = scaler.transform(df)
+        scaler.fit(data)
+    data = scaler.transform(data)
     print("Data normalized")
 
-    return df, scaler
+    return data, scaler
 
 
 def get_data_dim(dataset):
@@ -96,6 +97,8 @@ def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=Fal
         test_label = None
 
     if do_preprocess:
+        #train_data, _ = normalize(train_data)
+        #test_data, _ = normalize(test_data)
         train_data, scaler = normalize(train_data, scaler=None)
         test_data, _ = normalize(test_data, scaler=scaler)
 
@@ -118,10 +121,10 @@ class SlidingWindowDataset(Dataset):
         return x, y
 
     def __len__(self):
-        return len(self.data) - self.window  # - self.horizon
+        return len(self.data) - self.window
 
 
-def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, val_dataset=None, test_dataset=None):
+def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, test_dataset=None):
     train_loader, val_loader, test_loader = None, None, None
     if val_split == 0.0:
         print(f"train_size: {len(train_dataset)}")

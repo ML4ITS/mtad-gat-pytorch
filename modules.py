@@ -233,13 +233,13 @@ class RNNDecoder(nn.Module):
     :param dropout: dropout rate
     """
 
-    def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout=0.0):
+    def __init__(self, in_dim, hid_dim, n_layers, dropout=0.0):
         super(RNNDecoder, self).__init__()
         self.in_dim = in_dim
         self.rnn = nn.GRU(in_dim, hid_dim, n_layers, batch_first=True, dropout=dropout)
 
-    def forward(self, h):
-        decoder_out, _ = self.rnn(h)
+    def forward(self, x):
+        decoder_out, _ = self.rnn(x)
         return decoder_out
 
 
@@ -257,11 +257,11 @@ class ReconstructionModel(nn.Module):
         super(ReconstructionModel, self).__init__()
         self.window_size = window_size
         self.dropout = dropout
-        self.decoder = RNNDecoder(in_dim, hid_dim, out_dim, n_layers, dropout=dropout)
+        self.decoder = RNNDecoder(in_dim, hid_dim, n_layers, dropout=dropout)
         self.fc = nn.Linear(hid_dim, out_dim)
 
     def forward(self, x):
-        # x will be last hidden state of GRU layer
+        # x will be last hidden state of the GRU layer
         h_end = x
         h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 
