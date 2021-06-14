@@ -446,7 +446,7 @@ class SPOT:
                     # otherwise we add it in the peaks
                     else:
                         self.peaks = np.append(self.peaks, self.data[i] - self.init_threshold)
-                        self.peaks = self.peaks[1:]
+                        # self.peaks = self.peaks[1:]
                         self.Nt += 1
                         self.n += 1
                         # and we update the thresholds
@@ -458,7 +458,7 @@ class SPOT:
                 elif self.data[i] > self.init_threshold:
                     # we add it in the peaks
                     self.peaks = np.append(self.peaks, self.data[i] - self.init_threshold)
-                    self.peaks = self.peaks[1:]
+                    # self.peaks = self.peaks[1:]
                     self.Nt += 1
                     self.n += 1
                     # and we update the thresholds
@@ -469,6 +469,7 @@ class SPOT:
                     self.n += 1
 
             th.append(self.extreme_quantile)  # thresholds record
+            self.data = self.data[1:]
 
         return {"thresholds": th, "alarms": alarm}
 
