@@ -431,6 +431,7 @@ class SPOT:
         th = []
         alarm = []
         # Loop over the stream
+        data_copy = self.data.copy()
         for i in tqdm.tqdm(range(self.data.size)):
 
             if not dynamic:
@@ -469,7 +470,7 @@ class SPOT:
                     self.n += 1
 
             th.append(self.extreme_quantile)  # thresholds record
-            self.data = self.data[1:]
+            self.data = data_copy[max(0, i-5000), max(5000, min(i+5000, len(data_copy)-1))]
 
         return {"thresholds": th, "alarms": alarm}
 
