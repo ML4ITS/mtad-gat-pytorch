@@ -97,8 +97,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=Fal
         test_label = None
 
     if do_preprocess:
-        #train_data, _ = normalize(train_data)
-        #test_data, _ = normalize(test_data)
         train_data, scaler = normalize(train_data, scaler=None)
         test_data, _ = normalize(test_data, scaler=scaler)
 
