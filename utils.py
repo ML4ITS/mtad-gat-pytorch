@@ -1,7 +1,5 @@
 import os
 import pickle
-import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -9,27 +7,22 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
-def preprocess(df):
-    """Returns normalized and standardized data."""
-    df = np.asarray(df, dtype=np.float32)
-
-    if len(df.shape) == 1:
-        raise ValueError("Data must be a 2-D array")
-
+def normalize(df, scaler=None):
+    # df = np.asarray(df, dtype=np.float32)
     if np.any(sum(np.isnan(df)) != 0):
-        print("Data contains null values. Will be replaced with 0")
         df = np.nan_to_num()
 
-    # normalize data
-    df = MinMaxScaler().fit_transform(df)
+    if scaler is None:
+        scaler = MinMaxScaler()
+        scaler.fit(df)
+    df = scaler.transform(df)
     print("Data normalized")
 
-    return df
+    return df, scaler
 
 
 def get_data_dim(dataset):
     """
-
     :param dataset: Name of dataset
     :return: Number of dimensions in data
     """
@@ -39,15 +32,12 @@ def get_data_dim(dataset):
         return 55
     elif str(dataset).startswith("machine"):
         return 38
-    elif dataset == "TELENOR":
-        return 48
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
 
 def get_target_dims(dataset):
     """
-
     :param dataset: Name of dataset
     :return: index of data dimension that should be modeled (forecasted and reconstructed),
                      returns None if all input dimensions should be modeled
@@ -58,70 +48,16 @@ def get_target_dims(dataset):
         return [0]
     elif dataset == "SMD":
         return None
-    elif dataset == "TELENOR":
-        return None
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def get_telenor_data(site=None, test_split=0.0, do_preprocess=False):
-    if site is None:
-        data = np.load("datasets/telenor/graph_signals.npy", allow_pickle=True)
-        print(f"Data shape: {data.shape}")
-        sector_list = [f"{e[0]}_{e[1]}" for e in data[0, :, 1:3]]
-        print(f"Number of nodes (sectors): {len(sector_list)}")
-        print(f"Site_Sector Combinations: {sector_list}")
-        print(f"-" * 50)
-        print(f"Data start-end: {data[0, 0, 0]} - {data[-1, 0, 0]}")
-        if do_preprocess:
-            data = preprocess(data)
-        if test_split == 0.0:
-            train = data
-            test = None
-        else:
-            test_start = int(len(data) * (1 - test_split))
-            print(f"Train start-end: {data[0, 0, 0]} - {data[test_start - 1, 0, 0]}")
-            print(f"Test start-end: {data[test_start, 0, 0]} - {data[-1, 0, 0]}")
-            train, test = data[:test_start], data[test_start:]
-
-        train = train[:, :, 2:]  # Remove timestamp and site_sector column
-        test = test[:, :, 2:]
-
-    else:
-        data = np.load(f"datasets/telenor/site_data/cph/{site}.npy", allow_pickle=True)
-        print(f"Loading data for site: {site}")
-        print(f"Data shape: {data.shape}")
-        print(f"Data start-end: {data[0, 0]} - {data[-1, 0]}")
-        if do_preprocess:
-            data[:, 2:] = preprocess(data[:, 2:])
-        if test_split == 0.0:
-            train = data
-            test = None
-        else:
-            test_start = int(len(data) * (1 - test_split))
-            print(f"Train start-end: {data[0, 0]} - {data[test_start-1, 0]}")
-            print(f"Test start-end: {data[test_start, 0]} - {data[-1, 0]}")
-            train, test = data[:test_start], data[test_start:]
-
-        train = train[:, 2:]  # Remove timestamp and site_sector column
-        test = test[:, 2:]
-
-    return train.astype(float), test.astype(float)
-
-
-def get_data(
-    dataset,
-    max_train_size=None,
-    max_test_size=None,
-    print_log=True,
-    do_preprocess=False,
-    train_start=0,
-    test_start=0,
-):
+def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=False, train_start=0, test_start=0):
     """
     Get data from pkl files
 
     return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
+    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
     """
     prefix = "datasets"
     if str(dataset).startswith("machine"):
@@ -160,8 +96,8 @@ def get_data(
         test_label = None
 
     if do_preprocess:
-        train_data = preprocess(train_data)
-        test_data = preprocess(test_data)
+        train_data, scaler = normalize(train_data, scaler=None)
+        test_data, _ = normalize(test_data, scaler=scaler)
 
     print("train set shape: ", train_data.shape)
     print("test set shape: ", test_data.shape)
@@ -196,7 +132,6 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
         indices = list(range(dataset_size))
         split = int(np.floor(val_split * dataset_size))
         if shuffle:
-            # np.random.seed(random_seed)
             np.random.shuffle(indices)
         train_indices, val_indices = indices[split:], indices[:split]
 

@@ -3,10 +3,9 @@ __pycache__/
 .idea/
 .DS_Store
 datasets/data/
-datasets/telenor/
 datasets/ServerMachineDataset/processed/
 visualization/.ipynb_checkpoints/
-models/
+output/
 **.pkl
 **.npy
 **/logs

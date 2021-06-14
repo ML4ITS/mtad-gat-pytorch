@@ -1,9 +1,5 @@
-import sys
-from datetime import datetime
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class ConvLayer(nn.Module):
@@ -11,17 +7,16 @@ class ConvLayer(nn.Module):
     :param num_nodes: Number of input features/nodes
     :param window_size: length of the input sequence
     :param: kernel_size: size of kernel to use in the convolution operation
-    :param device: which device to use (cpu or cuda)
     """
 
-    def __init__(self, n_features, window_size, kernel_size=7, device="cpu"):
+    def __init__(self, n_features, window_size, kernel_size=7):
         super(ConvLayer, self).__init__()
         self.padding = nn.ConstantPad1d((kernel_size - 1) // 2, 0.0)
         self.conv = nn.Conv1d(in_channels=n_features, out_channels=n_features, kernel_size=kernel_size)
         self.relu = nn.ReLU()
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)  # To get the features/nodes as channel and timesteps as the spatial dimension
+        x = x.permute(0, 2, 1)
         x = self.padding(x)
         x = self.relu(self.conv(x))
         return x.permute(0, 2, 1)  # Permute back
@@ -29,39 +24,61 @@ class ConvLayer(nn.Module):
 
 class FeatureAttentionLayer(nn.Module):
     """Single Graph Feature/Spatial Attention Layer
-    :param num_nodes: Number of input features/nodes
+    :param n_features: Number of input features/nodes
     :param window_size: length of the input sequence
     :param dropout: percentage of nodes to dropout
     :param alpha: negative slope used in the leaky rely activation function
-    :param device: which device to use (cpu or cuda)
+    :param use_gatv2: whether to use the modified attention mechanism of GATv2 instead of standard GAT
+    :param embed_dim: embedding dimension (output dimension of linear transformation)
     """
 
-    def __init__(self, num_nodes, window_size, dropout, alpha, device="cpu"):
+    def __init__(self, n_features, window_size, dropout, alpha, embed_dim=None, use_gatv2=True):
         super(FeatureAttentionLayer, self).__init__()
-        self.num_nodes = num_nodes
+        self.n_features = n_features
         self.window_size = window_size
         self.dropout = dropout
+        self.embed_dim = embed_dim if embed_dim is not None else window_size
+        self.use_gatv2 = use_gatv2
+        self.num_nodes = n_features
+
+        # Because linear transformation is done after concatenation in GATv2
+        if self.use_gatv2:
+            self.embed_dim *= 2
+            lin_input_dim = 2 * window_size
+            a_input_dim = self.embed_dim
+        else:
+            lin_input_dim = window_size
+            a_input_dim = 2 * self.embed_dim
+
+        self.lin = nn.Linear(lin_input_dim, self.embed_dim)
+        self.a = nn.Parameter(torch.empty((a_input_dim, 1)))
+        self.bias = nn.Parameter(torch.empty(n_features, n_features))
+
+        nn.init.xavier_uniform_(self.a.data, gain=1.414)
+
         self.leakyrelu = nn.LeakyReLU(alpha)
-
-        self.w = nn.Parameter(torch.empty((2 * window_size, 1)))
-        nn.init.xavier_uniform_(self.w.data, gain=1.414)
-
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        # x has shape (b, n, k) where n is window size and k is number of nodes
-        # For feature attention we represent each node by a sequential vector,
-        # containing all its values within the window
+        # x shape (b, n, k): b - batch size, n - window size, k - number of features
+        # For feature attention we represent a node as the values of a particular feature across all timestamps
 
         v = x.permute(0, 2, 1)
 
-        # Wh = torch.mm(h, self.W)  # Transformation shared across nodes (not used)
+        # 'Dynamic' GAT attention
+        # Proposed by Brody et. al., 2021 (https://arxiv.org/pdf/2105.14491.pdf)
+        # Linear transformation applied after concatenation and attention layer applied after leakyrelu
+        if self.use_gatv2:
+            a_input = self._make_attention_input(v)                 # (b, k, k, 2*window_size)
+            a_input = self.leakyrelu(self.lin(a_input))             # (b, k, k, embed_dim)
+            e = torch.matmul(a_input, self.a).squeeze(3)            # (b, k, k, 1)
+            e += self.bias                                          # (b, k, k, 1)
 
-        # Creating matrix of concatenations of node features
-        attn_input = self._make_attention_input(v)  # (b, k, k, 2*win_size)
-
-        # Attention scores
-        e = self.leakyrelu(torch.matmul(attn_input, self.w)).squeeze(3)  # (b, k, k, 1)
+        # Original GAT attention
+        else:
+            v = self.lin(v)                                                  # (b, k, k, embed_dim)
+            a_input = self._make_attention_input(v)                          # (b, k, k, 2*embed_dim)
+            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)     # (b, k, k, 1)
 
         # Attention weights
         attention = torch.softmax(e, dim=2)
@@ -70,7 +87,7 @@ class FeatureAttentionLayer(nn.Module):
         # Computing new node features using the attention
         h = self.sigmoid(torch.matmul(attention, v))
 
-        return h
+        return h.permute(0, 2, 1)
 
     def _make_attention_input(self, v):
         """Preparing the feature attention mechanism.
@@ -90,54 +107,76 @@ class FeatureAttentionLayer(nn.Module):
         """
 
         K = self.num_nodes
-        Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
-        Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
+        blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
+        blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
 
-        combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
+        combined = torch.cat((blocks_repeating, blocks_alternating), dim=2)  # (b, K*K, 2*window_size)
 
         return combined.view(v.size(0), K, K, 2 * self.window_size)
 
 
 class TemporalAttentionLayer(nn.Module):
     """Single Graph Temporal Attention Layer
-    :param num_nodes: Number of input features/nodes
+    :param n_features: number of input features/nodes
     :param window_size: length of the input sequence
     :param dropout: percentage of nodes to dropout
     :param alpha: negative slope used in the leaky rely activation function
-    :param device: which device to use (cpu or cuda)
+    :param use_gatv2: whether to use the modified attention mechanism of GATv2 instead of standard GAT
+    :param embed_dim: embedding dimension (output dimension of linear transformation)
 
     """
 
-    def __init__(self, num_nodes, window_size, dropout, alpha, device="cpu"):
+    def __init__(self, n_features, window_size, dropout, alpha, embed_dim=None, use_gatv2=True):
         super(TemporalAttentionLayer, self).__init__()
-        self.num_nodes = num_nodes
+        self.n_features = n_features
         self.window_size = window_size
         self.dropout = dropout
+        self.use_gatv2 = use_gatv2
+        self.embed_dim = embed_dim if embed_dim is not None else n_features
+        self.num_nodes = window_size
+
+        # Because linear transformation is performed after concatenation in GATv2
+        if self.use_gatv2:
+            self.embed_dim *= 2
+            lin_input_dim = 2 * n_features
+            a_input_dim = self.embed_dim
+        else:
+            lin_input_dim = n_features
+            a_input_dim = 2 * self.embed_dim
+
+        self.lin = nn.Linear(lin_input_dim, self.embed_dim)
+        self.a = nn.Parameter(torch.empty((a_input_dim, 1)))
+        self.bias = nn.Parameter(torch.empty(window_size, window_size))
+
+        nn.init.xavier_uniform_(self.a.data, gain=1.414)
+
         self.leakyrelu = nn.LeakyReLU(alpha)
-
-        self.w = nn.Parameter(torch.empty((2 * num_nodes, 1)))
-        nn.init.xavier_uniform_(self.w.data, gain=1.414)
-
         self.sigmoid = nn.Sigmoid()
 
-    # self.a = nn.Linear(2 * out_dim, 1, bias=False)
-
     def forward(self, x):
-        # x has shape (b, n, k) where b is batch size, n is window size and k is number of nodes
-        # For temporal attention each node attend to its previous values,
+        # x shape (b, n, k): b - batch size, n - window size, k - number of features
+        # For temporal attention a node is represented as all feature values at a specific timestamp
 
-        # Creating matrix of concatenations of node features
-        attn_input = self._make_attention_input(x)
+        # 'Dynamic' GAT attention
+        # Proposed by Brody et. al., 2021 (https://arxiv.org/pdf/2105.14491.pdf)
+        # Linear transformation applied after concatenation and attention layer applied after leakyrelu
+        if self.use_gatv2:
+            a_input = self._make_attention_input(x)              # (b, n, n, 2*n_features)
+            a_input = self.leakyrelu(self.lin(a_input))          # (b, n, n, embed_dim)
+            e = torch.matmul(a_input, self.a).squeeze(3)         # (b, n, n, 1)
+            e += self.bias                                       # (b, n, n, 1)
 
-        # Attention scores
-        e = self.leakyrelu(torch.matmul(attn_input, self.w).squeeze(3))
+        # Original GAT attention
+        else:
+            x = self.lin(x)                                                  # (b, n, n, embed_dim)
+            a_input = self._make_attention_input(x)                          # (b, n, n, 2*embed_dim)
+            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)     # (b, n, n, 1)
 
         # Attention weights
         attention = torch.softmax(e, dim=2)
         attention = torch.dropout(attention, self.dropout, train=self.training)
 
-        # Computing new node features using the attention
-        h = self.sigmoid(torch.matmul(attention, x))
+        h = self.sigmoid(torch.matmul(attention, x))    # (b, n, k)
 
         return h
 
@@ -155,73 +194,35 @@ class TemporalAttentionLayer(nn.Module):
 
         """
 
-        # v has shape (b, n, k)
+        K = self.num_nodes
+        blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
+        blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
+        combined = torch.cat((blocks_repeating, blocks_alternating), dim=2)
 
-        K = self.window_size
-        Wh_blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
-        Wh_blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
-
-        combined = torch.cat((Wh_blocks_repeating, Wh_blocks_alternating), dim=2)  # Shape (b, K*K, 2*window_size)
-        return combined.view(v.size(0), K, K, 2 * self.num_nodes)
+        if self.use_gatv2:
+            return combined.view(v.size(0), K, K, 2 * self.n_features)
+        else:
+            return combined.view(v.size(0), K, K, 2 * self.embed_dim)
 
 
-class GRU(nn.Module):
-    """Gated Recurrent Unit (GRU)
+class GRULayer(nn.Module):
+    """Gated Recurrent Unit (GRU) Layer
     :param in_dim: number of input features
     :param hid_dim: hidden size of the GRU
     :param n_layers: number of layers in GRU
     :param dropout: dropout rate
-    :param device: which device to use (cpu or cuda)
     """
 
-    def __init__(self, in_dim, hid_dim, n_layers, dropout, device="cpu"):
-        super(GRU, self).__init__()
+    def __init__(self, in_dim, hid_dim, n_layers, dropout):
+        super(GRULayer, self).__init__()
         self.hid_dim = hid_dim
         self.n_layers = n_layers
-        self.device = device
-
         self.gru = nn.GRU(in_dim, hid_dim, num_layers=n_layers, batch_first=True, dropout=dropout)
 
     def forward(self, x):
-        # h0 = torch.zeros(self.n_layers, x.shape[0], self.hid_dim).to(self.device)
         out, h = self.gru(x)
         out, h = out[-1, :, :], h[-1, :, :]  # Extracting from last layer
         return out, h
-
-
-class RNNEncoder(nn.Module):
-    """Encoder network containing enrolled GRU
-    :param in_dim: number of input features
-    :param hid_dim: hidden size of the RNN
-    :param n_layers: number of layers in RNN
-    :param dropout: dropout rate
-    :param device: which device to use (cpu or cuda)
-    """
-
-    def __init__(self, in_dim, n_layers=1, hid_dim=64, dropout=0.0, device="cpu"):
-        super(RNNEncoder, self).__init__()
-
-        self.in_dim = in_dim
-        self.n_layers = n_layers
-        self.hid_dim = hid_dim
-
-        self.rnn = nn.GRU(
-            input_size=in_dim,
-            hidden_size=hid_dim,
-            num_layers=n_layers,
-            batch_first=True,
-            dropout=dropout,
-        )
-        # self.rnn2 = nn.GRU(self.hid_dim, self.embed_dim, n_layers, batch_first=True, dropout=dropout)
-
-    def forward(self, x):
-        """Forward propagation of encoder. Given input, outputs the last hidden state of encoder
-        :param x: input to the encoder, of shape (batch_size, window_size, number_of_features)
-        :return: last hidden state of encoder, of shape (batch_size, hidden_size)
-        """
-
-        _, h_end = self.rnn(x)
-        return h_end
 
 
 class RNNDecoder(nn.Module):
@@ -230,59 +231,42 @@ class RNNDecoder(nn.Module):
     :param n_layers: number of layers in RNN
     :param hid_dim: hidden size of the RNN
     :param dropout: dropout rate
-    :param device: which device to use (cpu or cuda)
     """
 
-    def __init__(self, in_dim, n_layers, hid_dim, out_dim, dropout=0.0, device="cpu"):
+    def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout=0.0):
         super(RNNDecoder, self).__init__()
-
         self.in_dim = in_dim
-
         self.rnn = nn.GRU(in_dim, hid_dim, n_layers, batch_first=True, dropout=dropout)
-        # self.decoder_inputs = torch.zeros(self.window_size, batch_size, 1, requires_grad=True).to(device)
-
-        self.fc = nn.Linear(hid_dim, out_dim)
 
     def forward(self, h):
-
         decoder_out, _ = self.rnn(h)
-        # print(f'decoder_out: {decoder_out.shape}')
-
-        out = self.fc(decoder_out)
-        return out
+        return decoder_out
 
 
-class RNNAutoencoder(nn.Module):
-    """Reconstruction Model using a GRU-based Encoder-Decoder.
+class ReconstructionModel(nn.Module):
+    """Reconstruction Model
     :param window_size: length of the input sequence
     :param in_dim: number of input features
     :param n_layers: number of layers in RNN
     :param hid_dim: hidden size of the RNN
     :param in_dim: number of output features
     :param dropout: dropout rate
-    :param device: which device to use (cpu or cuda)
     """
 
-    def __init__(self, window_size, in_dim, n_layers, hid_dim, out_dim, dropout, device="cpu"):
-        super(RNNAutoencoder, self).__init__()
-
+    def __init__(self, window_size, in_dim, hid_dim, out_dim, n_layers, dropout):
+        super(ReconstructionModel, self).__init__()
         self.window_size = window_size
         self.dropout = dropout
-        self.device = device
-
-        # self.encoder = RNNEncoder(in_dim, n_layers, hid_dim, dropout=dropout, device=device)
-        self.decoder = RNNDecoder(in_dim, n_layers, hid_dim, out_dim, dropout=dropout, device=device)
+        self.decoder = RNNDecoder(in_dim, hid_dim, out_dim, n_layers, dropout=dropout)
+        self.fc = nn.Linear(hid_dim, out_dim)
 
     def forward(self, x):
-        # x shape: (b, n, k)
-
-        # h_end = self.encoder(x).squeeze(0).unsqueeze(2)
-        # Use last hidden state from GRU module as the encoding
+        # x will be last hidden state of GRU layer
         h_end = x
         h_end_rep = h_end.repeat_interleave(self.window_size, dim=1).view(x.size(0), self.window_size, -1)
 
-        out = self.decoder(h_end_rep)
-
+        decoder_out = self.decoder(h_end_rep)
+        out = self.fc(decoder_out)
         return out
 
 
@@ -293,14 +277,11 @@ class Forecasting_Model(nn.Module):
     :param out_dim: number of output features
     :param n_layers: number of FC layers
     :param dropout: dropout rate
-    :param device: which device to use (cpu or cuda)
     """
 
-    def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout, device="cpu"):
+    def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout):
         super(Forecasting_Model, self).__init__()
-
-        layers = []
-        layers.append(nn.Linear(in_dim, hid_dim))
+        layers = [nn.Linear(in_dim, hid_dim)]
         for _ in range(n_layers - 1):
             layers.append(nn.Linear(hid_dim, hid_dim))
 

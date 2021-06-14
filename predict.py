@@ -65,7 +65,6 @@ if __name__ == "__main__":
     site = args.site
     do_preprocess = model_args.do_preprocess
     window_size = model_args.lookback
-    horizon = model_args.horizon
     n_epochs = model_args.epochs
     batch_size = model_args.bs
     init_lr = model_args.init_lr
@@ -112,7 +111,6 @@ if __name__ == "__main__":
     model = MTAD_GAT(
         n_features,
         window_size,
-        model_args.horizon,
         out_dim,
         model_args.bs,
         kernel_size=model_args.kernel_size,

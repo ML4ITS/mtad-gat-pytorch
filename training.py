@@ -1,11 +1,8 @@
 import os
 import time
-from datetime import datetime
-
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -43,11 +40,8 @@ class Trainer:
         log_dir="output/",
         print_every=1,
         args_summary="",
-        site="",
-        site_independent=False,
     ):
-        self.site_independent = site_independent
-        self.site = site
+
         self.model = model
         self.optimizer = optimizer
         self.window_size = window_size
@@ -75,9 +69,6 @@ class Trainer:
 
         if self.device == "cuda":
             self.model.cuda()
-
-        # self.id = datetime.now().strftime("%d%m%Y_%H%M%S")
-        # self.dload = dload
 
         self.writer = SummaryWriter(f"{log_dir}")
         self.writer.add_text("args_summary", args_summary)
@@ -183,11 +174,6 @@ class Trainer:
         if val_loader is None:
             self.save(f"model.pt")
 
-            # Experimental Pre-trained Models
-            if self.site_independent:
-                now = datetime.now().strftime("%d%m%y")
-                torch.save(self.model.state_dict(), f"./models/{now}/model_{self.site}.pt")
-
         train_time = int(time.time() - train_start)
         self.writer.add_text("total_train_time", str(train_time))
         print(f"-- Training done in {train_time}s.")
@@ -205,10 +191,7 @@ class Trainer:
         recon_losses = []
 
         with torch.no_grad():
-            for (
-                x,
-                y,
-            ) in data_loader:
+            for x, y in data_loader:
                 x = x.to(self.device)
                 y = y.to(self.device)
 
@@ -256,7 +239,6 @@ class Trainer:
         Loads the model's parameters from the path mentioned
         :param PATH: Should contain pickle file
         """
-
         self.model.load_state_dict(torch.load(PATH, map_location=self.device))
 
     def write_loss(self, epoch):

@@ -1,7 +1,5 @@
 import json
 from datetime import datetime
-from os import listdir
-
 import torch.nn as nn
 
 from args import get_parser
@@ -17,9 +15,7 @@ if __name__ == "__main__":
     parser = get_parser()
     args = parser.parse_args()
 
-    if args.dataset == "TELENOR":
-        output_path = f"output/TELENOR/{args.site}"
-    elif args.dataset == "SMD":
+    if args.dataset == "SMD":
         output_path = f"output/SMD/{args.group}"
     else:
         output_path = f"output/{args.dataset}"
@@ -35,10 +31,8 @@ if __name__ == "__main__":
     save_path = f"{output_path}/{id}"
 
     dataset = args.dataset
-    site = args.site
     do_preprocess = args.do_preprocess
     window_size = args.lookback
-    horizon = args.horizon
     n_epochs = args.epochs
     batch_size = args.bs
     init_lr = args.init_lr
@@ -52,16 +46,14 @@ if __name__ == "__main__":
     args_summary = str(args.__dict__)
     print(args_summary)
 
-    if args.dataset == "TELENOR":
-        x_train, x_test = get_telenor_data(site, test_split=test_split, do_preprocess=do_preprocess)
-        y_test = None
-    elif args.dataset == "SMD":
+    if dataset == "SMD":
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
-    else:
+    elif dataset == "MSL" or dataset == "SMAP":
         (x_train, _), (x_test, y_test) = get_data(dataset, do_preprocess=do_preprocess)
 
-    x_train = torch.from_numpy(x_train).float()
-    x_test = torch.from_numpy(x_test).float()
+    x_train = torch.from_numpy(x_train).float()[:1000]
+    x_test = torch.from_numpy(x_test).float()[:1000]
+    y_test = y_test[:1000]
     n_features = x_train.shape[1]
 
     target_dims = get_target_dims(dataset)
@@ -85,29 +77,20 @@ if __name__ == "__main__":
     model = MTAD_GAT(
         n_features,
         window_size,
-        horizon,
         out_dim,
-        batch_size,
         kernel_size=args.kernel_size,
-        dropout=args.dropout,
-        gru_n_layers=args.gru_layers,
+        use_gatv2=args.use_gatv2,
+        feat_gat_embed_dim=args.feat_gat_embed_dim,
+        time_gat_embed_dim=args.time_gat_embed_dim,
+        gru_n_layers=args.gru_n_layers,
         gru_hid_dim=args.gru_hid_dim,
-        autoenc_n_layers=args.autoenc_layers,
-        autoenc_hid_dim=args.autoenc_hid_dim,
-        forecast_n_layers=args.fc_layers,
+        forecast_n_layers=args.fc_n_layers,
         forecast_hid_dim=args.fc_hid_dim,
-        use_cuda=args.use_cuda,
+        recon_n_layers=args.recon_n_layers,
+        recon_hid_dim=args.recon_hid_dim,
+        dropout=args.dropout,
+        alpha=args.alpha
     )
-
-    if args.site_independent:
-        today = datetime.now().strftime("%d%m%y")
-        os.makedirs(f"./models/{today}", exist_ok=True)
-        PATH_TO_MODELS = f"./models/{today}"
-        models = listdir(PATH_TO_MODELS)
-
-        if len(models) != 0 and models[-1].endswith(".pt"):
-            print(f"Loading pretrained model:\t{models[-1]}")
-            model.load_state_dict(torch.load(f"{PATH_TO_MODELS}/{models[-1]}"))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.init_lr)
     forecast_criterion = nn.MSELoss()
@@ -128,9 +111,7 @@ if __name__ == "__main__":
         save_path,
         log_dir,
         print_every,
-        args_summary,
-        site,
-        args.site_independent,
+        args_summary
     )
 
     trainer.fit(train_loader, val_loader)
@@ -143,11 +124,10 @@ if __name__ == "__main__":
     print(f"Test reconstruction loss: {test_loss[1]:.5f}")
     print(f"Test total loss: {test_loss[2]:.5f}")
 
-    # Predict anomalies
-    # 'level' argument for POT-method
+    # Fit threshold and predict anomalies
     if args.level is not None:
         level = args.level
-    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
+    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
 

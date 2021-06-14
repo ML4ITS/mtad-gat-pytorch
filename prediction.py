@@ -1,10 +1,9 @@
 from tqdm import tqdm
+import pandas as pd
+import json
 
 from eval_methods import *
 from utils import *
-
-import pandas as pd
-import json
 
 
 class Predictor:
@@ -120,7 +119,6 @@ class Predictor:
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
         # Find threshold and predict anomalies for each feature
-
         out_dim = self.n_features if self.target_dims is None else len(self.target_dims)
         all_preds = np.zeros((len(test_pred_df), out_dim))  # 1 row is 1 timestamp, preds for all cols
         for i in range(out_dim):
@@ -140,7 +138,7 @@ class Predictor:
             all_preds[:, i] = test_feature_anom_preds
 
         # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
-        # Use validation set to find hyperparams for epsilon method
+
         e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies)
         p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, q=self.q, level=self.level)
         if true_anomalies is not None:
@@ -177,16 +175,12 @@ class Predictor:
         with open(f"{self.save_path}/{self.summary_file_name}", "w") as f:
             json.dump(summary, f, indent=2)
 
-        # Make and save predictions using best found epsilon
         test_pred_df["A_True_Global"] = true_anomalies
-
         train_pred_df["Thresh_Global"] = train_global_epsilon
         test_pred_df["Thresh_Global"] = global_epsilon
-
         train_pred_df[f"A_Pred_Global"] = (train_anomaly_scores >= train_global_epsilon).astype(int)
         test_preds_global = (test_anomaly_scores >= global_epsilon).astype(int)
         if true_anomalies is not None:
-            # test_preds_global = adjust_predicts(test_anomaly_scores, true_anomalies, global_epsilon)
             test_preds_global = adjust_predicts(None, true_anomalies, global_epsilon, pred=test_preds_global)
 
         test_pred_df[f"A_Pred_Global"] = test_preds_global

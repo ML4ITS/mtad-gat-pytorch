@@ -3,7 +3,7 @@ import more_itertools as mit
 from spot import SPOT, dSPOT
 
 
-def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=False):
+def adjust_predicts(score, label, threshold, pred=None, calc_latency=False):
     """
     Calculate adjusted predict labels using given `score`, `threshold` (or given `pred`) and `label`.
     Args:
@@ -15,6 +15,8 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
             calc_latency (bool):
     Returns:
             np.ndarray: predict labels
+
+    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
     """
     if label is None:
         predict = score > threshold
@@ -32,10 +34,8 @@ def adjust_predicts(score, label, threshold, advance=1, pred=None, calc_latency=
     anomaly_count = 0
     latency = 0
 
-    # Added advance in case model predicts anomaly 'in advance' within a small window
-    # Advance should be 0 or small
     for i in range(len(predict)):
-        if any(actual[max(i - advance, 0) : i + 1]) and predict[i] and not anomaly_state:
+        if any(actual[max(i, 0) : i + 1]) and predict[i] and not anomaly_state:
             anomaly_state = True
             anomaly_count += 1
             for j in range(i, 0, -1):
@@ -61,6 +61,7 @@ def calc_point2point(predict, actual):
     Args:
             predict (np.ndarray): the predict label
             actual (np.ndarray): np.ndarray
+    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
     """
     TP = np.sum(predict * actual)
     TN = np.sum((1 - predict) * (1 - actual))
@@ -83,18 +84,14 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     :param q (float): Detection level (risk)
     :param level (float): Probability associated with the initial threshold t
     :return dict: pot result dict
+    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
     """
 
     print(f"Running POT with q={q}, level={level}..")
     s = SPOT(q)  # SPOT object
-    s.fit(init_score, score)  # data import
-    s.initialize(level=level, min_extrema=False)  # initialization step
-    ret = s.run(dynamic=False, with_alarm=False)  # much faster
-
-    # s = dSPOT(q, depth=300)  # SPOT object
-    # s.fit(init_score, score)  # data import
-    # s.initialize()  # initialization step
-    # ret = s.run()  # much faster
+    s.fit(init_score, score)
+    s.initialize(level=level, min_extrema=False)  # Calibration step
+    ret = s.run(dynamic=False, with_alarm=True)
 
     print(len(ret["alarms"]))
     print(len(ret["thresholds"]))
@@ -123,9 +120,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
 def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose=True):
     """
     Find the best-f1 score by searching best `threshold` in [`start`, `end`).
-    Returns:
-            list: list for results
-            float: the `threshold` for best-f1
+    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
     """
 
     print(f"Finding best f1-score by searching for threshold..")
@@ -163,51 +158,15 @@ def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose
 
 
 def calc_seq(score, label, threshold):
-    """
-    Calculate f1 score for a score sequence
-    """
     predict, latency = adjust_predicts(score, label, threshold, calc_latency=True)
     return calc_point2point(predict, label), latency
 
 
-def epsilon_eval(train_score, test_score, label):
-    best_reg = 0
-
-    if label is None:
-        test_label = label
-        best_epsilon = find_epsilon(train_score)
-    else:
-        val_split = 0.2 if label is not None else 0.0
-        val_end = int(val_split * len(test_score))
-        val_score = test_score[:val_end]
-        val_label = label[:val_end]
-        test_score = test_score[val_end:]
-        test_label = label[val_end:]
-
-        reg_levels = [0, 1, 2]
-        best_epsilon = None
-        best_f1 = -1
-        best_acc = -1
-        for reg in reg_levels:
-            epsilon = find_epsilon(train_score, reg_level=reg)
-            val_pred = adjust_predicts(val_score, val_label, epsilon, calc_latency=False)
-            p_t = calc_point2point(val_pred, val_label)
-            acc = (p_t[3] + p_t[4]) / (p_t[3] + p_t[4] + p_t[5] + p_t[6])
-            f1 = p_t[0]
-            if 1 in val_label:
-                if f1 > best_f1:
-                    best_f1 = f1
-                    best_epsilon = epsilon
-                    best_reg = reg
-            else:
-                if acc > best_acc:
-                    best_acc = acc
-                    best_epsilon = epsilon
-                    best_reg = reg
-
-    pred, p_latency = adjust_predicts(test_score, test_label, best_epsilon, calc_latency=True)
-    if label is not None:
-        p_t = calc_point2point(pred, test_label)
+def epsilon_eval(train_scores, test_scores, test_labels, reg_level=0):
+    best_epsilon = find_epsilon(train_scores)
+    pred, p_latency = adjust_predicts(test_scores, test_labels, best_epsilon, calc_latency=True)
+    if test_labels is not None:
+        p_t = calc_point2point(pred, test_labels)
         return {
             "f1": p_t[0],
             "precision": p_t[1],
@@ -218,18 +177,19 @@ def epsilon_eval(train_score, test_score, label):
             "FN": p_t[6],
             "threshold": best_epsilon,
             "latency": p_latency,
-            "reg_level": best_reg,
+            "reg_level": reg_level,
         }
     else:
-        return {"threshold": best_epsilon, "reg_level": best_reg}
+        return {"threshold": best_epsilon, "reg_level": reg_level}
 
 
 def find_epsilon(errors, reg_level=0):
+    """
+    Threshold method proposed by Hundman et. al. (https://arxiv.org/abs/1802.04431)
+    Code from TelemAnom (https://github.com/khundman/telemanom)
+    """
     e_s = errors
-
-    sd_threshold = None
     best_epsilon = None
-
     max_score = -10000000
     mean_e_s = np.mean(e_s)
     sd_e_s = np.std(e_s)
@@ -238,9 +198,7 @@ def find_epsilon(errors, reg_level=0):
         epsilon = mean_e_s + sd_e_s * z
         pruned_e_s = e_s[e_s < epsilon]
 
-        i_anom = np.argwhere(e_s >= epsilon).reshape(
-            -1,
-        )
+        i_anom = np.argwhere(e_s >= epsilon).reshape(-1,)
         buffer = np.arange(1, 50)
         i_anom = np.sort(
             np.concatenate(
@@ -269,10 +227,8 @@ def find_epsilon(errors, reg_level=0):
 
             score = (mean_perc_decrease + sd_perc_decrease) / denom
 
-            # sanity checks / guardrails
             if score >= max_score and len(i_anom) < (len(e_s) * 0.5):
                 max_score = score
-                sd_threshold = z
                 best_epsilon = epsilon
 
     if best_epsilon is None:
