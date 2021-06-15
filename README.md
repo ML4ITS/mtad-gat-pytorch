@@ -2,7 +2,7 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 
 - This repo includes a complete framework for multivariate anomaly detection, using a model that is heavily inspired by MTAD-GAT.
 - Our work does not serve to reproduce the original results in the paper.
-- For contact, feel free to use: axel.harstad@gmail.com or williamkvaale@gmail.com
+- For contact, feel free to use axel.harstad@gmail.com or williamkvaale@gmail.com
 
 ## Key Notes
 - We include the option to use the recently proposed *GATv2* instead of standard GAT
@@ -57,9 +57,9 @@ You can change the default configuration by adding more arguments. All arguments
 python train.py --dataset smd --group 1-1 --lookback 150 --epochs 10 
 ```
   
-- Training MSL for 10 epochs, using standard GAT instead of GATv2 (which is the default), and a validation split of 0.1:
+- Training MSL for 10 epochs, using standard GAT instead of GATv2 (which is the default), and a validation split of 0.2:
 ```bash 
-python train.py --dataset msl --epochs 10 --use_gatv2 False --val_split 0.1
+python train.py --dataset msl --epochs 10 --use_gatv2 False --val_split 0.2
 ```
 <!--
 #### Default configuration:
