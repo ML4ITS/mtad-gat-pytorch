@@ -41,8 +41,7 @@ def get_parser():
     parser.add_argument("--alpha", type=float, default=0.2)
 
     # --- Train params ---
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--test_size", type=float, default=0.1)
+    parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--val_split", type=float, default=0.1)
     parser.add_argument("--bs", type=int, default=256)
     parser.add_argument("--init_lr", type=float, default=1e-3)

@@ -23,7 +23,6 @@ if __name__ == "__main__":
     batch_size = args.bs
     init_lr = args.init_lr
     val_split = args.val_split
-    test_split = args.test_size
     shuffle_dataset = args.shuffle_dataset
     use_cuda = args.use_cuda
     print_every = args.print_every
