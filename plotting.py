@@ -310,7 +310,10 @@ class Plotter:
             data_copy = self.train_output.copy()
         elif type == "test":
             data_copy = self.test_output.copy()
-        data_copy = data_copy.drop(columns=["A_Score_Global", "Thresh_Global"])
+
+        data_copy = data_copy.drop(columns=['timestamp', 'A_Score_Global', 'Thresh_Global'])
+        cols = [c for c in data_copy.columns if not (c.startswith('Thresh_') or c.startswith('A_Pred_'))]
+        data_copy = data_copy[cols]
 
         if start is not None and end is not None:
             assert start < end
@@ -323,7 +326,7 @@ class Plotter:
         num_cols = data_copy.shape[1]
         plt.tight_layout()
         colors = ["gray", "gray", "gray", "r"] * (num_cols // 4) + ["b", "g"]
-        data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.1), style=colors)
+        data_copy.plot(subplots=True, figsize=(20, num_cols), ylim=(0, 1.5), style=colors)
         plt.show()
 
     def plot_anomaly_segments(self, type="test", num_aligned_segments=None, show_boring_series=False):
@@ -473,6 +476,7 @@ class Plotter:
 
         tot_anomaly_scores = data_copy["A_Score_Global"].values
         pred_anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_Global"].values)
+        threshold = data_copy['Thresh_Global'].values
         y_min = -0.1
         y_max = 1.1 * np.max(tot_anomaly_scores)
         shapes = self.create_shapes(pred_anomaly_sequences, "pred", y_min, y_max, None, is_test=is_test)
@@ -490,7 +494,8 @@ class Plotter:
         }
 
         fig = go.Figure(
-            data=[go.Scatter(x=data_copy["timestamp"], y=tot_anomaly_scores, line=dict(width=1, color="red"))],
+            data=[go.Scatter(x=data_copy["timestamp"], y=tot_anomaly_scores, line=dict(width=1, color="red")),
+                  go.Scatter(x=data_copy["timestamp"], y=threshold, line=dict(color="black", width=1, dash="dash"))],
             layout=layout,
         )
         py.offline.iplot(fig)
