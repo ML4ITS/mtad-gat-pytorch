@@ -50,7 +50,7 @@ To train:
 ```
 where <dataset> is one of msl, smap or smd (upper-case also works). If training on SMD, one should specify which machine using the ``` --group``` argument.
 
-You can change the default configuration by adding more arguments. Some examples:
+You can change the default configuration by adding more arguments. All arguments can be found in ```args.py```. Some examples:
     
 - Training machine-1-1 of SMD for 10 epochs, using a lookback (window size) of 150:
 ```bash 
@@ -61,7 +61,7 @@ python train.py --dataset smd --group 1-1 --lookback 150 --epochs 10
 ```bash 
 python train.py --dataset msl --epochs 10 --use_gatv2 False --val_split 0.1
 ```
-
+<!--
 #### Default configuration:
 Data params:
 ```--dataset='SMD'```
@@ -101,8 +101,9 @@ Predictor params:
 ```--q=1e-3```
 ```--dynamic_pot=False```  <br />
 ```--use_mov_av=False```
-
-## Output
+-->
+  
+## Output and visualization results
 Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is used as ID) and include:
   - ```summary.txt```: performance on test set (precision, recall, F1, etc.)
   - ```config.txt```: the configuration used for model, training, etc. 
@@ -110,12 +111,17 @@ Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is u
   - ```train/test_scores.npy```: anomaly scores
   - ```train/validation_losses.png```: plots of train and validation loss during training
   - ```model.pt``` weights etc. for trained model 
+ 
+```result_visualizer.ipynb``` provides a jupyter notebook for visualizing results. 
+To launch notebook:
+```bash 
+jupyter notebook result_visualizer.ipynb
+```
   
   
 ## Theory
 ### GATv2
 Recently, Brody et al. (2021, https://arxiv.org/abs/2105.14491) proposed *GATv2*, a modified version of the standard GAT.
-We include the option to use GATv2 instead of the standard GAT.
 
 Brody et al. proved that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
 
