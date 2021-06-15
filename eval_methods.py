@@ -162,7 +162,7 @@ def calc_seq(score, label, threshold):
     return calc_point2point(predict, label), latency
 
 
-def epsilon_eval(train_scores, test_scores, test_labels, reg_level=0):
+def epsilon_eval(train_scores, test_scores, test_labels, reg_level=2):
     best_epsilon = find_epsilon(train_scores)
     pred, p_latency = adjust_predicts(test_scores, test_labels, best_epsilon, calc_latency=True)
     if test_labels is not None:
