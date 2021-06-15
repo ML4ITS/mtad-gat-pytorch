@@ -34,8 +34,10 @@ if __name__ == "__main__":
 
     if dataset == 'SMD':
         output_path = f'output/SMD/{args.group}'
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
     elif dataset in ['MSL', 'SMAP']:
         output_path = f'output/{dataset}'
+        (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
     else:
         raise Exception(f'Dataset "{dataset}" not available.')
 
@@ -46,14 +48,9 @@ if __name__ == "__main__":
         os.makedirs(log_dir)
     save_path = f"{output_path}/{id}"
 
-    if dataset == 'SMD':
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
-    elif dataset in ['MSL', 'SMAP']:
-        (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
-
-    x_train = torch.from_numpy(x_train).float()[:1000]
-    x_test = torch.from_numpy(x_test).float()[:1000]
-    y_test = y_test[:1000]
+    x_train = torch.from_numpy(x_train).float()
+    x_test = torch.from_numpy(x_test).float()
+    # y_test = y_test
     n_features = x_train.shape[1]
 
     target_dims = get_target_dims(dataset)

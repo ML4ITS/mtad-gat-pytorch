@@ -62,20 +62,19 @@ class Plotter:
         try:
             print("Result summary:")
             with open(path) as f:
-                result_dict = json.load(f)["epsilon_result"]
-                print(f"\tTP: {result_dict['TP']}")
-                print(f"\tTN: {result_dict['TN']}")
-                print(f"\tFP: {result_dict['FP']}")
-                print(f"\tFN: {result_dict['FN']}")
-                print(f"\tAvg latency: {result_dict['latency']:.2f}")
-                print()
-                print(f"\tPrecison:  {result_dict['precision']:.4f}")
-                print(f"\tRecall:    {result_dict['recall']:.4f}")
-                print(f"\tF1:        {result_dict['f1']:.4f}")
+                result_dict = json.load(f)
+                epsilon_result = result_dict["epsilon_result"]
+                pot_result = result_dict["pot_result"]
+                bf_results = result_dict["bf_result"]
+                print(f'Epsilon:')
+                print(f'\t\tprecision: {epsilon_result["precision"]:.2f}, recall: {epsilon_result["recall"]:.2f}, F1: {epsilon_result["f1"]:.2f}')
+                print(f'POT:')
+                print(f'\t\tprecision: {pot_result["precision"]:.2f}, recall: {pot_result["recall"]:.2f}, F1: {pot_result["f1"]:.2f}')
+                print(f'Brute-Force:')
+                print(f'\t\tprecision: {bf_results["precision"]:.2f}, recall: {bf_results["recall"]:.2f}, F1: {bf_results["f1"]:.2f}')
+
         except FileNotFoundError as e:
             print(e)
-        except Exception:
-            print("\tNo results because labels are not available")
 
     def create_shapes(self, ranges, sequence_type, _min, _max, plot_values, is_test=True, xref=None, yref=None):
         """
@@ -142,7 +141,7 @@ class Plotter:
 
         return a_seqs
 
-    def plot_channel(self, channel, plot_train=False, start=None, end=None, plot_errors=True):
+    def plot_channel(self, channel, plot_train=False, plot_errors=True, plot_channel_anom=False, start=None, end=None, ):
         """Plot forecasting, reconstruction, true value of a specific channel (feature),
         along with the anomaly score for that channel
         """
@@ -184,17 +183,10 @@ class Plotter:
                 "true": self.get_anomaly_sequences(data_copy["A_True_Global"].values),
             }
 
-            if "TELENOR" in self.result_path:
-                y_min = plot_values["y_true"].min()
-                y_max = plot_values["y_true"].max()
-                e_max = 2
-                y_min -= 0.1 * y_max
-                y_max += 0.5 * y_max
-                y_min = -0.1
-            else:
-                y_min = 1.1 * plot_values["y_true"].min()
-                y_max = 1.1 * plot_values["y_true"].max()
-                e_max = 1.5 * plot_values["errors"].max()
+
+            y_min = 1.1 * plot_values["y_true"].min()
+            y_max = 1.1 * plot_values["y_true"].max()
+            e_max = 1.5 * plot_values["errors"].max()
 
             # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
             if self.labels_available:
@@ -235,7 +227,6 @@ class Plotter:
             data_type = "Test data" if is_test else "Train data"
             y_layout = {
                 "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
-                "shapes": y_shapes,
                 "yaxis": dict(range=[y_min, y_max]),
                 "showlegend": True,
                 "height": 400,
@@ -244,11 +235,14 @@ class Plotter:
 
             e_layout = {
                 "title": f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
-                "shapes": e_shapes,
                 "yaxis": dict(range=[0, e_max]),
                 "height": 400,
                 "width": 1100,
             }
+
+            if plot_channel_anom:
+                y_layout["shapes"] = y_shapes
+                e_layout["shapes"] = e_shapes
 
             lines = [
                 go.Scatter(
@@ -292,14 +286,16 @@ class Plotter:
                         color="red",
                         width=1,
                     ),
-                ),
-                go.Scatter(
-                    x=e_df["timestamp"],
-                    y=e_df["threshold"],
-                    name="Threshold",
-                    line=dict(color="black", width=1, dash="dash"),
-                ),
-            ]
+                )]
+            if plot_channel_anom:
+                e_lines.append(
+                    go.Scatter(
+                        x=e_df["timestamp"],
+                        y=e_df["threshold"],
+                        name="Threshold",
+                        line=dict(color="black", width=1, dash="dash"),
+                    )
+                )
 
             if plot_errors:
                 e_fig = go.Figure(data=e_lines, layout=e_layout)
@@ -486,7 +482,8 @@ class Plotter:
             shapes.extend(shapes2)
 
         layout = {
-            "title": f"{type} | Total error, predicted (blue) and true anomalies (red if available)",
+            "title": f"{type} set | Total error, predicted anomalies in blue, true anomalies in red if available "
+                     f"(making correctly predicted in purple)",
             "shapes": shapes,
             "yaxis": dict(range=[0, y_max]),
             "height": 400,
@@ -494,8 +491,8 @@ class Plotter:
         }
 
         fig = go.Figure(
-            data=[go.Scatter(x=data_copy["timestamp"], y=tot_anomaly_scores, line=dict(width=1, color="red")),
-                  go.Scatter(x=data_copy["timestamp"], y=threshold, line=dict(color="black", width=1, dash="dash"))],
+            data=[go.Scatter(x=data_copy["timestamp"], y=tot_anomaly_scores, name='Error', line=dict(width=1, color="red")),
+                  go.Scatter(x=data_copy["timestamp"], y=threshold, name='Threshold', line=dict(color="black", width=1, dash="dash"))],
             layout=layout,
         )
         py.offline.iplot(fig)
