@@ -2,6 +2,7 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 
 - This repo includes a complete framework for multivariate anomaly detection, using a model that is heavily inspired by MTAD-GAT.
 - Our work does not serve to reproduce the original results in the paper.
+- For contact, feel free to use: axel.harstad@gmail.com or williamkvaale@gmail.com
 
 ## Key Notes
 - We include the option to use the recently proposed *GATv2* instead of standard GAT
@@ -10,7 +11,11 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
   - peaks-over-threshold (POT) as in the original paper
   - thresholding method from Telemanom (https://github.com/khundman/telemanom)
   - brute-force method that searches through "all" possible thresholds and picks the one that gives highest F1 score 
-- We would like to credit OmniAnomaly, TelemAnom and ... for 
+- Parts of our code should be credited to the following:
+  - OmniAnomaly for preprocessing methods and evaluation methods (including POT)
+  - TelemAnom for plotting methods and thresholding method
+  - Diego Antognini for inspiration on GAT-related methods 
+  - Their respective licences are included in ```licences```.
 
 
 ## Getting Started 
@@ -97,7 +102,10 @@ Predictor params:
 ```--dynamic_pot=False```  <br />
 ```--use_mov_av=False```
 
-
+## Output
+  
+  
+  
 ## Theory
 ### GATv2
 Recently, Brody et al. (2021, https://arxiv.org/abs/2105.14491) proposed *GATv2*, a modified version of the standard GAT.
