@@ -30,6 +30,7 @@ class Predictor:
         self.dynamic_pot = pred_args["dynamic_pot"]
         self.use_mov_av = pred_args["use_mov_av"]
         self.gamma = pred_args["gamma"]
+        self.reg_level = pred_args["reg_level"]
         self.save_path = pred_args["save_path"]
         self.batch_size = 256
         self.use_cuda = True
@@ -122,11 +123,11 @@ class Predictor:
 
         # Find threshold and predict anomalies for each feature
         out_dim = self.n_features if self.target_dims is None else len(self.target_dims)
-        all_preds = np.zeros((len(test_pred_df), out_dim))  # 1 row is 1 timestamp, preds for all cols
+        all_preds = np.zeros((len(test_pred_df), out_dim))
         for i in range(out_dim):
             train_feature_anom_scores = train_pred_df[f"A_Score_{i}"].values
             test_feature_anom_scores = test_pred_df[f"A_Score_{i}"].values
-            epsilon = find_epsilon(train_feature_anom_scores, reg_level=2)
+            epsilon = find_epsilon(train_feature_anom_scores, reg_level=2) # Using a high reg_level as it is per-feature
 
             train_feature_anom_preds = (train_feature_anom_scores >= epsilon).astype(int)
             test_feature_anom_preds = (test_feature_anom_scores >= epsilon).astype(int)
@@ -140,7 +141,7 @@ class Predictor:
             all_preds[:, i] = test_feature_anom_preds
 
         # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
-        e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies)
+        e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, reg_level=self.reg_level)
         p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies,
                           q=self.q, level=self.level, dynamic=self.dynamic_pot)
         if true_anomalies is not None:

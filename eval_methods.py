@@ -163,7 +163,7 @@ def calc_seq(score, label, threshold):
 
 
 def epsilon_eval(train_scores, test_scores, test_labels, reg_level=1):
-    best_epsilon = find_epsilon(train_scores)
+    best_epsilon = find_epsilon(train_scores, reg_level)
     pred, p_latency = adjust_predicts(test_scores, test_labels, best_epsilon, calc_latency=True)
     if test_labels is not None:
         p_t = calc_point2point(pred, test_labels)
@@ -183,7 +183,7 @@ def epsilon_eval(train_scores, test_scores, test_labels, reg_level=1):
         return {"threshold": best_epsilon, "reg_level": reg_level}
 
 
-def find_epsilon(errors, reg_level=2):
+def find_epsilon(errors, reg_level=1):
     """
     Threshold method proposed by Hundman et. al. (https://arxiv.org/abs/1802.04431)
     Code from TelemAnom (https://github.com/khundman/telemanom)
@@ -214,16 +214,16 @@ def find_epsilon(errors, reg_level=2):
 
         if len(i_anom) > 0:
             groups = [list(group) for group in mit.consecutive_groups(i_anom)]
-            E_seq = [(g[0], g[-1]) for g in groups if not g[0] == g[-1]]
+            # E_seq = [(g[0], g[-1]) for g in groups if not g[0] == g[-1]]
 
             mean_perc_decrease = (mean_e_s - np.mean(pruned_e_s)) / mean_e_s
             sd_perc_decrease = (sd_e_s - np.std(pruned_e_s)) / sd_e_s
             if reg_level == 0:
                 denom = 1
             elif reg_level == 1:
-                denom = len(i_anom) ** 2
+                denom = len(i_anom)
             elif reg_level == 2:
-                denom = len(E_seq) ** 2 + len(i_anom) ** 2
+                denom = len(i_anom) ** 2
 
             score = (mean_perc_decrease + sd_perc_decrease) / denom
 

@@ -122,12 +122,17 @@ if __name__ == "__main__":
     print(f"Test reconstruction loss: {test_loss[1]:.5f}")
     print(f"Test total loss: {test_loss[2]:.5f}")
 
-    # Fit threshold and predict anomalies
+    # POT args
     if args.level is not None:
         level = args.level
     level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
-    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     level = level_dict[key]
+
+    # Epsilon args
+    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
+    key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
+    reg_level = reg_level_dict[key]
 
     trainer.load(f"{save_path}/model.pt")
     prediction_args = {
@@ -137,6 +142,7 @@ if __name__ == "__main__":
         'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
+        "reg_level": reg_level,
         "save_path": save_path,
     }
     best_model = trainer.model

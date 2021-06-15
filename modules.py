@@ -227,7 +227,8 @@ class GRULayer(nn.Module):
         super(GRULayer, self).__init__()
         self.hid_dim = hid_dim
         self.n_layers = n_layers
-        self.gru = nn.GRU(in_dim, hid_dim, num_layers=n_layers, batch_first=True, dropout=dropout)
+        self.dropout = None if n_layers == 1 else dropout
+        self.gru = nn.GRU(in_dim, hid_dim, num_layers=n_layers, batch_first=True, dropout=self.dropout)
 
     def forward(self, x):
         out, h = self.gru(x)
@@ -246,7 +247,8 @@ class RNNDecoder(nn.Module):
     def __init__(self, in_dim, hid_dim, n_layers, dropout=0.0):
         super(RNNDecoder, self).__init__()
         self.in_dim = in_dim
-        self.rnn = nn.GRU(in_dim, hid_dim, n_layers, batch_first=True, dropout=dropout)
+        self.dropout = None if n_layers == 1 else dropout
+        self.rnn = nn.GRU(in_dim, hid_dim, n_layers, batch_first=True, dropout=self.dropout)
 
     def forward(self, x):
         decoder_out, _ = self.rnn(x)
