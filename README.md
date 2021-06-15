@@ -103,7 +103,13 @@ Predictor params:
 ```--use_mov_av=False```
 
 ## Output
-  
+Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is used as ID) and include:
+  - ```summary.txt```: performance on test set (precision, recall, F1, etc.)
+  - ```config.txt```: the configuration used for model, training, etc. 
+  - ```train/test.pkl```: saved forecasts, reconstructions, actual, thresholds, etc.
+  - ```train/test_scores.npy```: anomaly scores
+  - ```train/validation_losses.png```: plots of train and validation loss during training
+  - ```model.pt``` weights etc. for trained model 
   
   
 ## Theory
