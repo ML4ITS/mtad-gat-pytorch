@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
-def normalize(data, scaler=None):
+def normalize_data(data, scaler=None):
 
     data = np.asarray(data, dtype=np.float32)
     if np.any(sum(np.isnan(data))):
@@ -53,7 +53,7 @@ def get_target_dims(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=False, train_start=0, test_start=0):
+def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, train_start=0, test_start=0):
     """
     Get data from pkl files
 
@@ -63,9 +63,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=Fal
     prefix = "datasets"
     if str(dataset).startswith("machine"):
         prefix += "/ServerMachineDataset/processed"
-    elif dataset == "TELENOR":
-        prefix += "/telenor/processed"
-    else:
+    elif dataset in ["MSL", "SMAP"]:
         prefix += "/data/processed"
 
     if max_train_size is None:
@@ -96,14 +94,9 @@ def get_data(dataset, max_train_size=None, max_test_size=None, do_preprocess=Fal
     except (KeyError, FileNotFoundError):
         test_label = None
 
-    train_min = np.min(train_data)
-    train_max = np.max(train_data)
-
-    test_data[test_data < train_min] = train_min
-    test_data[test_data > train_max] = train_max
-    if do_preprocess:
-        train_data, scaler = normalize(train_data, scaler=None)
-        test_data, _ = normalize(test_data, scaler=scaler)
+    if normalize:
+        train_data, scaler = normalize_data(train_data, scaler=None)
+        test_data, _ = normalize_data(test_data, scaler=scaler)
 
     print("train set shape: ", train_data.shape)
     print("test set shape: ", test_data.shape)

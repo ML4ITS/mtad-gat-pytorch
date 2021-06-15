@@ -431,7 +431,6 @@ class SPOT:
         th = []
         alarm = []
         # Loop over the stream
-        data_copy = self.data.copy()
         for i in tqdm.tqdm(range(self.data.size)):
 
             if not dynamic:

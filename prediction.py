@@ -145,20 +145,12 @@ class Predictor:
         p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies,
                           q=self.q, level=self.level, dynamic=self.dynamic_pot)
         if true_anomalies is not None:
-            bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
+            bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=2, step_num=100, verbose=False)
         else:
             bf_eval = {}
 
         global_epsilon = e_eval["threshold"]
-        # In case of multiple thresholds (one for each split)
-        if type(e_eval["threshold"]) == list:
-            train_global_epsilon = global_epsilon[0]
-            e_eval["threshold"] = np.unique(e_eval["threshold"]).tolist()
-        else:
-            train_global_epsilon = global_epsilon
-
-        if type(p_eval["threshold"]) == list:
-            p_eval["threshold"] = np.unique(p_eval["threshold"]).tolist()
+        train_global_epsilon = global_epsilon
 
         print(f"Results using epsilon method:\n {e_eval}")
         print(f"Results using peak-over-threshold method:\n {p_eval}")

@@ -19,7 +19,7 @@ def get_parser():
     parser.add_argument("--dataset", type=str.upper, default="SMD")
     parser.add_argument("--group", type=str, default="1-1", help="Required for SMD dataset. <group_index>-<index>")
     parser.add_argument("--lookback", type=int, default=100)
-    parser.add_argument("--do_preprocess", type=str2bool, default=True)
+    parser.add_argument("--normalize", type=str2bool, default=True)
 
     # -- Model params ---
     # 1D conv layer

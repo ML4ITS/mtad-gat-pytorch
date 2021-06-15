@@ -16,7 +16,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset = args.dataset
-    do_preprocess = args.do_preprocess
+    normalize = args.normalize
     window_size = args.lookback
     n_epochs = args.epochs
     batch_size = args.bs
@@ -46,9 +46,9 @@ if __name__ == "__main__":
     save_path = f"{output_path}/{id}"
 
     if dataset == 'SMD':
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
     elif dataset in ['MSL', 'SMAP']:
-        (x_train, _), (x_test, y_test) = get_data(dataset, do_preprocess=do_preprocess)
+        (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
 
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
