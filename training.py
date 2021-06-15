@@ -13,6 +13,7 @@ class Trainer:
     :param optimizer: Optimizer used to minimize the loss function
     :param window_size: Length of the input sequence
     :param n_features: Number of input features
+    :param target_dims: dimension of input features to forecast and reconstruct
     :param n_epochs: Number of iterations/epochs
     :param batch_size: Number of windows in a single batch
     :param init_lr: Initial learning rate of the module
@@ -21,6 +22,9 @@ class Trainer:
     :param boolean use_cuda: To be run on GPU or not
     :param dload: Download directory where models are to be dumped
     :param log_dir: Directory where SummaryWriter logs are written to
+    :param print_every: At what epoch interval to print losses
+    :param log_tensorboard: Whether to log loss++ to tensorboard
+    :param args_summary: Summary of args that will also be written to tensorboard if log_tensorboard
     """
 
     def __init__(
@@ -39,6 +43,7 @@ class Trainer:
         dload="",
         log_dir="output/",
         print_every=1,
+        log_tensorboard=True,
         args_summary="",
     ):
 
@@ -56,6 +61,7 @@ class Trainer:
         self.dload = dload
         self.log_dir = log_dir
         self.print_every = print_every
+        self.log_tensorboard = log_tensorboard
 
         self.losses = {
             "train_total": [],
@@ -70,11 +76,9 @@ class Trainer:
         if self.device == "cuda":
             self.model.cuda()
 
-        self.writer = SummaryWriter(f"{log_dir}")
-        self.writer.add_text("args_summary", args_summary)
-
-    def __repr__(self):
-        return f"model={repr(self.model)}, w_size={self.window_size}, init_lr={self.init_lr}"
+        if self.log_tensorboard:
+            self.writer = SummaryWriter(f"{log_dir}")
+            self.writer.add_text("args_summary", args_summary)
 
     def fit(self, train_loader, val_loader=None):
         """Train model for self.n_epochs.
@@ -148,7 +152,8 @@ class Trainer:
                 if total_val_loss <= self.losses["val_total"][-1]:
                     self.save(f"model.pt")
 
-            self.write_loss(epoch)
+            if self.log_tensorboard:
+                self.write_loss(epoch)
 
             epoch_time = time.time() - epoch_start
             self.epoch_times.append(epoch_time)
@@ -175,7 +180,8 @@ class Trainer:
             self.save(f"model.pt")
 
         train_time = int(time.time() - train_start)
-        self.writer.add_text("total_train_time", str(train_time))
+        if self.log_tensorboard:
+            self.writer.add_text("total_train_time", str(train_time))
         print(f"-- Training done in {train_time}s.")
 
     def evaluate(self, data_loader):

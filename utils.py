@@ -8,7 +8,6 @@ from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
 def normalize_data(data, scaler=None):
-
     data = np.asarray(data, dtype=np.float32)
     if np.any(sum(np.isnan(data))):
         data = np.nan_to_num(data)
@@ -65,7 +64,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, 
         prefix += "/ServerMachineDataset/processed"
     elif dataset in ["MSL", "SMAP"]:
         prefix += "/data/processed"
-
     if max_train_size is None:
         train_end = None
     else:

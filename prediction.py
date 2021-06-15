@@ -140,7 +140,6 @@ class Predictor:
             all_preds[:, i] = test_feature_anom_preds
 
         # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
-
         e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies)
         p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies,
                           q=self.q, level=self.level, dynamic=self.dynamic_pot)
@@ -165,7 +164,7 @@ class Predictor:
         for k, v in bf_eval.items():
             bf_eval[k] = float(v)
 
-        summary = {"epsilon_results": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
+        summary = {"epsilon_result": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
 
         with open(f"{self.save_path}/{self.summary_file_name}", "w") as f:
             json.dump(summary, f, indent=2)

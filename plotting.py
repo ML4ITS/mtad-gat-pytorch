@@ -62,7 +62,7 @@ class Plotter:
         try:
             print("Result summary:")
             with open(path) as f:
-                result_dict = json.load(f)["epsilon_results"]
+                result_dict = json.load(f)["epsilon_result"]
                 print(f"\tTP: {result_dict['TP']}")
                 print(f"\tTN: {result_dict['TN']}")
                 print(f"\tFP: {result_dict['FP']}")

@@ -2,9 +2,9 @@ import argparse
 import json
 
 from args import get_parser
+from utils import *
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
-from utils import *
 
 if __name__ == "__main__":
 

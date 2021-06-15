@@ -3,10 +3,11 @@ from datetime import datetime
 import torch.nn as nn
 
 from args import get_parser
+from utils import *
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
 from training import Trainer
-from utils import *
+
 
 if __name__ == "__main__":
 
@@ -26,6 +27,7 @@ if __name__ == "__main__":
     shuffle_dataset = args.shuffle_dataset
     use_cuda = args.use_cuda
     print_every = args.print_every
+    log_tensorboard = args.log_tensorboard
     group_index = args.group[0]
     index = args.group[2:]
     args_summary = str(args.__dict__)
@@ -50,9 +52,9 @@ if __name__ == "__main__":
     elif dataset in ['MSL', 'SMAP']:
         (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
 
-    x_train = torch.from_numpy(x_train).float()
-    x_test = torch.from_numpy(x_test).float()
-    # y_test = y_test[:1000]
+    x_train = torch.from_numpy(x_train).float()[:1000]
+    x_test = torch.from_numpy(x_test).float()[:1000]
+    y_test = y_test[:1000]
     n_features = x_train.shape[1]
 
     target_dims = get_target_dims(dataset)
@@ -110,6 +112,7 @@ if __name__ == "__main__":
         save_path,
         log_dir,
         print_every,
+        log_tensorboard,
         args_summary
     )
 

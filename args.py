@@ -50,6 +50,7 @@ def get_parser():
     parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--use_cuda", type=str2bool, default=True)
     parser.add_argument("--print_every", type=int, default=1)
+    parser.add_argument("--log_tensorboard", type=str2bool, default=True)
 
     # --- Predictor params ---
     parser.add_argument("--save_scores", type=str2bool, default=True, help="To save anomaly scores predicted.")
