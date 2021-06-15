@@ -27,6 +27,7 @@ class Predictor:
         self.target_dims = pred_args["target_dims"]
         self.q = pred_args["q"]
         self.level = pred_args["level"]
+        self.dynamic_pot = pred_args["dynamic_pot"]
         self.use_mov_av = pred_args["use_mov_av"]
         self.gamma = pred_args["gamma"]
         self.save_path = pred_args["save_path"]
@@ -64,6 +65,7 @@ class Predictor:
                 _, window_recon = self.model(recon_x)
 
                 preds.append(y_hat.detach().cpu().numpy())
+                # Extract last reconstruction only
                 recons.append(window_recon[:, -1, :].detach().cpu().numpy())
 
         preds = np.concatenate(preds, axis=0)
@@ -91,7 +93,7 @@ class Predictor:
 
         :param train: 2D array of train multivariate time series data
         :param test: 2D array of test multivariate time series data
-        :param true_anomalies: true anomalies of testset, None if not available
+        :param true_anomalies: true anomalies of test set, None if not available
         :param save_scores: Whether to save anomaly scores of train and test
         :param load_scores: Whether to load anomaly scores instead of calculating them
         :param save_output: Whether to save output dataframe
@@ -140,7 +142,8 @@ class Predictor:
         # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
 
         e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies)
-        p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, q=self.q, level=self.level)
+        p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies,
+                          q=self.q, level=self.level, dynamic=self.dynamic_pot)
         if true_anomalies is not None:
             bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=5, step_num=100, verbose=False)
         else:

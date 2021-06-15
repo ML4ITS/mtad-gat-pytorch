@@ -135,6 +135,7 @@ if __name__ == "__main__":
         "target_dims": target_dims,
         "level": level,
         "q": args.q,
+        'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
         "save_path": save_path,

@@ -73,7 +73,7 @@ def calc_point2point(predict, actual):
     return f1, precision, recall, TP, TN, FP, FN
 
 
-def pot_eval(init_score, score, label, q=1e-3, level=0.99):
+def pot_eval(init_score, score, label, q=1e-3, level=0.99, dynamic=False):
     """
     Run POT method on given score.
     :param init_score (np.ndarray): The data to get init threshold.
@@ -91,7 +91,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99):
     s = SPOT(q)  # SPOT object
     s.fit(init_score, score)
     s.initialize(level=level, min_extrema=False)  # Calibration step
-    ret = s.run(dynamic=False, with_alarm=False)
+    ret = s.run(dynamic=dynamic, with_alarm=False)
 
     print(len(ret["alarms"]))
     print(len(ret["thresholds"]))
@@ -162,7 +162,7 @@ def calc_seq(score, label, threshold):
     return calc_point2point(predict, label), latency
 
 
-def epsilon_eval(train_scores, test_scores, test_labels, reg_level=2):
+def epsilon_eval(train_scores, test_scores, test_labels, reg_level=1):
     best_epsilon = find_epsilon(train_scores)
     pred, p_latency = adjust_predicts(test_scores, test_labels, best_epsilon, calc_latency=True)
     if test_labels is not None:
