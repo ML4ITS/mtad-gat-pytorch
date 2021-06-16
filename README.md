@@ -5,11 +5,11 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 - For contact, feel free to use axel.harstad@gmail.com or williamkvaale@gmail.com
 
 ## Key Notes
-- We include the option to use the recently proposed *GATv2* instead of standard GAT
+- By default we use the recently proposed [*GATv2*](https://arxiv.org/abs/2105.14491), but include the option to use the standard GAT
 - Instead of using a Variational Auto-Encoder (VAE) as the Reconstruction Model, we use a GRU-based decoder. 
 - For thresholding we implement three methods:
   - peaks-over-threshold (POT) as in the original paper
-  - thresholding method from Telemanom (https://github.com/khundman/telemanom)
+  - thresholding method proposed by [Hundman et. al.](https://arxiv.org/abs/1802.04431)
   - brute-force method that searches through "all" possible thresholds and picks the one that gives highest F1 score 
 - Parts of our code should be credited to the following:
   - OmniAnomaly for preprocessing methods and evaluation methods (including POT)
@@ -31,7 +31,7 @@ cd data && wget https://raw.githubusercontent.com/khundman/telemanom/master/labe
 
 ```
 This downloads the MSL and SMAP datasets. The SMD dataset is already in repo. 
-We refer to TelemAnom (https://github.com/khundman/telemanom) and OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly) for detailed information regarding these three datasets. 
+We refer to [TelemAnom](https://github.com/khundman/telemanom) and [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for detailed information regarding these three datasets. 
 
 Install dependencies (virtualenv is recommended):
 ```bash
@@ -121,7 +121,7 @@ jupyter notebook result_visualizer.ipynb
   
 ## Theory
 ### GATv2
-Recently, Brody et al. (2021, https://arxiv.org/abs/2105.14491) proposed *GATv2*, a modified version of the standard GAT.
+Recently, Brody et al. (2021) proposed [*GATv2*](https://arxiv.org/abs/2105.14491)), a modified version of the standard GAT.
 
 Brody et al. proved that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
 
