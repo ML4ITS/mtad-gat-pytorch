@@ -42,13 +42,13 @@ Preprocess the data:
 ```bash
 python preprocess.py --dataset <dataset>
 ```
-where <dataset> is one of MSL, SMAP or SMD.
+where \<dataset> is one of MSL, SMAP or SMD.
 
 To train:
 ```bash
  python train.py --dataset <dataset>
 ```
-where <dataset> is one of msl, smap or smd (upper-case also works). If training on SMD, one should specify which machine using the ``` --group``` argument.
+where \<dataset> is one of msl, smap or smd (upper-case also works). If training on SMD, one should specify which machine using the ``` --group``` argument.
 
 You can change the default configuration by adding more arguments. All arguments can be found in ```args.py```. Some examples:
     
