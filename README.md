@@ -1,4 +1,4 @@
-Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD) via Graph Attention Networks (GAT) by Zhao et al. (2020, https://arxiv.org/pdf/2009.02040.pdf).
+Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD) via Graph Attention Networks (GAT) by [Zhao et al. (2020)](https://arxiv.org/pdf/2009.02040.pdf).
 
 - This repo includes a complete framework for multivariate anomaly detection, using a model that is heavily inspired by MTAD-GAT.
 - Our work does not serve to reproduce the original results in the paper.
