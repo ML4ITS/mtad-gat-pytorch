@@ -14,7 +14,7 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 - Parts of our code should be credited to the following:
   - [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for preprocessing methods and evaluation methods (including POT)
   - [TelemAnom](https://github.com/khundman/telemanom) for plotting methods and thresholding method
-  - [Diego Antognini](https://github.com/Diego999/pyGAT) for inspiration on GAT-related methods 
+  - [pyGAT](https://github.com/Diego999/pyGAT) by Diego Antognini] for inspiration on GAT-related methods 
   - Their respective licences are included in ```licences```.
 
 
