@@ -12,8 +12,8 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
   - thresholding method proposed by [Hundman et. al.](https://arxiv.org/abs/1802.04431)
   - brute-force method that searches through "all" possible thresholds and picks the one that gives highest F1 score 
 - Parts of our code should be credited to the following:
-  - [OmniAnomaly]((https://github.com/NetManAIOps/OmniAnomaly)) for preprocessing methods and evaluation methods (including POT)
-  - [TelemAnom]((https://github.com/khundman/telemanom)) for plotting methods and thresholding method
+  - [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for preprocessing methods and evaluation methods (including POT)
+  - [TelemAnom](https://github.com/khundman/telemanom) for plotting methods and thresholding method
   - [Diego Antognini](https://github.com/Diego999/pyGAT) for inspiration on GAT-related methods 
   - Their respective licences are included in ```licences```.
 
