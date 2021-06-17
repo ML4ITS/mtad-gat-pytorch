@@ -119,13 +119,25 @@ jupyter notebook result_visualizer.ipynb
 ```
   
   
-## Theory
+### GAT layers
+
+Feature-Oriented GAT layer | Time-Oriented GAT layer
+--- | --- 
+<img src="https://i.imgur.com/wVD8oIx.png" alt="drawing" width="700"/> | <img src="https://i.imgur.com/a9PsNB0.png" alt="drawing" width="730"/>
+
+**Left**: The feature-oriented GAT layer views the input data as a complete graph where each node represents the values of one feature across all timestamps in the sliding window. 
+
+**Right**: The time-oriented GAT layer views the input data as a complete graph in which each node represents the values for all features at a specific timestamp.
+
 ### GATv2
 Recently, Brody et al. (2021) proposed [*GATv2*](https://arxiv.org/abs/2105.14491), a modified version of the standard GAT.
 
 Brody et al. proved that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
 
-![](https://i.imgur.com/agPNXBy.png)
+<img src="https://i.imgur.com/agPNXBy.png" alt="drawing" width="700"/> 
+
+
+
 
 
 
