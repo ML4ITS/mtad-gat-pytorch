@@ -17,8 +17,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset = args.dataset
-    normalize = args.normalize
     window_size = args.lookback
+    normalize = args.normalize
     n_epochs = args.epochs
     batch_size = args.bs
     init_lr = args.init_lr
@@ -50,7 +50,6 @@ if __name__ == "__main__":
 
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
-    # y_test = y_test
     n_features = x_train.shape[1]
 
     target_dims = get_target_dims(dataset)

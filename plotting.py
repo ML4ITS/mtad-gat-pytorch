@@ -1,3 +1,4 @@
+from utils import get_data_dim, get_series_color, get_y_height
 import pandas as pd
 import numpy as np
 import os
@@ -8,8 +9,6 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import cufflinks as cf
 cf.go_offline()
-
-from utils import get_data_dim, get_series_color, get_y_height
 
 
 class Plotter:
@@ -84,7 +83,7 @@ class Plotter:
 
         Args:
                 ranges (list of tuples): tuple of start and end indices for anomaly
-                        sequences for a channel
+                        sequences for a feature
                 sequence_type (str): "predict" if predicted values else
                         "true" if actual values. Determines colors.
                 _min (float): min y value of series
@@ -129,7 +128,8 @@ class Plotter:
 
         return shapes
 
-    def get_anomaly_sequences(self, values):
+    @staticmethod
+    def get_anomaly_sequences(values):
         splits = np.where(values[1:] != values[:-1])[0] + 1
 
         a_seqs = []
@@ -141,9 +141,10 @@ class Plotter:
 
         return a_seqs
 
-    def plot_channel(self, channel, plot_train=False, plot_errors=True, plot_channel_anom=False, start=None, end=None, ):
-        """Plot forecasting, reconstruction, true value of a specific channel (feature),
-        along with the anomaly score for that channel
+    def plot_feature(self, feature, plot_train=False, plot_errors=True, plot_feature_anom=False, start=None, end=None):
+        """
+        Plot forecasting, reconstruction, true value of a specific feature (feature),
+        along with the anomaly score for that feature
         """
 
         test_copy = self.test_output.copy()
@@ -165,10 +166,10 @@ class Plotter:
         for nr, data_copy in enumerate(plot_data):
             is_test = nr == 0
 
-            if channel < 0 or f"Forecast_{channel}" not in data_copy.columns:
-                raise Exception(f"Channel {channel} not present in data.")
+            if feature < 0 or f"Forecast_{feature}" not in data_copy.columns:
+                raise Exception(f"Channel {feature} not present in data.")
 
-            i = channel
+            i = feature
             plot_values = {
                 "timestamp": data_copy["timestamp"].values,
                 "y_forecast": data_copy[f"Forecast_{i}"].values,
@@ -182,7 +183,6 @@ class Plotter:
                 "pred": self.get_anomaly_sequences(data_copy[f"A_Pred_{i}"].values),
                 "true": self.get_anomaly_sequences(data_copy["A_True_Global"].values),
             }
-
 
             y_min = 1.1 * plot_values["y_true"].min()
             y_max = 1.1 * plot_values["y_true"].max()
@@ -226,21 +226,20 @@ class Plotter:
 
             data_type = "Test data" if is_test else "Train data"
             y_layout = {
-                "title": f"{data_type} | Forecast & reconstruction vs true value for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
-                "yaxis": dict(range=[y_min, y_max]),
+                "title": f"{data_type} | Forecast & reconstruction vs true value for feature {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "showlegend": True,
                 "height": 400,
                 "width": 1100,
             }
 
             e_layout = {
-                "title": f"{data_type} | Error for channel {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
-                "yaxis": dict(range=[0, e_max]),
+                "title": f"{data_type} | Error for feature {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
+                #"yaxis": dict(range=[0, e_max]),
                 "height": 400,
                 "width": 1100,
             }
 
-            if plot_channel_anom:
+            if plot_feature_anom:
                 y_layout["shapes"] = y_shapes
                 e_layout["shapes"] = e_shapes
 
@@ -250,28 +249,19 @@ class Plotter:
                     y=y_df["y_true"],
                     line_color="rgb(0, 204, 150, 0.5)",
                     name="y_true",
-                    line=dict(
-                        width=2,
-                    ),
-                ),
+                    line=dict(width=2)),
                 go.Scatter(
                     x=y_df["timestamp"],
                     y=y_df["y_forecast"],
                     line_color="rgb(255, 127, 14, 1)",
                     name="y_forecast",
-                    line=dict(
-                        width=2,
-                    ),
-                ),
+                    line=dict(width=2)),
                 go.Scatter(
                     x=y_df["timestamp"],
                     y=y_df["y_recon"],
                     line_color="rgb(31, 119, 180, 1)",
                     name="y_recon",
-                    line=dict(
-                        width=2,
-                    ),
-                ),
+                    line=dict(width=2)),
             ]
 
             fig = go.Figure(data=lines, layout=y_layout)
@@ -282,26 +272,27 @@ class Plotter:
                     x=e_df["timestamp"],
                     y=e_df["e_s"],
                     name="Error",
-                    line=dict(
-                        color="red",
-                        width=1,
-                    ),
-                )]
-            if plot_channel_anom:
+                    line=dict(color="red", width=1))]
+            if plot_feature_anom:
                 e_lines.append(
                     go.Scatter(
                         x=e_df["timestamp"],
                         y=e_df["threshold"],
                         name="Threshold",
-                        line=dict(color="black", width=1, dash="dash"),
-                    )
-                )
+                        line=dict(color="black", width=1, dash="dash")))
 
             if plot_errors:
                 e_fig = go.Figure(data=e_lines, layout=e_layout)
                 py.offline.iplot(e_fig)
 
-    def plot_all_channels(self, start=None, end=None, type="test"):
+    def plot_all_features(self, start=None, end=None, type="test"):
+        """
+        Plotting all features, using the following order:
+            - forecasting for feature i
+            - reconstruction for feature i
+            - true value for feature i
+            - anomaly score (error) for feature i
+        """
         if type == "train":
             data_copy = self.train_output.copy()
         elif type == "test":

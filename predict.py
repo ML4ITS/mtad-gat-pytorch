@@ -1,5 +1,6 @@
 import argparse
 import json
+import datetime
 
 from args import get_parser
 from utils import *
@@ -15,33 +16,38 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    if args.model_id is None and not args.site_independent:
+    dataset = args.dataset
+
+    if args.model_id is None:
         # Use latest model
-        group = args.site if args.dataset == "TELENOR" else args.group
-        dir_path = f"./output/{args.dataset}/{group}"
+        if dataset == 'SMD':
+            dir_path = f"./output/{dataset}/{args.group}"
+        else:
+            dir_path = f"./output/{dataset}"
         dir_content = os.listdir(dir_path)
         subfolders = [subf for subf in dir_content if os.path.isdir(f"{dir_path}/{subf}") and subf != "logs"]
-        subfolders.sort()
-        model_id = subfolders[-1]
+        date_times = [datetime.datetime.strptime(subf, '%d%m%Y_%H%M%S') for subf in subfolders]
+        date_times.sort()
+        print(date_times)
+        model_datetime = date_times[-1]
+        model_id = model_datetime.strftime('%d%m%Y_%H%M%S')
 
     else:
         model_id = args.model_id
 
-    if args.dataset == "SMD":
-        model_path = f"./output/{args.dataset}/{args.group}/{model_id}"
-    elif args.dataset == "TELENOR":
-        model_path = f"./output/{args.dataset}/{args.site}/{model_id}"
-        if args.site_independent:
-            model_path = f"./models/beast"
+    if dataset == "SMD":
+        model_path = f"./output/{dataset}/{args.group}/{model_id}"
+    elif dataset in ['MSL', 'SMAP']:
+        model_path = f"./output/{dataset}/{model_id}"
     else:
-        model_path = f"./output/{args.dataset}/{model_id}"
+        raise Exception(f'Dataset "{dataset}" not available.')
 
     # Check that model exist
     if not os.path.isfile(f"{model_path}/model.pt"):
         raise Exception(f"<{model_path}/model.pt> does not exist.")
 
     # Get configs of model
-    print(model_path)
+    print(f'Using model from {model_path}')
     model_parser = argparse.ArgumentParser()
     model_args, unknown = model_parser.parse_known_args()
     model_args_path = f"{model_path}/config.txt"
@@ -54,22 +60,15 @@ if __name__ == "__main__":
     if args.dataset.lower() != model_args.dataset.lower():
         raise Exception(f"Model trained on {model_args.dataset}, but asked to predict {args.dataset}.")
 
-    elif args.dataset == "TELENOR" and args.site != model_args.site:
-        print(
-            f"Model trained on Telenor site {model_args.site}, but asked to predict Telenor site {args.site}."
-        )
-
     elif args.dataset == "SMD" and args.group != model_args.group:
         print(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
-    site = args.site
-    do_preprocess = model_args.do_preprocess
     window_size = model_args.lookback
+    normalize = model_args.normalize
     n_epochs = model_args.epochs
     batch_size = model_args.bs
     init_lr = model_args.init_lr
     val_split = model_args.val_split
-    test_split = model_args.test_size
     shuffle_dataset = model_args.shuffle_dataset
     use_cuda = model_args.use_cuda
     print_every = model_args.print_every
@@ -78,13 +77,10 @@ if __name__ == "__main__":
     args_summary = str(model_args.__dict__)
     print(args_summary)
 
-    if args.dataset == "TELENOR":
-        x_train, x_test = get_telenor_data(site, test_split=test_split, do_preprocess=do_preprocess)
-        y_test = None
-    elif args.dataset == "SMD":
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", do_preprocess=do_preprocess)
+    if dataset == "SMD":
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
     else:
-        (x_train, _), (x_test, y_test) = get_data(args.dataset, do_preprocess=do_preprocess)
+        (x_train, _), (x_test, y_test) = get_data(args.dataset, normalize=normalize)
 
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
@@ -112,32 +108,42 @@ if __name__ == "__main__":
         n_features,
         window_size,
         out_dim,
-        model_args.bs,
-        kernel_size=model_args.kernel_size,
-        dropout=model_args.dropout,
-        gru_n_layers=model_args.gru_layers,
-        gru_hid_dim=model_args.gru_hid_dim,
-        autoenc_n_layers=model_args.autoenc_layers,
-        autoenc_hid_dim=model_args.autoenc_hid_dim,
-        forecast_n_layers=model_args.fc_layers,
-        forecast_hid_dim=model_args.fc_hid_dim,
-        use_cuda=model_args.use_cuda,
+        kernel_size=args.kernel_size,
+        use_gatv2=args.use_gatv2,
+        feat_gat_embed_dim=args.feat_gat_embed_dim,
+        time_gat_embed_dim=args.time_gat_embed_dim,
+        gru_n_layers=args.gru_n_layers,
+        gru_hid_dim=args.gru_hid_dim,
+        forecast_n_layers=args.fc_n_layers,
+        forecast_hid_dim=args.fc_hid_dim,
+        recon_n_layers=args.recon_n_layers,
+        recon_hid_dim=args.recon_hid_dim,
+        dropout=args.dropout,
+        alpha=args.alpha
     )
 
     device = "cuda" if args.use_cuda and torch.cuda.is_available() else "cpu"
     load(model, f"{model_path}/model.pt", device=device)
     model.to(device)
 
-    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999, "TELENOR": 0.99}
+    # Pot args
+    level_dict = {"SMAP": 0.93, "MSL": 0.90, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
+
+    # Epsilon args
+    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
+    key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
+    reg_level = reg_level_dict[key]
+
     prediction_args = {
-        "model_name": model_id,
         "target_dims": target_dims,
         "level": level,
         "q": args.q,
+        'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
+        "reg_level": reg_level,
         "save_path": f"{model_path}",
     }
 
@@ -152,4 +158,4 @@ if __name__ == "__main__":
 
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
-    predictor.predict_anomalies(x_train, x_test, label, save_scores=False, load_scores=True, save_output=True)
+    predictor.predict_anomalies(x_train, x_test, label, save_scores=False, load_scores=True, save_output=False)

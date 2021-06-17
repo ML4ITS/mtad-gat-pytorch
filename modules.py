@@ -244,7 +244,7 @@ class RNNDecoder(nn.Module):
     :param dropout: dropout rate
     """
 
-    def __init__(self, in_dim, hid_dim, n_layers, dropout=0.0):
+    def __init__(self, in_dim, hid_dim, n_layers, dropout):
         super(RNNDecoder, self).__init__()
         self.in_dim = in_dim
         self.dropout = 0.0 if n_layers == 1 else dropout
@@ -268,7 +268,7 @@ class ReconstructionModel(nn.Module):
     def __init__(self, window_size, in_dim, hid_dim, out_dim, n_layers, dropout):
         super(ReconstructionModel, self).__init__()
         self.window_size = window_size
-        self.decoder = RNNDecoder(in_dim, hid_dim, n_layers, dropout=dropout)
+        self.decoder = RNNDecoder(in_dim, hid_dim, n_layers, dropout)
         self.fc = nn.Linear(hid_dim, out_dim)
 
     def forward(self, x):
