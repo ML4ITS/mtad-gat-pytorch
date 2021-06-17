@@ -54,7 +54,7 @@ def get_target_dims(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def spectral_residual(data):
+def spectral_residual(data, dim=None):
     od = SpectralResidual(
         threshold=3.,
         window_amp=20,
@@ -63,7 +63,8 @@ def spectral_residual(data):
         n_grad_points=5
     )
     print('Running spectral residual..')
-    for i in tqdm(range(data.shape[1])):
+    dim_list = range(data.shape[1]) if dim is None else [dim]
+    for i in tqdm(dim_list):
         x = data[:, i].copy()
         od.infer_threshold(x, threshold_perc=99.9)
         preds = od.predict(x, return_instance_score=True)
@@ -121,7 +122,10 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
         test_label = None
 
     if spec_res:
-        train_data = spectral_residual(train_data)
+        if dataset in ['MSL', 'SMAP']:
+            train_data = spectral_residual(train_data, dim=0)
+        else:
+            train_data = spectral_residual(train_data)
 
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
