@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     dataset = args.dataset
     window_size = args.lookback
-    spec_res = args.sprec_res
+    spec_res = args.spec_res
     normalize = args.normalize
     n_epochs = args.epochs
     batch_size = args.bs
