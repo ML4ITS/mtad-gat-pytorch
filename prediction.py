@@ -1,3 +1,4 @@
+import numpy as np
 from tqdm import tqdm
 import pandas as pd
 import json
@@ -85,8 +86,14 @@ class Predictor:
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
                 (recons[:, i] - actual[:, i]) ** 2)
             if scale_scores:
-                a_score = preprocessing.scale(a_score)
-                scaled_anomaly_scores[:, i] = a_score
+                std = np.std(a_score)
+                median = np.median(a_score)
+                print(std)
+                print('-'*50)
+                if std > 0.01:
+                    scaled_anomaly_scores[:, i] = (a_score - median) / std
+                else:
+                    scaled_anomaly_scores[:, i] = a_score
             df[f"A_Score_{i}"] = a_score
 
         anomaly_scores = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
