@@ -17,7 +17,6 @@ if __name__ == "__main__":
     print(args)
 
     dataset = args.dataset
-
     if args.model_id is None:
         # Use latest model
         if dataset == 'SMD':
@@ -133,6 +132,7 @@ if __name__ == "__main__":
     reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
+    reg_level = 1
 
     prediction_args = {
         "target_dims": target_dims,
@@ -154,6 +154,7 @@ if __name__ == "__main__":
     else:
         summary_file_name = f"summary_{count}.txt"
 
+    summary_file_name = 'summary.txt'
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
     predictor.predict_anomalies(x_train, x_test, label,

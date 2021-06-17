@@ -1,6 +1,8 @@
 import os
 import pickle
 import matplotlib.pyplot as plt
+from alibi_detect.od import SpectralResidual
+from tqdm import  tqdm
 import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
@@ -52,7 +54,33 @@ def get_target_dims(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, train_start=0, test_start=0):
+def spectral_residual(data):
+    od = SpectralResidual(
+        threshold=3.,
+        window_amp=20,
+        window_local=300,
+        n_est_points=10,
+        n_grad_points=5
+    )
+    print('Running spectral residual..')
+    for i in tqdm(range(data.shape[1])):
+        x = data[:, i].copy()
+        od.infer_threshold(x, threshold_perc=99.9)
+        preds = od.predict(x, return_instance_score=True)
+        is_outlier = preds['data']['is_outlier']
+        replace_idxs = sorted(np.where(is_outlier == 1)[0])
+        for _ in range(100):
+            x[replace_idxs] = [np.median(x[max(0, j-20):j+1]) for j in replace_idxs]
+            od.infer_threshold(x, threshold_perc=99.9)
+            preds = od.predict(x, return_instance_score=True)
+            is_outlier = preds['data']['is_outlier']
+            replace_idxs = np.where(is_outlier == 1)[0]
+        data[:, i] = x
+    return data
+
+
+def get_data(dataset, max_train_size=None, max_test_size=None,
+             normalize=False, spec_res=False, train_start=0, test_start=0):
     """
     Get data from pkl files
 
@@ -91,6 +119,9 @@ def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, 
         f.close()
     except (KeyError, FileNotFoundError):
         test_label = None
+
+    if spec_res:
+        train_data = spectral_residual(train_data)
 
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)

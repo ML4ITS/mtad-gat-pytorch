@@ -317,6 +317,9 @@ class Plotter:
         plt.show()
 
     def plot_anomaly_segments(self, type="test", num_aligned_segments=None, show_boring_series=False):
+        """
+        Finds collective anomalies, i.e. feature-wise anomalies that occur at the same time, and visualize them
+        """
         is_test = True
         if type == "train":
             data_copy = self.train_output.copy()
@@ -449,7 +452,7 @@ class Plotter:
                 data_copy["A_True_Global"],
                 label="actual anomalies",
             )
-        axs[0].set_ylim([None, 2 * data_copy["Thresh_Global"].mean()])
+        # axs[0].set_ylim([np.min(a_scores), None])
         fig.legend(prop={"size": 20})
         plt.show()
 
