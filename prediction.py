@@ -88,11 +88,13 @@ class Predictor:
                 a_score = preprocessing.scale(a_score)
                 scaled_anomaly_scores[:, i] = a_score
             df[f"A_Score_{i}"] = a_score
-        
+
+        anomaly_scores = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
         if scale_scores:
-            anomaly_scores = np.mean(scaled_anomaly_scores, 1)
+            anomaly_scores = RobustScaler.fit_transform(anomaly_scores)
+            anomaly_scores = np.mean(anomaly_scores, 1)
         else:
-            anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
+            anomaly_scores = np.mean(anomaly_scores, 1)
 
         return anomaly_scores, df
 
