@@ -2,6 +2,7 @@ from tqdm import tqdm
 import pandas as pd
 import json
 from sklearn import preprocessing
+from sklearn.preprocessing import RobustScaler
 
 from eval_methods import *
 from utils import *
@@ -38,10 +39,10 @@ class Predictor:
         self.pred_args = pred_args
         self.summary_file_name = summary_file_name
 
-    def get_score(self, values, standardize_scores):
+    def get_score(self, values, scale_scores):
         """Method that calculates anomaly score using given model and data
         :param values: 2D array of multivariate time series data, shape (N, k)
-        :param standardize_scores: Whether to feature-wise standardize anomaly scores
+        :param scale_scores: Whether to feature-wise scale anomaly scores
         :return np array of anomaly scores + dataframe with prediction for each channel and global anomalies
         """
 
@@ -75,7 +76,7 @@ class Predictor:
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
 
-        standardized_anomaly_scores = np.zeros_like(actual)
+        scaled_anomaly_scores = np.zeros_like(actual)
         df = pd.DataFrame()
         for i in range(preds.shape[1]):
             df[f"Forecast_{i}"] = preds[:, i]
@@ -83,13 +84,13 @@ class Predictor:
             df[f"True_{i}"] = actual[:, i]
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
                 (recons[:, i] - actual[:, i]) ** 2)
-            if standardize_scores:
+            if scale_scores:
                 a_score = preprocessing.scale(a_score)
-                standardized_anomaly_scores[:, i] = a_score
+                scaled_anomaly_scores[:, i] = a_score
             df[f"A_Score_{i}"] = a_score
-
-        if standardize_scores:
-            anomaly_scores = np.mean(standardized_anomaly_scores, 1)
+        
+        if scale_scores:
+            anomaly_scores = np.mean(scaled_anomaly_scores, 1)
         else:
             anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
 
@@ -98,7 +99,7 @@ class Predictor:
         # return anomaly_scores, df
 
     def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False, save_output=True,
-                          standardize_scores=False):
+                          scale_scores=False):
         """ Predicts anomalies
 
         :param train: 2D array of train multivariate time series data
@@ -107,7 +108,7 @@ class Predictor:
         :param save_scores: Whether to save anomaly scores of train and test
         :param load_scores: Whether to load anomaly scores instead of calculating them
         :param save_output: Whether to save output dataframe
-        :param standardize_scores: Whether to feature-wise standardize anomaly scores
+        :param scale_scores: Whether to feature-wise scale anomaly scores
         """
 
         if load_scores:
@@ -119,8 +120,8 @@ class Predictor:
             test_pred_df = pd.read_pickle(f"{self.save_path}/test_output.pkl")
 
         else:
-            train_anomaly_scores, train_pred_df = self.get_score(train, standardize_scores)
-            test_anomaly_scores, test_pred_df = self.get_score(test, standardize_scores)
+            train_anomaly_scores, train_pred_df = self.get_score(train, scale_scores)
+            test_anomaly_scores, test_pred_df = self.get_score(test, scale_scores)
 
         if save_scores:
             np.save(f"{self.save_path}/train_scores", train_anomaly_scores)

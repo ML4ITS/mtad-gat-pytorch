@@ -3,7 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
 
