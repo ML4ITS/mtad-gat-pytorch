@@ -2,7 +2,7 @@ import argparse
 import json
 import datetime
 
-from args import get_parser
+from args import get_parser, str2bool
 from utils import *
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
@@ -10,9 +10,9 @@ from prediction import Predictor
 if __name__ == "__main__":
 
     parser = get_parser()
-    parser.add_argument(
-        "--model_id", type=str, default=None, help="ID (datetime) of pretrained model to use, '-1' for latest"
-    )
+    parser.add_argument("--model_id", type=str, default=None, help="ID (datetime) of pretrained model to use, '-1' for latest")
+    parser.add_argument("--save_output", type=str2bool, default=False)
+    parser.add_argument("--stand_scores", type=str2bool, default=False)
     args = parser.parse_args()
     print(args)
 
@@ -75,7 +75,6 @@ if __name__ == "__main__":
     group_index = model_args.group[0]
     index = model_args.group[2:]
     args_summary = str(model_args.__dict__)
-    print(args_summary)
 
     if dataset == "SMD":
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
@@ -158,4 +157,8 @@ if __name__ == "__main__":
 
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
-    predictor.predict_anomalies(x_train, x_test, label, save_scores=False, load_scores=True, save_output=False)
+    predictor.predict_anomalies(x_train, x_test, label,
+                                save_scores=False,
+                                load_scores=args.load_scores,
+                                save_output=args.save_output,
+                                standardize_scores=args.stand_scores)

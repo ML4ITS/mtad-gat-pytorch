@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import pandas as pd
 import json
+from sklearn import preprocessing
 
 from eval_methods import *
 from utils import *
@@ -37,12 +38,10 @@ class Predictor:
         self.pred_args = pred_args
         self.summary_file_name = summary_file_name
 
-        self.preds_train = None
-        self.preds_test = None
-
-    def get_score(self, values):
+    def get_score(self, values, standardize_scores):
         """Method that calculates anomaly score using given model and data
         :param values: 2D array of multivariate time series data, shape (N, k)
+        :param standardize_scores: Whether to feature-wise standardize anomaly scores
         :return np array of anomaly scores + dataframe with prediction for each channel and global anomalies
         """
 
@@ -76,21 +75,31 @@ class Predictor:
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
 
+        standardized_anomaly_scores = np.zeros_like(actual)
         df = pd.DataFrame()
         for i in range(preds.shape[1]):
             df[f"Forecast_{i}"] = preds[:, i]
             df[f"Recon_{i}"] = recons[:, i]
             df[f"True_{i}"] = actual[:, i]
-            df[f"A_Score_{i}"] = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
-                (recons[:, i] - actual[:, i]) ** 2
-            )
-        anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
+            a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
+                (recons[:, i] - actual[:, i]) ** 2)
+            if standardize_scores:
+                a_score = preprocessing.scale(a_score)
+                standardized_anomaly_scores[:, i] = a_score
+            df[f"A_Score_{i}"] = a_score
+
+        if standardize_scores:
+            anomaly_scores = np.mean(standardized_anomaly_scores, 1)
+        else:
+            anomaly_scores = np.mean(np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2), 1)
 
         return anomaly_scores, df
 
-    def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False, save_output=True):
-        """Predicts anomalies for given test set.
-        Train data needed to set threshold
+        # return anomaly_scores, df
+
+    def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False, save_output=True,
+                          standardize_scores=False):
+        """ Predicts anomalies
 
         :param train: 2D array of train multivariate time series data
         :param test: 2D array of test multivariate time series data
@@ -98,6 +107,7 @@ class Predictor:
         :param save_scores: Whether to save anomaly scores of train and test
         :param load_scores: Whether to load anomaly scores instead of calculating them
         :param save_output: Whether to save output dataframe
+        :param standardize_scores: Whether to feature-wise standardize anomaly scores
         """
 
         if load_scores:
@@ -109,8 +119,8 @@ class Predictor:
             test_pred_df = pd.read_pickle(f"{self.save_path}/test_output.pkl")
 
         else:
-            train_anomaly_scores, train_pred_df = self.get_score(train)
-            test_anomaly_scores, test_pred_df = self.get_score(test)
+            train_anomaly_scores, train_pred_df = self.get_score(train, standardize_scores)
+            test_anomaly_scores, test_pred_df = self.get_score(test, standardize_scores)
 
         if save_scores:
             np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
@@ -120,14 +130,15 @@ class Predictor:
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
+            test_anomaly_scores = pd.DataFrame(test_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
-        # Find threshold and predict anomalies for each feature
+        # Find threshold and predict anomalies at feature-level (for plotting and diagnosis purposes)
         out_dim = self.n_features if self.target_dims is None else len(self.target_dims)
         all_preds = np.zeros((len(test_pred_df), out_dim))
         for i in range(out_dim):
             train_feature_anom_scores = train_pred_df[f"A_Score_{i}"].values
             test_feature_anom_scores = test_pred_df[f"A_Score_{i}"].values
-            epsilon = find_epsilon(train_feature_anom_scores, reg_level=2) # Using a high reg_level as it is per-feature
+            epsilon = find_epsilon(train_feature_anom_scores, reg_level=2)
 
             train_feature_anom_preds = (train_feature_anom_scores >= epsilon).astype(int)
             test_feature_anom_preds = (test_feature_anom_scores >= epsilon).astype(int)
@@ -140,7 +151,9 @@ class Predictor:
 
             all_preds[:, i] = test_feature_anom_preds
 
-        # Evaluate using different threshold methods: brute-force, epsilon and peak-over-treshold
+        # Global anomalies (entity-level) are predicted using aggregation of anomaly scores across all features
+        # These predictions are used to evaluate performance, as true anomalies are labeled at entity-level
+        # Evaluate using different threshold methods: brute-force, epsilon and peaks-over-treshold
         e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, reg_level=self.reg_level)
         p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies,
                           q=self.q, level=self.level, dynamic=self.dynamic_pot)
@@ -148,9 +161,6 @@ class Predictor:
             bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=2, step_num=100, verbose=False)
         else:
             bf_eval = {}
-
-        global_epsilon = e_eval["threshold"]
-        train_global_epsilon = global_epsilon
 
         print(f"Results using epsilon method:\n {e_eval}")
         print(f"Results using peak-over-threshold method:\n {p_eval}")
@@ -165,22 +175,24 @@ class Predictor:
         for k, v in bf_eval.items():
             bf_eval[k] = float(v)
 
+        # Save performance
         summary = {"epsilon_result": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
-
         with open(f"{self.save_path}/{self.summary_file_name}", "w") as f:
             json.dump(summary, f, indent=2)
 
-        test_pred_df["A_True_Global"] = true_anomalies
-        train_pred_df["Thresh_Global"] = train_global_epsilon
-        test_pred_df["Thresh_Global"] = global_epsilon
-        train_pred_df[f"A_Pred_Global"] = (train_anomaly_scores >= train_global_epsilon).astype(int)
-        test_preds_global = (test_anomaly_scores >= global_epsilon).astype(int)
-        if true_anomalies is not None:
-            test_preds_global = adjust_predicts(None, true_anomalies, global_epsilon, pred=test_preds_global)
-
-        test_pred_df[f"A_Pred_Global"] = test_preds_global
-
+        # Save anomaly predictions made using epsilon method (could be changed to pot or bf-method)
         if save_output:
+            global_epsilon = e_eval["threshold"]
+            test_pred_df["A_True_Global"] = true_anomalies
+            train_pred_df["Thresh_Global"] = global_epsilon
+            test_pred_df["Thresh_Global"] = global_epsilon
+            train_pred_df[f"A_Pred_Global"] = (train_anomaly_scores >= global_epsilon).astype(int)
+            test_preds_global = (test_anomaly_scores >= global_epsilon).astype(int)
+            # Adjust predictions according to evaluation strategy
+            if true_anomalies is not None:
+                test_preds_global = adjust_predicts(None, true_anomalies, global_epsilon, pred=test_preds_global)
+            test_pred_df[f"A_Pred_Global"] = test_preds_global
+
             print(f"Saving output to {self.save_path}/<train/test>_output.pkl")
             train_pred_df.to_pickle(f"{self.save_path}/train_output.pkl")
             test_pred_df.to_pickle(f"{self.save_path}/test_output.pkl")
