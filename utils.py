@@ -13,8 +13,7 @@ def normalize_data(data, scaler=None):
         data = np.nan_to_num(data)
 
     if scaler is None:
-        # scaler = MinMaxScaler()
-        scaler = RobustScaler()
+        scaler = MinMaxScaler()
         scaler.fit(data)
     data = scaler.transform(data)
     print("Data normalized")
