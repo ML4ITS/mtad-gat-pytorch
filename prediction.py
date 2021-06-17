@@ -98,8 +98,8 @@ class Predictor:
 
         anomaly_scores = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
         if scale_scores:
-            anomaly_scores = RobustScaler().fit_transform(anomaly_scores)
-            anomaly_scores = np.mean(anomaly_scores, 1)
+            # anomaly_scores = RobustScaler().fit_transform(anomaly_scores)
+            anomaly_scores = np.mean(scaled_anomaly_scores, 1)
         else:
             anomaly_scores = np.mean(anomaly_scores, 1)
 
