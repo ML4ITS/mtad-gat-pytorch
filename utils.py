@@ -66,17 +66,12 @@ def spectral_residual(data, dim=None):
     dim_list = range(data.shape[1]) if dim is None else [dim]
     for i in tqdm(dim_list):
         x = data[:, i].copy()
-        od.infer_threshold(x, threshold_perc=99.9)
-        preds = od.predict(x, return_instance_score=True)
+        preds = od.predict(x)
         is_outlier = preds['data']['is_outlier']
         replace_idxs = sorted(np.where(is_outlier == 1)[0])
-        for _ in range(100):
-            x[replace_idxs] = [np.median(x[max(0, j-20):j+1]) for j in replace_idxs]
-            od.infer_threshold(x, threshold_perc=99.9)
-            preds = od.predict(x, return_instance_score=True)
-            is_outlier = preds['data']['is_outlier']
-            replace_idxs = np.where(is_outlier == 1)[0]
+        x[replace_idxs] = [np.median(x[max(0, j-5): min(len(x), j+5)]) for j in replace_idxs]
         data[:, i] = x
+
     return data
 
 
@@ -121,15 +116,15 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     except (KeyError, FileNotFoundError):
         test_label = None
 
+    if normalize:
+        train_data, scaler = normalize_data(train_data, scaler=None)
+        test_data, _ = normalize_data(test_data, scaler=scaler)
+
     if spec_res:
         if dataset in ['MSL', 'SMAP']:
             train_data = spectral_residual(train_data, dim=0)
         else:
             train_data = spectral_residual(train_data)
-
-    if normalize:
-        train_data, scaler = normalize_data(train_data, scaler=None)
-        test_data, _ = normalize_data(test_data, scaler=scaler)
 
     print("train set shape: ", train_data.shape)
     print("test set shape: ", test_data.shape)
