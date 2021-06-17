@@ -28,7 +28,6 @@ if __name__ == "__main__":
         subfolders = [subf for subf in dir_content if os.path.isdir(f"{dir_path}/{subf}") and subf != "logs"]
         date_times = [datetime.datetime.strptime(subf, '%d%m%Y_%H%M%S') for subf in subfolders]
         date_times.sort()
-        print(date_times)
         model_datetime = date_times[-1]
         model_id = model_datetime.strftime('%d%m%Y_%H%M%S')
 
