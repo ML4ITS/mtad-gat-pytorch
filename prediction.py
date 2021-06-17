@@ -77,7 +77,7 @@ class Predictor:
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
 
-        scaled_anomaly_scores = np.zeros_like(actual)
+        anomaly_scores = np.zeros_like(actual)
         df = pd.DataFrame()
         for i in range(preds.shape[1]):
             df[f"Forecast_{i}"] = preds[:, i]
@@ -86,22 +86,16 @@ class Predictor:
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
                 (recons[:, i] - actual[:, i]) ** 2)
             if scale_scores:
-                std = np.std(a_score)
+                q75, q25 = np.percentile(a_score, [75, 25])
+                iqr = q75 - q25
+                iqr = max(iqr, 0.01)
                 median = np.median(a_score)
-                print(std)
-                print('-'*50)
-                if std > 0.01:
-                    scaled_anomaly_scores[:, i] = (a_score - median) / std
-                else:
-                    scaled_anomaly_scores[:, i] = a_score
+                a_score = (a_score - median) / iqr
+            anomaly_scores[:, i] = a_score
             df[f"A_Score_{i}"] = a_score
 
-        anomaly_scores = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
-        if scale_scores:
-            # anomaly_scores = RobustScaler().fit_transform(anomaly_scores)
-            anomaly_scores = np.mean(scaled_anomaly_scores, 1)
-        else:
-            anomaly_scores = np.mean(anomaly_scores, 1)
+        # anomaly_scores = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
+        anomaly_scores = np.mean(anomaly_scores, 1)
 
         return anomaly_scores, df
 
