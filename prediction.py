@@ -90,7 +90,7 @@ class Predictor:
                 iqr = q75 - q25
                 # iqr = max(iqr, 0.01)
                 median = np.median(a_score)
-                a_score = (a_score - median) / iqr
+                a_score = (a_score - median) / (1+iqr)
             anomaly_scores[:, i] = a_score
             df[f"A_Score_{i}"] = a_score
 
