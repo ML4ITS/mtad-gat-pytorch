@@ -88,7 +88,7 @@ class Predictor:
             if scale_scores:
                 q75, q25 = np.percentile(a_score, [75, 25])
                 iqr = q75 - q25
-                iqr = max(iqr, 0.01)
+                # iqr = max(iqr, 0.01)
                 median = np.median(a_score)
                 a_score = (a_score - median) / iqr
             anomaly_scores[:, i] = a_score
