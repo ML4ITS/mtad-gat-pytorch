@@ -35,11 +35,10 @@ if __name__ == "__main__":
 
     if dataset == 'SMD':
         output_path = f'output/SMD/{args.group}'
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}",
-                                                  normalize=normalize, spec_res=spec_res)
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
     elif dataset in ['MSL', 'SMAP']:
         output_path = f'output/{dataset}'
-        (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize, spec_res=spec_res)
+        (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
     else:
         raise Exception(f'Dataset "{dataset}" not available.')
 

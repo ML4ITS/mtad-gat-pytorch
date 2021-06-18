@@ -1,8 +1,7 @@
 import os
 import pickle
 import matplotlib.pyplot as plt
-from alibi_detect.od import SpectralResidual
-from tqdm import  tqdm
+from tqdm import tqdm
 import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
@@ -54,27 +53,6 @@ def get_target_dims(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def spectral_residual(data, dim=None):
-    od = SpectralResidual(
-        threshold=3.,
-        window_amp=20,
-        window_local=300,
-        n_est_points=10,
-        n_grad_points=5
-    )
-    print('Running spectral residual..')
-    dim_list = range(data.shape[1]) if dim is None else [dim]
-    for i in tqdm(dim_list):
-        x = data[:, i].copy()
-        preds = od.predict(x)
-        is_outlier = preds['data']['is_outlier']
-        replace_idxs = sorted(np.where(is_outlier == 1)[0])
-        x[replace_idxs] = [np.median(x[max(0, j-5): min(len(x), j+5)]) for j in replace_idxs]
-        data[:, i] = x
-
-    return data
-
-
 def get_data(dataset, max_train_size=None, max_test_size=None,
              normalize=False, spec_res=False, train_start=0, test_start=0):
     """
@@ -119,12 +97,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
         test_data, _ = normalize_data(test_data, scaler=scaler)
-
-    if spec_res:
-        if dataset in ['MSL', 'SMAP']:
-            train_data = spectral_residual(train_data, dim=0)
-        else:
-            train_data = spectral_residual(train_data)
 
     print("train set shape: ", train_data.shape)
     print("test set shape: ", test_data.shape)
