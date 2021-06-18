@@ -66,20 +66,20 @@ class FeatureAttentionLayer(nn.Module):
         # x shape (b, n, k): b - batch size, n - window size, k - number of features
         # For feature attention we represent a node as the values of a particular feature across all timestamps
 
-        v = x.permute(0, 2, 1)
+        x = x.permute(0, 2, 1)
 
         # 'Dynamic' GAT attention
         # Proposed by Brody et. al., 2021 (https://arxiv.org/pdf/2105.14491.pdf)
         # Linear transformation applied after concatenation and attention layer applied after leakyrelu
         if self.use_gatv2:
-            a_input = self._make_attention_input(v)                 # (b, k, k, 2*window_size)
+            a_input = self._make_attention_input(x)                 # (b, k, k, 2*window_size)
             a_input = self.leakyrelu(self.lin(a_input))             # (b, k, k, embed_dim)
             e = torch.matmul(a_input, self.a).squeeze(3)            # (b, k, k, 1)
 
         # Original GAT attention
         else:
-            v = self.lin(v)                                                  # (b, k, k, embed_dim)
-            a_input = self._make_attention_input(v)                          # (b, k, k, 2*embed_dim)
+            Wx = self.lin(x)                                                  # (b, k, k, embed_dim)
+            a_input = self._make_attention_input(Wx)                          # (b, k, k, 2*embed_dim)
             e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)     # (b, k, k, 1)
 
         if self.use_bias:
@@ -90,7 +90,7 @@ class FeatureAttentionLayer(nn.Module):
         attention = torch.dropout(attention, self.dropout, train=self.training)
 
         # Computing new node features using the attention
-        h = self.sigmoid(torch.matmul(attention, v))
+        h = self.sigmoid(torch.matmul(attention, x))
 
         return h.permute(0, 2, 1)
 
@@ -177,8 +177,8 @@ class TemporalAttentionLayer(nn.Module):
 
         # Original GAT attention
         else:
-            x = self.lin(x)                                                  # (b, n, n, embed_dim)
-            a_input = self._make_attention_input(x)                          # (b, n, n, 2*embed_dim)
+            Wx = self.lin(x)                                                  # (b, n, n, embed_dim)
+            a_input = self._make_attention_input(Wx)                          # (b, n, n, 2*embed_dim)
             e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)     # (b, n, n, 1)
 
         if self.use_bias:
