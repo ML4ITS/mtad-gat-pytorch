@@ -26,5 +26,5 @@ python train.py --dataset SMD --group 3-6 --epochs 10 --use_gatv2 False --feat_g
 python train.py --dataset SMD --group 3-7 --epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8
 python train.py --dataset SMD --group 3-8 --epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8
 python train.py --dataset SMD --group 3-9 --epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8
-python train.py --dataset SMD --group 3-10--epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8
-python train.py --dataset SMD --group 3-11--epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8
+python train.py --dataset SMD --group 3-10 --epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8
+python train.py --dataset SMD --group 3-11 --epochs 10 --use_gatv2 False --feat_gat_embed_dim 32 --time_gat_embed_dim 8

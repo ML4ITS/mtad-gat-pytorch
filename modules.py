@@ -114,10 +114,12 @@ class FeatureAttentionLayer(nn.Module):
         K = self.num_nodes
         blocks_repeating = v.repeat_interleave(K, dim=1)  # Left-side of the matrix
         blocks_alternating = v.repeat(1, K, 1)  # Right-side of the matrix
-
         combined = torch.cat((blocks_repeating, blocks_alternating), dim=2)  # (b, K*K, 2*window_size)
 
-        return combined.view(v.size(0), K, K, 2 * self.window_size)
+        if self.use_gatv2:
+            return combined.view(v.size(0), K, K, 2 * self.window_size)
+        else:
+            return combined.view(v.size(0), K, K, 2 * self.embed_dim)
 
 
 class TemporalAttentionLayer(nn.Module):
