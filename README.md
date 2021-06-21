@@ -7,10 +7,11 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 ## Key Notes
 - By default we use the recently proposed [*GATv2*](https://arxiv.org/abs/2105.14491), but include the option to use the standard GAT
 - Instead of using a Variational Auto-Encoder (VAE) as the Reconstruction Model, we use a GRU-based decoder. 
-- For thresholding we implement three methods:
+- We include the following thresholding methods:
   - peaks-over-threshold (POT) as in the MTAD-GAT paper
   - thresholding method proposed by [Hundman et. al.](https://arxiv.org/abs/1802.04431)
   - brute-force method that searches through "all" possible thresholds and picks the one that gives highest F1 score 
+  - All methods are applied, and their respective results are outputted together for comparison.
 - Parts of our code should be credited to the following:
   - [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for preprocessing methods and evaluation methods (including POT)
   - [TelemAnom](https://github.com/khundman/telemanom) for plotting methods and thresholding method
