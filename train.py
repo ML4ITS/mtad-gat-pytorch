@@ -130,7 +130,7 @@ if __name__ == "__main__":
     level = level_dict[key]
 
     # Some suggestions for Epsilon args
-    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
+    reg_level_dict = {"SMAP": 0, "MSL": 1, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
 
