@@ -53,13 +53,12 @@ def get_parser():
     parser.add_argument("--log_tensorboard", type=str2bool, default=True)
 
     # --- Predictor params ---
-    parser.add_argument("--save_scores", type=str2bool, default=True, help="To save anomaly scores predicted.")
-    parser.add_argument("--load_scores", type=str2bool, default=False, help="To use already computed anomaly scores")
+    parser.add_argument("--scale_scores", type=str2bool, default=False)
+    parser.add_argument("--use_mov_av", type=str2bool, default=False)
     parser.add_argument("--gamma", type=float, default=1)
     parser.add_argument("--level", type=float, default=None)
     parser.add_argument("--q", type=float, default=1e-3)
     parser.add_argument("--dynamic_pot", type=str2bool, default=False)
-    parser.add_argument("--use_mov_av", type=str2bool, default=False)
 
     # --- Other ---
     parser.add_argument("--comment", type=str, default="")

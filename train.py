@@ -122,14 +122,14 @@ if __name__ == "__main__":
     print(f"Test reconstruction loss: {test_loss[1]:.5f}")
     print(f"Test total loss: {test_loss[2]:.5f}")
 
-    # POT args
+    # Some suggestions for POT args
     if args.level is not None:
         level = args.level
-    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
+    level_dict = {"SMAP": 0.93, "MSL": 0.90, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     level = level_dict[key]
 
-    # Epsilon args
+    # Some suggestions for Epsilon args
     reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
@@ -138,6 +138,7 @@ if __name__ == "__main__":
     prediction_args = {
         "target_dims": target_dims,
         "level": level,
+        'scale_scores': args.scale_scores,
         "q": args.q,
         'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     )
 
     label = y_test[window_size:] if y_test is not None else None
-    predictor.predict_anomalies(x_train, x_test, label, save_scores=True)
+    predictor.predict_anomalies(x_train, x_test, label)
 
     # Save config
     args_path = f"{save_path}/config.txt"

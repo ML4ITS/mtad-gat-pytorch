@@ -20,7 +20,7 @@ class Predictor:
     :param batch_size: Number of windows in a single batch
     :param boolean use_cuda: To be run on GPU or not
     :param save_path: path to save predictions and other output files
-
+    :param pred_args: params for thresholding and predicting anomalies
     """
 
     def __init__(self, model, window_size, n_features, pred_args, summary_file_name="summary.txt"):
@@ -28,6 +28,7 @@ class Predictor:
         self.window_size = window_size
         self.n_features = n_features
         self.target_dims = pred_args["target_dims"]
+        self.scale_scores = pred_args["scale_scores"]
         self.q = pred_args["q"]
         self.level = pred_args["level"]
         self.dynamic_pot = pred_args["dynamic_pot"]
@@ -40,10 +41,9 @@ class Predictor:
         self.pred_args = pred_args
         self.summary_file_name = summary_file_name
 
-    def get_score(self, values, scale_scores):
+    def get_score(self, values):
         """Method that calculates anomaly score using given model and data
         :param values: 2D array of multivariate time series data, shape (N, k)
-        :param scale_scores: Whether to feature-wise scale anomaly scores
         :return np array of anomaly scores + dataframe with prediction for each channel and global anomalies
         """
 
@@ -72,7 +72,7 @@ class Predictor:
 
         preds = np.concatenate(preds, axis=0)
         recons = np.concatenate(recons, axis=0)
-        actual = values.detach().cpu().numpy()[self.window_size :]
+        actual = values.detach().cpu().numpy()[self.window_size:]
 
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
@@ -85,23 +85,22 @@ class Predictor:
             df[f"True_{i}"] = actual[:, i]
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
                 (recons[:, i] - actual[:, i]) ** 2)
-            if scale_scores:
+
+            if self.scale_scores:
                 q75, q25 = np.percentile(a_score, [75, 25])
                 iqr = q75 - q25
-                # iqr = max(iqr, 0.01)
                 median = np.median(a_score)
                 a_score = (a_score - median) / (1+iqr)
+
             anomaly_scores[:, i] = a_score
             df[f"A_Score_{i}"] = a_score
 
-        # anomaly_scores = np.sqrt((preds - actual) ** 2) + self.gamma * np.sqrt((recons - actual) ** 2)
         anomaly_scores = np.mean(anomaly_scores, 1)
+        df['A_Score_Global'] = anomaly_scores
 
-        return anomaly_scores, df
+        return df
 
-        # return anomaly_scores, df
-
-    def predict_anomalies(self, train, test, true_anomalies, save_scores=False, load_scores=False, save_output=True,
+    def predict_anomalies(self, train, test, true_anomalies, load_scores=False, save_output=True,
                           scale_scores=False):
         """ Predicts anomalies
 
@@ -116,20 +115,28 @@ class Predictor:
 
         if load_scores:
             print("Loading anomaly scores")
-            train_anomaly_scores = np.load(f"{self.save_path}/train_scores.npy")
-            test_anomaly_scores = np.load(f"{self.save_path}/test_scores.npy")
+            # train_anomaly_scores = np.load(f"{self.save_path}/train_scores.npy")
+            # test_anomaly_scores = np.load(f"{self.save_path}/test_scores.npy")
 
             train_pred_df = pd.read_pickle(f"{self.save_path}/train_output.pkl")
             test_pred_df = pd.read_pickle(f"{self.save_path}/test_output.pkl")
 
-        else:
-            train_anomaly_scores, train_pred_df = self.get_score(train, scale_scores)
-            test_anomaly_scores, test_pred_df = self.get_score(test, scale_scores)
+            train_anomaly_scores = train_pred_df['A_Score_Global'].values
+            test_anomaly_scores = test_pred_df['A_Score_Global'].values
 
-        if save_scores:
-            np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
-            np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
-            print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
+        else:
+            # train_anomaly_scores,  train_pred_df = self.get_score(train, scale_scores)
+            # test_anomaly_scores, test_pred_df = self.get_score(test, scale_scores)
+            train_pred_df = self.get_score(train)
+            test_pred_df = self.get_score(test)
+
+            train_anomaly_scores = train_pred_df['A_Score_Global'].values
+            test_anomaly_scores = test_pred_df['A_Score_Global'].values
+
+        #if save_scores:
+         #   np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
+          #  np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
+           # print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
 
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)

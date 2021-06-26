@@ -10,15 +10,15 @@ from prediction import Predictor
 if __name__ == "__main__":
 
     parser = get_parser()
-    parser.add_argument("--model_id", type=str, default=None, help="ID (datetime) of pretrained model to use, '-1' for latest")
+    parser.add_argument("--model_id", type=str, default=None,
+                        help="ID (datetime) of pretrained model to use, '-1' for latest, '-2' for second latest, etc")
+    parser.add_argument("--load_scores", type=str2bool, default=False, help="To use already computed anomaly scores")
     parser.add_argument("--save_output", type=str2bool, default=False)
-    parser.add_argument("--scale_scores", type=str2bool, default=False)
     args = parser.parse_args()
     print(args)
 
     dataset = args.dataset
     if args.model_id is None:
-        # Use latest model
         if dataset == 'SMD':
             dir_path = f"./output/{dataset}/{args.group}"
         else:
@@ -123,21 +123,21 @@ if __name__ == "__main__":
     load(model, f"{model_path}/model.pt", device=device)
     model.to(device)
 
-    # Pot args
+    # Some suggestions for POT args
     level_dict = {"SMAP": 0.93, "MSL": 0.90, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
 
-    # Epsilon args
+    # Some suggestions for Epsilon args
     reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
-    reg_level = 1
 
     prediction_args = {
         "target_dims": target_dims,
         "level": level,
         "q": args.q,
+        'scale_scores': args.scale_scores,
         'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
@@ -158,7 +158,5 @@ if __name__ == "__main__":
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
     predictor.predict_anomalies(x_train, x_test, label,
-                                save_scores=False,
                                 load_scores=args.load_scores,
-                                save_output=args.save_output,
-                                scale_scores=args.scale_scores)
+                                save_output=args.save_output)

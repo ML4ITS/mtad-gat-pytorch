@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import json
+from datetime import datetime
 import plotly as py
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
@@ -19,9 +20,9 @@ class Plotter:
     Plotter-class inspired by TelemAnom (https://github.com/khundman/telemanom)
     """
 
-    def __init__(self, result_path):
+    def __init__(self, result_path, model_id='-1'):
         self.result_path = result_path
-        self.data_name = self.result_path.split("/")[-1]
+        self.model_id = model_id
         self.train_output = None
         self.test_output = None
         self.labels_available = True
@@ -30,16 +31,24 @@ class Plotter:
         self.train_output["timestamp"] = self.train_output.index
         self.test_output["timestamp"] = self.test_output.index
 
-        config_path = f"{result_path}/config.txt"
+        config_path = f"{self.result_path}/config.txt"
         with open(config_path) as f:
             self.lookback = json.load(f)["lookback"]
 
-        if "SMD" in result_path:
+        if "SMD" in self.result_path:
             self.pred_cols = [f"feat_{i}" for i in range(get_data_dim("machine"))]
-        elif "SMAP" in result_path or "MSL" in result_path:
+        elif "SMAP" in self.result_path or "MSL" in self.result_path:
             self.pred_cols = ["feat_1"]
 
     def _load_results(self):
+        if self.model_id.startswith('-'):
+            dir_content = os.listdir(self.result_path)
+            datetimes = [datetime.strptime(subf, '%d%m%Y_%H%M%S') for subf in dir_content if os.path.isdir(f"{self.result_path}/{subf}")
+                          and subf not in ['logs']]
+            datetimes.sort()
+            model_id = datetimes[int(self.model_id)].strftime('%d%m%Y_%H%M%S')
+            self.result_path = f'{self.result_path}/{model_id}'
+
         print(f"Loading results of {self.result_path}")
         train_output = pd.read_pickle(f"{self.result_path}/train_output.pkl")
         train_anomaly_scores = np.load(f"{self.result_path}/train_scores.npy")
