@@ -7,12 +7,13 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 ## Key Notes
 - By default we use the recently proposed [*GATv2*](https://arxiv.org/abs/2105.14491), but include the option to use the standard GAT
 - Instead of using a Variational Auto-Encoder (VAE) as the Reconstruction Model, we use a GRU-based decoder. 
-- For thresholding we implement three methods:
+- We provide implementations of the following thresholding methods, but their parameters should be customized to different datasets:
   - peaks-over-threshold (POT) as in the MTAD-GAT paper
   - thresholding method proposed by [Hundman et. al.](https://arxiv.org/abs/1802.04431)
   - brute-force method that searches through "all" possible thresholds and picks the one that gives highest F1 score 
+  - All methods are applied, and their respective results are outputted together for comparison.
 - Parts of our code should be credited to the following:
-  - [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for preprocessing methods and evaluation methods (including POT)
+  - [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for preprocessing and evaluation methods and an implementation of POT
   - [TelemAnom](https://github.com/khundman/telemanom) for plotting methods and thresholding method
   - [pyGAT](https://github.com/Diego999/pyGAT) by Diego Antognini for inspiration on GAT-related methods 
   - Their respective licences are included in ```licences```.
@@ -110,7 +111,7 @@ Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is u
   - ```train/test.pkl```: saved forecasts, reconstructions, actual, thresholds, etc.
   - ```train/test_scores.npy```: anomaly scores
   - ```train/validation_losses.png```: plots of train and validation loss during training
-  - ```model.pt``` weights etc. for trained model 
+  - ```model.pt``` model parameters of trained model 
  
 ```result_visualizer.ipynb``` provides a jupyter notebook for visualizing results. 
 To launch notebook:
@@ -132,7 +133,7 @@ Feature-Oriented GAT layer | Time-Oriented GAT layer
 ### GATv2
 Recently, Brody et al. (2021) proposed [*GATv2*](https://arxiv.org/abs/2105.14491), a modified version of the standard GAT.
 
-Brody et al. proved that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
+They argue that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
 
 <img src="https://i.imgur.com/agPNXBy.png" alt="drawing" width="700"/> 
 
