@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # Some suggestions for POT args
     if args.level is not None:
         level = args.level
-    level_dict = {"SMAP": 0.93, "MSL": 0.90, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
+    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     level = level_dict[key]
 

@@ -235,14 +235,14 @@ class Plotter:
 
             data_type = "Test data" if is_test else "Train data"
             y_layout = {
-                "title": f"{data_type} | Forecast & reconstruction vs true value for feature {i}: {self.pred_cols[i] if self.pred_cols is not None else ''} ",
+                "title": f"{data_type} | Forecast & reconstruction vs true value for {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "showlegend": True,
                 "height": 400,
                 "width": 1100,
             }
 
             e_layout = {
-                "title": f"{data_type} | Error for feature {i}: {self.pred_cols[i] if self.pred_cols is not None else ''}",
+                "title": f"{data_type} | Error for {self.pred_cols[i] if self.pred_cols is not None else ''}",
                 #"yaxis": dict(range=[0, e_max]),
                 "height": 400,
                 "width": 1100,
