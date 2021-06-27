@@ -112,7 +112,8 @@ Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is u
   - ```train/test_scores.npy```: anomaly scores
   - ```train/validation_losses.png```: plots of train and validation loss during training
   - ```model.pt``` model parameters of trained model 
- 
+This repo includes example outputs for MSL, SMAP and SMD machine 1-1.  
+
 ```result_visualizer.ipynb``` provides a jupyter notebook for visualizing results. 
 To launch notebook:
 ```bash 
