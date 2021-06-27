@@ -9,7 +9,7 @@ class ConvLayer(nn.Module):
     :param kernel_size: size of kernel to use in the convolution operation
     """
 
-    def __init__(self, n_features, window_size, kernel_size=7):
+    def __init__(self, n_features, kernel_size=7):
         super(ConvLayer, self).__init__()
         self.padding = nn.ConstantPad1d((kernel_size - 1) // 2, 0.0)
         self.conv = nn.Conv1d(in_channels=n_features, out_channels=n_features, kernel_size=kernel_size)
@@ -80,7 +80,7 @@ class FeatureAttentionLayer(nn.Module):
         else:
             Wx = self.lin(x)                                                  # (b, k, k, embed_dim)
             a_input = self._make_attention_input(Wx)                          # (b, k, k, 2*embed_dim)
-            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)     # (b, k, k, 1)
+            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)      # (b, k, k, 1)
 
         if self.use_bias:
             e += self.bias
@@ -179,7 +179,7 @@ class TemporalAttentionLayer(nn.Module):
         else:
             Wx = self.lin(x)                                                  # (b, n, n, embed_dim)
             a_input = self._make_attention_input(Wx)                          # (b, n, n, 2*embed_dim)
-            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)     # (b, n, n, 1)
+            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)      # (b, n, n, 1)
 
         if self.use_bias:
             e += self.bias  # (b, n, n, 1)

@@ -15,12 +15,8 @@ class Predictor:
     :param model: MTAD-GAT model (pre-trained) used to forecast and reconstruct
     :param window_size: Length of the input sequence
     :param n_features: Number of input features
-    :param level: param used in the Peak-Over-Threshold method
-    :param gamma: weighting of recon loss relative to prediction loss (1=equally weighted)
-    :param batch_size: Number of windows in a single batch
-    :param boolean use_cuda: To be run on GPU or not
-    :param save_path: path to save predictions and other output files
     :param pred_args: params for thresholding and predicting anomalies
+
     """
 
     def __init__(self, model, window_size, n_features, pred_args, summary_file_name="summary.txt"):
@@ -115,8 +111,6 @@ class Predictor:
 
         if load_scores:
             print("Loading anomaly scores")
-            # train_anomaly_scores = np.load(f"{self.save_path}/train_scores.npy")
-            # test_anomaly_scores = np.load(f"{self.save_path}/test_scores.npy")
 
             train_pred_df = pd.read_pickle(f"{self.save_path}/train_output.pkl")
             test_pred_df = pd.read_pickle(f"{self.save_path}/test_output.pkl")
@@ -125,18 +119,11 @@ class Predictor:
             test_anomaly_scores = test_pred_df['A_Score_Global'].values
 
         else:
-            # train_anomaly_scores,  train_pred_df = self.get_score(train, scale_scores)
-            # test_anomaly_scores, test_pred_df = self.get_score(test, scale_scores)
             train_pred_df = self.get_score(train)
             test_pred_df = self.get_score(test)
 
             train_anomaly_scores = train_pred_df['A_Score_Global'].values
             test_anomaly_scores = test_pred_df['A_Score_Global'].values
-
-        #if save_scores:
-         #   np.save(f"{self.save_path}/train_scores", train_anomaly_scores)
-          #  np.save(f"{self.save_path}/test_scores", test_anomaly_scores)
-           # print(f"Anomaly scores saved to {self.save_path}/<train/test>_scores.npy")
 
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)

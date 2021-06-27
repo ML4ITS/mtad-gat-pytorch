@@ -51,13 +51,8 @@ class Plotter:
 
         print(f"Loading results of {self.result_path}")
         train_output = pd.read_pickle(f"{self.result_path}/train_output.pkl")
-        train_anomaly_scores = np.load(f"{self.result_path}/train_scores.npy")
-        train_output["A_Score_Global"] = train_anomaly_scores
         train_output["A_True_Global"] = 0
-
         test_output = pd.read_pickle(f"{self.result_path}/test_output.pkl")
-        test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy")
-        test_output["A_Score_Global"] = test_anomaly_scores
 
         self.train_output = train_output
         self.test_output = test_output

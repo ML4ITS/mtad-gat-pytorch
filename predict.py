@@ -124,7 +124,7 @@ if __name__ == "__main__":
     model.to(device)
 
     # Some suggestions for POT args
-    level_dict = {"SMAP": 0.93, "MSL": 0.90, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
+    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level = level_dict[key]
 
