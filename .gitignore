@@ -7,10 +7,10 @@ datasets/data/train/
 datasets/data/test/
 datasets/ServerMachineDataset/processed/
 .ipynb_checkpoints/
-
-#**.pkl
-#**.npy
-**/logs
-#*.pkl
-#*.npy
-#*.pt
+output/
+**.pkl
+**.npy
+*/logs
+*.pkl
+*.npy
+*.pt
