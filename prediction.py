@@ -23,6 +23,7 @@ class Predictor:
         self.model = model
         self.window_size = window_size
         self.n_features = n_features
+        self.dataset = pred_args["dataset"]
         self.target_dims = pred_args["target_dims"]
         self.scale_scores = pred_args["scale_scores"]
         self.q = pred_args["q"]
@@ -125,6 +126,9 @@ class Predictor:
             train_anomaly_scores = train_pred_df['A_Score_Global'].values
             test_anomaly_scores = test_pred_df['A_Score_Global'].values
 
+            train_anomaly_scores = adjust_anomaly_scores(train_anomaly_scores, self.dataset, True, self.window_size)
+            test_anomaly_scores = adjust_anomaly_scores(test_anomaly_scores, self.dataset, False, self.window_size)
+
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
@@ -173,7 +177,7 @@ class Predictor:
         for k, v in bf_eval.items():
             bf_eval[k] = float(v)
 
-        # Save performance
+        # Save
         summary = {"epsilon_result": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
         with open(f"{self.save_path}/{self.summary_file_name}", "w") as f:
             json.dump(summary, f, indent=2)

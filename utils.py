@@ -3,6 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 # from alibi_detect.od import SpectralResidual
 from tqdm import tqdm
+import pandas as pd
 import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
@@ -206,3 +207,32 @@ def get_y_height(y):
         return 0.1
     else:
         return max(y) + 0.1
+
+
+def adjust_anomaly_scores(scores, data_name, is_train, lookback):
+    # Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
+    # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
+    adjusted_scores = scores.copy()
+    if is_train:
+        md = pd.read_csv(f'./datasets/data/{data_name.lower()}_train_md.csv')
+    else:
+
+        md = pd.read_csv('./datasets/data/labeled_anomalies.csv')
+
+    md = md[md['spacecraft'] == data_name]
+    md = md[md['chan_id'] != 'P-2']
+
+    # Sort values by channel
+    md = md.sort_values(by=['chan_id'])
+
+    # Getting the cumulative start index for each channel
+    sep_cuma = np.cumsum(md['num_values'].values) - lookback
+    sep_cuma = sep_cuma[:-1]
+    buffer = np.arange(1, 20)
+    i_remov = np.sort(np.concatenate((sep_cuma, np.array([i+buffer for i in sep_cuma]).flatten(),
+                                      np.array([i-buffer for i in sep_cuma]).flatten())))
+    i_remov = i_remov[(i_remov < len(adjusted_scores)) & (i_remov >= 0)]
+    i_remov = np.sort(np.unique(i_remov))
+    if len(i_remov) != 0:
+        adjusted_scores[i_remov] = 0
+    return adjusted_scores

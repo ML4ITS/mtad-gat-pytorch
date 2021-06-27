@@ -10,6 +10,7 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import cufflinks as cf
 cf.go_offline()
+import sys
 
 
 class Plotter:
@@ -51,8 +52,16 @@ class Plotter:
 
         print(f"Loading results of {self.result_path}")
         train_output = pd.read_pickle(f"{self.result_path}/train_output.pkl")
+        # train_anomaly_scores = np.load(f"{self.result_path}/train_scores.npy", allow_pickle=True)
+        # train_output["A_Score_Global"] = train_anomaly_scores
+        train_output.to_pickle(f"{self.result_path}/train_output.pkl")
         train_output["A_True_Global"] = 0
+
         test_output = pd.read_pickle(f"{self.result_path}/test_output.pkl")
+        # test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy", allow_pickle=True)
+        # test_output["A_Score_Global"] = test_anomaly_scores
+        # test_output.to_pickle(f"{self.result_path}/test_output.pkl")
+        # sys.exit()
 
         self.train_output = train_output
         self.test_output = test_output
@@ -109,7 +118,7 @@ class Plotter:
         shapes = []
 
         for r in ranges:
-            w = 5
+            w = 20
             x0 = r[0] - w
             x1 = r[1] + w
             shape = {
@@ -192,24 +201,14 @@ class Plotter:
             y_max = 1.1 * plot_values["y_true"].max()
             e_max = 1.5 * plot_values["errors"].max()
 
-            # y_shapes = create_shapes(segments, 'true', y_min, y_max, plot_values)
-            if self.labels_available:
-                y_shapes = self.create_shapes(
-                    anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test
-                )
-                e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
-
-                y_shapes += self.create_shapes(
-                    anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test
-                )
-                e_shapes += self.create_shapes(
-                    anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test
-                )
-            else:
-                y_shapes = self.create_shapes(
-                    anomaly_sequences["pred"], None, y_min, y_max, plot_values, is_test=is_test
-                )
-                e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values, is_test=is_test)
+            # if self.labels_available:
+            #     y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
+            #     e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
+            #
+            #     y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
+            #     e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
+            y_shapes = self.create_shapes(anomaly_sequences["pred"], None, y_min, y_max, plot_values, is_test=is_test)
+            e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values, is_test=is_test)
 
             y_df = pd.DataFrame(
                 {
