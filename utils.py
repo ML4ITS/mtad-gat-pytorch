@@ -210,9 +210,16 @@ def get_y_height(y):
 
 
 def adjust_anomaly_scores(scores, dataset, is_train, lookback):
-    # Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
+    """
+    Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
+    :param scores: anomaly_scores
+    :param dataset: name of dataset
+    :param is_train: if scores is from train set
+    :param lookback: lookback (window size) used in model
+    """
+
     # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
-    if dataset not in ['SMAP', 'MSL']:
+    if dataset.upper() not in ['SMAP', 'MSL']:
         return scores
 
     adjusted_scores = scores.copy()

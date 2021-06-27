@@ -123,11 +123,19 @@ if __name__ == "__main__":
     print(f"Test total loss: {test_loss[2]:.5f}")
 
     # Some suggestions for POT args
+    level_q_dict = {
+        "SMAP": (0.90, 0.005),
+        "MSL": (0.90, 0.001),
+        "SMD-1": (0.9950, 0.001),
+        "SMD-2": (0.9925, 0.001),
+        "SMD-3": (0.9999, 0.001)
+    }
+    key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
+    level, q = level_q_dict[key]
     if args.level is not None:
         level = args.level
-    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
-    key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
-    level = level_dict[key]
+    if args.q is not None:
+        q = args.q
 
     # Some suggestions for Epsilon args
     reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
@@ -138,9 +146,9 @@ if __name__ == "__main__":
     prediction_args = {
         'dataset': dataset,
         "target_dims": target_dims,
-        "level": level,
         'scale_scores': args.scale_scores,
-        "q": args.q,
+        "level": level,
+        "q": q,
         'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,

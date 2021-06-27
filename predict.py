@@ -124,9 +124,19 @@ if __name__ == "__main__":
     model.to(device)
 
     # Some suggestions for POT args
-    level_dict = {"SMAP": 0.93, "MSL": 0.99, "SMD-1": 0.9950, "SMD-2": 0.9925, "SMD-3": 0.9999}
+    level_q_dict = {
+        "SMAP": (0.90, 0.005),
+        "MSL": (0.90, 0.001),
+        "SMD-1": (0.9950, 0.001),
+        "SMD-2": (0.9925, 0.001),
+        "SMD-3": (0.9999, 0.001)
+    }
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
-    level = level_dict[key]
+    level, q = level_q_dict[key]
+    if args.level is not None:
+        level = args.level
+    if args.q is not None:
+        q = args.q
 
     # Some suggestions for Epsilon args
     reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
@@ -136,9 +146,9 @@ if __name__ == "__main__":
     prediction_args = {
         'dataset': dataset,
         "target_dims": target_dims,
-        "level": level,
-        "q": args.q,
         'scale_scores': args.scale_scores,
+        "level": level,
+        "q": q,
         'dynamic_pot': args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
@@ -146,6 +156,7 @@ if __name__ == "__main__":
         "save_path": f"{model_path}",
     }
 
+    # Creating a new summary-file each time when new prediction are made with a pre-trained model
     count = 0
     for filename in os.listdir(model_path):
         if filename.startswith("summary"):
@@ -155,7 +166,6 @@ if __name__ == "__main__":
     else:
         summary_file_name = f"summary_{count}.txt"
 
-    # summary_file_name = 'summary.txt'
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
     predictor.predict_anomalies(x_train, x_test, label,

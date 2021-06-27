@@ -455,7 +455,7 @@ class Plotter:
                 data_copy["A_True_Global"],
                 label="actual anomalies",
             )
-        # axs[0].set_ylim([np.min(a_scores), None])
+        axs[0].set_ylim([0, 5 * np.mean(data_copy["Thresh_Global"].values)])
         fig.legend(prop={"size": 20})
         plt.show()
 
@@ -471,7 +471,7 @@ class Plotter:
         pred_anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_Pred_Global"].values)
         threshold = data_copy['Thresh_Global'].values
         y_min = -0.1
-        y_max = 1.1 * np.max(tot_anomaly_scores)
+        y_max = 5 * np.mean(threshold) # np.max(tot_anomaly_scores)
         shapes = self.create_shapes(pred_anomaly_sequences, "pred", y_min, y_max, None, is_test=is_test)
         if self.labels_available and is_test:
             true_anomaly_sequences = self.get_anomaly_sequences(data_copy[f"A_True_Global"].values)
