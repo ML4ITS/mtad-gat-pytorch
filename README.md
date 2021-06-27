@@ -139,9 +139,19 @@ Example from SMAP test set:
 Example from MSL test set (note that one anomaly segment is not detected):
 <img src="https://i.imgur.com/h4DU3kE.png" alt="drawing"/>
 
+## Model Overview
+
+<img src="https://i.imgur.com/s9FuPT4.png" alt="drawing"/>
+
+Figure above adapted from [Zhao et al. (2020)](https://arxiv.org/pdf/2009.02040.pdf)
+
+1. The raw input data is preprocessed, and then a 1-D convolution is applied in the temporal dimension in order to smooth the data and alleviate possible noise effects.
+2. The output of the 1-D convolution module is processed by two parallel graph attention layer, one feature-oriented and one time-oriented, in order to capture dependencies among features and timestamps, respectively.
+3. The output from the 1-D convolution module and the two GAT modules are concatenated and fed to a GRU layer, to capture longer sequential patterns.
+4. The output from the GRU layer are fed into a forecasting model and a reconstruction model, to get a prediction for the next timestamp, as well as a reconstruction of the input sequence.
   
 ## GAT layers
-
+Below we visualize how the two GAT layers view the input as a complete graph. 
 Feature-Oriented GAT layer | Time-Oriented GAT layer
 --- | --- 
 <img src="https://i.imgur.com/wVD8oIx.png" alt="drawing" width="700" height="250"/> | <img src="https://i.imgur.com/a9PsNB0.png" alt="drawing" width="730" height="250"/>
