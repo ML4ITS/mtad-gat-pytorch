@@ -212,12 +212,15 @@ def get_y_height(y):
 def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     # Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
     # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
+    if dataset not in ['SMAP', 'MSL']:
+        return scores
+    
     adjusted_scores = scores.copy()
     if is_train:
         md = pd.read_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
     else:
         md = pd.read_csv('./datasets/data/labeled_anomalies.csv')
-        md = md[md['spacecraft'] == dataset]
+        md = md[md['spacecraft'] == dataset.upper()]
 
     md = md[md['chan_id'] != 'P-2']
 
