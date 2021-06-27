@@ -118,9 +118,26 @@ To launch notebook:
 ```bash 
 jupyter notebook result_visualizer.ipynb
 ```
+
+Predicted anomalies are visualized using a blue rectangle. <br />
+Actual (true) anomalies are visualized using a red rectangle. <br />
+Thus, correctly predicted anomalies are visualized by a purple (blue + red) rectangle. <br />
+Some examples:
+
+SMD test set (feature 0) | SMD train set (feature 0)
+--- | --- 
+<img src="https://i.imgur.com/AFCVhtF.png" alt="drawing" width="730"/> | <img src="https://i.imgur.com/CJ6t8ST.png" alt="drawing" width="730"/>
+
+
+Example from SMAP test set:
+<img src="https://i.imgur.com/XEzUNv7.png" alt="drawing"/>
+
+
+Example from MSL test set (note that one anomaly segment is not detected):
+<img src="https://i.imgur.com/h4DU3kE.png" alt="drawing"/>
+
   
-  
-### GAT layers
+## GAT layers
 
 Feature-Oriented GAT layer | Time-Oriented GAT layer
 --- | --- 
@@ -130,7 +147,7 @@ Feature-Oriented GAT layer | Time-Oriented GAT layer
 
 **Right**: The time-oriented GAT layer views the input data as a complete graph in which each node represents the values for all features at a specific timestamp.
 
-### GATv2
+## GATv2
 Recently, Brody et al. (2021) proposed [*GATv2*](https://arxiv.org/abs/2105.14491), a modified version of the standard GAT.
 
 They argue that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
