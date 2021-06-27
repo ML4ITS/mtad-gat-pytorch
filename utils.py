@@ -209,17 +209,16 @@ def get_y_height(y):
         return max(y) + 0.1
 
 
-def adjust_anomaly_scores(scores, data_name, is_train, lookback):
+def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     # Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
     # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
     adjusted_scores = scores.copy()
     if is_train:
-        md = pd.read_csv(f'./datasets/data/{data_name.lower()}_train_md.csv')
+        md = pd.read_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
     else:
-
         md = pd.read_csv('./datasets/data/labeled_anomalies.csv')
+        md = md[md['spacecraft'] == dataset]
 
-    md = md[md['spacecraft'] == data_name]
     md = md[md['chan_id'] != 'P-2']
 
     # Sort values by channel
@@ -235,4 +234,14 @@ def adjust_anomaly_scores(scores, data_name, is_train, lookback):
     i_remov = np.sort(np.unique(i_remov))
     if len(i_remov) != 0:
         adjusted_scores[i_remov] = 0
+
+    # Normalize each concatenated part individually
+    sep_cuma = np.cumsum(md['num_values'].values) - lookback
+    s = [0] + sep_cuma.tolist()
+    for c_start, c_end in [(s[i], s[i+1]) for i in range(len(s)-1)]:
+        e_s = adjusted_scores[c_start: c_end+1]
+
+        e_s = (e_s - np.min(e_s))/(np.max(e_s) - np.min(e_s))
+        adjusted_scores[c_start: c_end+1] = e_s
+
     return adjusted_scores
