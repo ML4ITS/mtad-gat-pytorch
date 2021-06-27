@@ -10,7 +10,6 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import cufflinks as cf
 cf.go_offline()
-import sys
 
 
 class Plotter:
@@ -52,16 +51,19 @@ class Plotter:
 
         print(f"Loading results of {self.result_path}")
         train_output = pd.read_pickle(f"{self.result_path}/train_output.pkl")
-        # train_anomaly_scores = np.load(f"{self.result_path}/train_scores.npy", allow_pickle=True)
-        # train_output["A_Score_Global"] = train_anomaly_scores
         train_output.to_pickle(f"{self.result_path}/train_output.pkl")
         train_output["A_True_Global"] = 0
-
         test_output = pd.read_pickle(f"{self.result_path}/test_output.pkl")
-        # test_anomaly_scores = np.load(f"{self.result_path}/test_scores.npy", allow_pickle=True)
-        # test_output["A_Score_Global"] = test_anomaly_scores
-        # test_output.to_pickle(f"{self.result_path}/test_output.pkl")
-        # sys.exit()
+
+        # Because for SMAP and MSL only one feature is predicted
+        if 'SMAP' in self.result_path or 'MSL' in self.result_path:
+            train_output[f'A_Pred_0'] = train_output['A_Pred_Global']
+            train_output[f'A_Score_0'] = train_output['A_Score_Global']
+            train_output[f'Thresh_0'] = train_output['Thresh_Global']
+
+            test_output[f'A_Pred_0'] = test_output['A_Pred_Global']
+            test_output[f'A_Score_0'] = test_output['A_Score_Global']
+            test_output[f'Thresh_0'] = test_output['Thresh_Global']
 
         self.train_output = train_output
         self.test_output = test_output
@@ -90,22 +92,15 @@ class Plotter:
 
     def create_shapes(self, ranges, sequence_type, _min, _max, plot_values, is_test=True, xref=None, yref=None):
         """
-        Create shapes for regions to highlight in plotly vizzes (true and
-        predicted anomaly sequences). Will plot labeled anomalous ranges if
-        available.
+        Create shapes for regions to highlight in plotly (true and predicted anomaly sequences).
 
-        Args:
-                ranges (list of tuples): tuple of start and end indices for anomaly
-                        sequences for a feature
-                sequence_type (str): "predict" if predicted values else
-                        "true" if actual values. Determines colors.
-                _min (float): min y value of series
-                _max (float): max y value of series
-                plot_values (dict): dictionary of different series to be plotted
-                        (predicted, actual, errors, training data)
+        :param ranges: tuple of start and end indices for anomaly sequences for a feature
+        :param sequence_type: "predict" if predicted values else "true" if actual values. Determines colors.
+        :param _min: min y value of series
+        :param _max: max y value of series
+        :param plot_values: dictionary of different series to be plotted
 
-        Returns:
-                (dict) shape specifications for plotly
+        :return: list of shapes specifications for plotly
         """
 
         if _max is None:
@@ -118,7 +113,7 @@ class Plotter:
         shapes = []
 
         for r in ranges:
-            w = 20
+            w = 5
             x0 = r[0] - w
             x1 = r[1] + w
             shape = {
@@ -144,7 +139,9 @@ class Plotter:
     @staticmethod
     def get_anomaly_sequences(values):
         splits = np.where(values[1:] != values[:-1])[0] + 1
-
+        if values[0] == 1:
+            splits = np.insert(splits, 0, 0)
+    
         a_seqs = []
         for i in range(0, len(splits) - 1, 2):
             a_seqs.append([splits[i], splits[i + 1] - 1])
@@ -197,18 +194,19 @@ class Plotter:
                 "true": self.get_anomaly_sequences(data_copy["A_True_Global"].values),
             }
 
+            if is_test and start is not None:
+                anomaly_sequences['pred'] = [[s+start, e+start] for [s, e] in anomaly_sequences['pred']]
+                anomaly_sequences['true'] = [[s+start, e+start] for [s, e] in anomaly_sequences['true']]
+
             y_min = 1.1 * plot_values["y_true"].min()
             y_max = 1.1 * plot_values["y_true"].max()
             e_max = 1.5 * plot_values["errors"].max()
 
-            # if self.labels_available:
-            #     y_shapes = self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
-            #     e_shapes = self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
-            #
-            #     y_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
-            #     e_shapes += self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
-            y_shapes = self.create_shapes(anomaly_sequences["pred"], None, y_min, y_max, plot_values, is_test=is_test)
-            e_shapes = self.create_shapes(anomaly_sequences["pred"], None, 0, e_max, plot_values, is_test=is_test)
+            y_shapes = self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
+            e_shapes = self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
+            if self.labels_available and ('SMAP' in self.result_path or 'MSL' in self.result_path):
+                y_shapes += self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
+                e_shapes += self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
 
             y_df = pd.DataFrame(
                 {
