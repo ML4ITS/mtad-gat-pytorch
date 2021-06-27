@@ -141,7 +141,7 @@ class Plotter:
         splits = np.where(values[1:] != values[:-1])[0] + 1
         if values[0] == 1:
             splits = np.insert(splits, 0, 0)
-    
+
         a_seqs = []
         for i in range(0, len(splits) - 1, 2):
             a_seqs.append([splits[i], splits[i + 1] - 1])
