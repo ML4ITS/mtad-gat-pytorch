@@ -129,6 +129,10 @@ class Predictor:
             train_anomaly_scores = adjust_anomaly_scores(train_anomaly_scores, self.dataset, True, self.window_size)
             test_anomaly_scores = adjust_anomaly_scores(test_anomaly_scores, self.dataset, False, self.window_size)
 
+            # Update df
+            train_pred_df['A_Score_Global'] = train_anomaly_scores
+            test_pred_df['A_Score_Global'] = test_anomaly_scores
+
         if self.use_mov_av:
             smoothing_window = int(self.batch_size * self.window_size * 0.05)
             train_anomaly_scores = pd.DataFrame(train_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()

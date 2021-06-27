@@ -134,6 +134,7 @@ if __name__ == "__main__":
     reg_level = reg_level_dict[key]
 
     prediction_args = {
+        'dataset': dataset,
         "target_dims": target_dims,
         "level": level,
         "q": args.q,
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     else:
         summary_file_name = f"summary_{count}.txt"
 
-    summary_file_name = 'summary.txt'
+    # summary_file_name = 'summary.txt'
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
     predictor.predict_anomalies(x_train, x_test, label,

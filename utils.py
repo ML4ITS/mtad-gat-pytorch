@@ -214,7 +214,7 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
     if dataset not in ['SMAP', 'MSL']:
         return scores
-    
+
     adjusted_scores = scores.copy()
     if is_train:
         md = pd.read_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
