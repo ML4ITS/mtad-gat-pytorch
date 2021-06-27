@@ -118,6 +118,14 @@ To launch notebook:
 ```bash 
 jupyter notebook result_visualizer.ipynb
 ```
+Some examples:
+
+SMD test set (feature 0) | SMD train set (feature 0)
+--- | --- 
+<img src="https://i.imgur.com/AFCVhtF.png" alt="drawing" width="730"/> | <img src="https://i.imgur.com/CJ6t8ST.png" alt="drawing" width="730"/>
+
+
+<img src="https://i.imgur.com/XEzUNv7.png" alt="drawing"/>
   
   
 ### GAT layers
