@@ -2,9 +2,9 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
 
 - This repo includes a complete framework for multivariate anomaly detection, using a model that is heavily inspired by MTAD-GAT.
 - Our work does not serve to reproduce the original results in the paper.
-- For contact, feel free to use axel.harstad@gmail.com or williamkvaale@gmail.com
+- :email: For contact, feel free to use axel.harstad@gmail.com or williamkvaale@gmail.com
 
-## Key Notes
+## :exclamation: Key Notes
 - By default we use the recently proposed [*GATv2*](https://arxiv.org/abs/2105.14491), but include the option to use the standard GAT
 - Instead of using a Variational Auto-Encoder (VAE) as the Reconstruction Model, we use a GRU-based decoder. 
 - We provide implementations of the following thresholding methods, but their parameters should be customized to different datasets:
@@ -19,7 +19,7 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
   - Their respective licences are included in ```licences```.
 
 
-## Getting Started 
+## :zap: Getting Started 
 To clone the repo:
 ```bash
 git clone https://github.com/ML4ITS/mtad-gat-pytorch.git && cd mtad-gat-pytorch
@@ -63,15 +63,19 @@ python train.py --dataset smd --group 1-1 --lookback 150 --epochs 10
 ```bash 
 python train.py --dataset msl --epochs 10 --use_gatv2 False --val_split 0.2
 ```
-<!--
-#### Default configuration:
-Data params:
+
+### ⚙️ Default configuration:
+Default parameters can be found in ```args.py```.
+
+Data params: 
+
 ```--dataset='SMD'```
 ```--group='1-1'```
 ```--lookback=100```
 ```--normalize=True```
   
 Model params:
+
 ```--kernel_size=7```
 ```--use_gatv2=True```
 ```--feat_gat_embed_dim=None```
@@ -85,6 +89,7 @@ Model params:
 ```--alpha=0.2```
 
 Train params:
+
 ```--epochs=30```
 ```--val_split=0.1```
 ```--bs=256```
@@ -95,7 +100,8 @@ Train params:
 ```--print_every=1```
 ```--log_tensorboard=True```
 
-Predictor params:
+Anomaly Predictor params:
+
 ```--save_scores=True```
 ```--load_scores=False```
 ```--gamma=1```
@@ -103,9 +109,9 @@ Predictor params:
 ```--q=1e-3```
 ```--dynamic_pot=False```  <br />
 ```--use_mov_av=False```
--->
+
   
-## Output and visualization results
+## :eyes: Output and visualization results
 Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is used as ID) and include:
   - ```summary.txt```: performance on test set (precision, recall, F1, etc.)
   - ```config.txt```: the configuration used for model, training, etc. 
@@ -139,7 +145,7 @@ Example from SMAP test set:
 Example from MSL test set (note that one anomaly segment is not detected):
 <img src="https://i.imgur.com/h4DU3kE.png" alt="drawing"/>
 
-## Model Overview
+## 🧬 Model Overview
 
 <img src="https://i.imgur.com/s9FuPT4.png" alt="drawing"/>
 
@@ -150,7 +156,7 @@ Figure above adapted from [Zhao et al. (2020)](https://arxiv.org/pdf/2009.02040.
 3. The output from the 1-D convolution module and the two GAT modules are concatenated and fed to a GRU layer, to capture longer sequential patterns.
 4. The output from the GRU layer are fed into a forecasting model and a reconstruction model, to get a prediction for the next timestamp, as well as a reconstruction of the input sequence.
   
-## GAT layers
+## 📖 GAT layers
 Below we visualize how the two GAT layers view the input as a complete graph. 
 Feature-Oriented GAT layer | Time-Oriented GAT layer
 --- | --- 
@@ -160,7 +166,7 @@ Feature-Oriented GAT layer | Time-Oriented GAT layer
 
 **Right**: The time-oriented GAT layer views the input data as a complete graph in which each node represents the values for all features at a specific timestamp.
 
-## GATv2
+## 📖 GATv2
 Recently, Brody et al. (2021) proposed [*GATv2*](https://arxiv.org/abs/2105.14491), a modified version of the standard GAT.
 
 They argue that the original GAT can only compute a restricted kind of attention (which they refer to as static) where the ranking of attended nodes is unconditioned on the query node. That is, the ranking of attention weights is global for all nodes in the graph, a property which the authors claim to severely hinders the expressiveness of the GAT. In order to address this, they introduce a simple fix by modifying the order of operations, and propose GATv2, a dynamic attention variant that is strictly more expressive that GAT. We refer to the paper for further reading. The difference between GAT and GATv2 is depicted below:
