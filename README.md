@@ -84,8 +84,8 @@ Model params:
 ```--gru_hid_dim=150```
 ```--fc_n_layers=3```
 ```--fc_hid_dim=150```
-```--recon_n_layers=1```
-```--recon_hid_dim=150```  <br />
+```--recon_n_layers=1``` <br />
+```--recon_hid_dim=150```
 ```--alpha=0.2```
 
 Train params:
