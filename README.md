@@ -158,6 +158,7 @@ Figure above adapted from [Zhao et al. (2020)](https://arxiv.org/pdf/2009.02040.
   
 ## 📖 GAT layers
 Below we visualize how the two GAT layers view the input as a complete graph. 
+
 Feature-Oriented GAT layer | Time-Oriented GAT layer
 --- | --- 
 <img src="https://i.imgur.com/wVD8oIx.png" alt="drawing" width="700"/> | <img src="https://i.imgur.com/a9PsNB0.png" alt="drawing" width="730"/>
