@@ -7,5 +7,3 @@ pre-commit
 tqdm
 tensorboard
 more_itertools
-plotly
-torch
