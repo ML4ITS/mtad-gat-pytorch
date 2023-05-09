@@ -1,13 +1,13 @@
 import os
-import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import torch
-from sklearn.preprocessing import MinMaxScaler, RobustScaler
+from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
-
+# TODO: REMOVE DATA NORMALIZATION AND ANY OTHER TYPE OF DATA PRE-PROCESSING
+# ONLY THE MODEL FILES SHOULD BE HERE, NOT OTHER TASKS
 def normalize_data(data, scaler=None):
     data = np.asarray(data, dtype=np.float32)
     if np.any(sum(np.isnan(data))):
@@ -22,34 +22,11 @@ def normalize_data(data, scaler=None):
     return data, scaler
 
 
-def get_data_dim(dataset):
-    """
-    :param dataset: Name of dataset
-    :return: Number of dimensions in data
-    """
-    if dataset == "SMAP":
-        return 25
-    elif dataset == "MSL":
-        return 55
-    elif str(dataset).startswith("machine"):
-        return 38
-    else:
-        raise ValueError("unknown dataset " + str(dataset))
+def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, train_start=0, test_start=0):
+    
+    dataset_folder = os.path.join("datasets", dataset)
 
-
-def get_data(dataset, max_train_size=None, max_test_size=None,
-             normalize=False, spec_res=False, train_start=0, test_start=0):
-    """
-    Get data from pkl files
-
-    return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
-    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
-    """
-    prefix = "datasets"
-    if str(dataset).startswith("machine"):
-        prefix += "/ServerMachineDataset/processed"
-    elif dataset in ["MSL", "SMAP"]:
-        prefix += "/data/processed"
+    print("Loading data for dataset:", dataset)
     if max_train_size is None:
         train_end = None
     else:
@@ -58,26 +35,23 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
         test_end = None
     else:
         test_end = test_start + max_test_size
-    print("load data of:", dataset)
-    print("train: ", train_start, train_end)
-    print("test: ", test_start, test_end)
-    x_dim = get_data_dim(dataset)
-    f = open(os.path.join(prefix, dataset + "_train.pkl"), "rb")
-    train_data = pickle.load(f).reshape((-1, x_dim))[train_start:train_end, :]
-    f.close()
+
+    # Load the data
+    train_data = np.loadtxt(os.path.join(dataset_folder, "train.txt"),
+                            delimiter=",", dtype=np.float32)[train_start:train_end, :]
     try:
-        f = open(os.path.join(prefix, dataset + "_test.pkl"), "rb")
-        test_data = pickle.load(f).reshape((-1, x_dim))[test_start:test_end, :]
-        f.close()
+        test_data = np.loadtxt(os.path.join(dataset_folder, "test.txt"),
+                                delimiter=",", dtype=np.float32)[test_start:test_end, :]
     except (KeyError, FileNotFoundError):
         test_data = None
     try:
-        f = open(os.path.join(prefix, dataset + "_test_label.pkl"), "rb")
-        test_label = pickle.load(f).reshape((-1))[test_start:test_end]
-        f.close()
+        test_label = np.loadtxt(os.path.join(dataset_folder, "labels.txt"),
+                                delimiter=",", dtype=np.float32)[test_start:test_end]
     except (KeyError, FileNotFoundError):
         test_label = None
 
+    # TODO: REMOVE DATA NORMALIZATION AND ANY OTHER TYPE OF DATA PRE-PROCESSING
+    # ONLY THE MODEL FILES SHOULD BE HERE, NOT OTHER TASKS
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
         test_data, _ = normalize_data(test_data, scaler=scaler)
