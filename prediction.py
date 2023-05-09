@@ -19,7 +19,6 @@ class Predictor:
         self.window_size = window_size
         self.n_features = n_features
         self.dataset = pred_args["dataset"]
-        self.target_dims = pred_args["target_dims"]
         self.scale_scores = pred_args["scale_scores"]
         self.q = pred_args["q"]
         self.level = pred_args["level"]
@@ -40,7 +39,7 @@ class Predictor:
         """
 
         print("Predicting and calculating anomaly scores..")
-        data = SlidingWindowDataset(values, self.window_size, self.target_dims)
+        data = SlidingWindowDataset(values, self.window_size)
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size, shuffle=False)
         device = "cuda" if self.use_cuda and torch.cuda.is_available() else "cpu"
 
@@ -65,9 +64,6 @@ class Predictor:
         preds = np.concatenate(preds, axis=0)
         recons = np.concatenate(recons, axis=0)
         actual = values.detach().cpu().numpy()[self.window_size:]
-
-        if self.target_dims is not None:
-            actual = actual[:, self.target_dims]
 
         anomaly_scores = np.zeros_like(actual)
         df = pd.DataFrame()
@@ -134,7 +130,7 @@ class Predictor:
             test_anomaly_scores = pd.DataFrame(test_anomaly_scores).ewm(span=smoothing_window).mean().values.flatten()
 
         # Find threshold and predict anomalies at feature-level (for plotting and diagnosis purposes)
-        out_dim = self.n_features if self.target_dims is None else len(self.target_dims)
+        out_dim = self.n_features
         all_preds = np.zeros((len(test_pred_df), out_dim))
         for i in range(out_dim):
             train_feature_anom_scores = train_pred_df[f"A_Score_{i}"].values

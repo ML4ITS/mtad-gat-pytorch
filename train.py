@@ -53,19 +53,12 @@ if __name__ == "__main__":
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
 
-    target_dims = get_target_dims(dataset)
-    if target_dims is None:
-        out_dim = n_features
-        print(f"Will forecast and reconstruct all {n_features} input features")
-    elif type(target_dims) == int:
-        print(f"Will forecast and reconstruct input feature: {target_dims}")
-        out_dim = 1
-    else:
-        print(f"Will forecast and reconstruct input features: {target_dims}")
-        out_dim = len(target_dims)
+    # We want to perform forecasting/reconstruction to all features
+    out_dim = n_features
+    print(f"Proceeding with forecasting and reconstruction of all {n_features} input features.")
 
-    train_dataset = SlidingWindowDataset(x_train, window_size, target_dims)
-    test_dataset = SlidingWindowDataset(x_test, window_size, target_dims)
+    train_dataset = SlidingWindowDataset(x_train, window_size)
+    test_dataset = SlidingWindowDataset(x_test, window_size)
 
     train_loader, val_loader, test_loader = create_data_loaders(
         train_dataset, batch_size, val_split, shuffle_dataset, test_dataset=test_dataset
@@ -98,7 +91,6 @@ if __name__ == "__main__":
         optimizer,
         window_size,
         n_features,
-        target_dims,
         n_epochs,
         batch_size,
         init_lr,
@@ -145,7 +137,6 @@ if __name__ == "__main__":
     trainer.load(f"{save_path}/model.pt")
     prediction_args = {
         'dataset': dataset,
-        "target_dims": target_dims,
         'scale_scores': args.scale_scores,
         "level": level,
         "q": q,

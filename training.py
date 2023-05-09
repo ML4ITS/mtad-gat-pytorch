@@ -13,7 +13,6 @@ class Trainer:
     :param optimizer: Optimizer used to minimize the loss function
     :param window_size: Length of the input sequence
     :param n_features: Number of input features
-    :param target_dims: dimension of input features to forecast and reconstruct
     :param n_epochs: Number of iterations/epochs
     :param batch_size: Number of windows in a single batch
     :param init_lr: Initial learning rate of the module
@@ -33,7 +32,6 @@ class Trainer:
         optimizer,
         window_size,
         n_features,
-        target_dims=None,
         n_epochs=200,
         batch_size=256,
         init_lr=0.001,
@@ -51,7 +49,6 @@ class Trainer:
         self.optimizer = optimizer
         self.window_size = window_size
         self.n_features = n_features
-        self.target_dims = target_dims
         self.n_epochs = n_epochs
         self.batch_size = batch_size
         self.init_lr = init_lr
@@ -109,10 +106,6 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 preds, recons = self.model(x)
-
-                if self.target_dims is not None:
-                    x = x[:, :, self.target_dims]
-                    y = y[:, :, self.target_dims].squeeze(-1)
 
                 if preds.ndim == 3:
                     preds = preds.squeeze(1)
@@ -202,10 +195,6 @@ class Trainer:
                 y = y.to(self.device)
 
                 preds, recons = self.model(x)
-
-                if self.target_dims is not None:
-                    x = x[:, :, self.target_dims]
-                    y = y[:, :, self.target_dims].squeeze(-1)
 
                 if preds.ndim == 3:
                     preds = preds.squeeze(1)

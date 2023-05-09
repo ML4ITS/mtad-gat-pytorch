@@ -37,22 +37,6 @@ def get_data_dim(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def get_target_dims(dataset):
-    """
-    :param dataset: Name of dataset
-    :return: index of data dimension that should be modeled (forecasted and reconstructed),
-                     returns None if all input dimensions should be modeled
-    """
-    if dataset == "SMAP":
-        return [0]
-    elif dataset == "MSL":
-        return [0]
-    elif dataset == "SMD":
-        return None
-    else:
-        raise ValueError("unknown dataset " + str(dataset))
-
-
 def get_data(dataset, max_train_size=None, max_test_size=None,
              normalize=False, spec_res=False, train_start=0, test_start=0):
     """
@@ -105,10 +89,9 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
 
 
 class SlidingWindowDataset(Dataset):
-    def __init__(self, data, window, target_dim=None, horizon=1):
+    def __init__(self, data, window, horizon=1):
         self.data = data
         self.window = window
-        self.target_dim = target_dim
         self.horizon = horizon
 
     def __getitem__(self, index):
