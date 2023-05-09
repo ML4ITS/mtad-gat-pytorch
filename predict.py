@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     with open(model_args_path, "r") as f:
         model_args.__dict__ = json.load(f)
-    window_size = model_args.lookback
+    window_size = model_args.window_size
 
     # Check that model is trained on specified dataset
     if args.dataset.lower() != model_args.dataset.lower():
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     elif args.dataset == "SMD" and args.group != model_args.group:
         print(f"Model trained on SMD group {model_args.group}, but asked to predict SMD group {args.group}.")
 
-    window_size = model_args.lookback
+    window_size = model_args.window_size
     normalize = model_args.normalize
     n_epochs = model_args.epochs
     batch_size = model_args.bs

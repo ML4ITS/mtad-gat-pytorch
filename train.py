@@ -17,7 +17,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset = args.dataset
-    window_size = args.lookback
+    window_size = args.window_size
     normalize = args.normalize
     n_epochs = args.epochs
     batch_size = args.bs

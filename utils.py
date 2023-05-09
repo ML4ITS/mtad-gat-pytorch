@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler
-from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
+from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler, SequentialSampler
 
 # TODO: REMOVE DATA NORMALIZATION AND ANY OTHER TYPE OF DATA PRE-PROCESSING
 # ONLY THE MODEL FILES SHOULD BE HERE, NOT OTHER TASKS
@@ -56,9 +56,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, 
         train_data, scaler = normalize_data(train_data, scaler=None)
         test_data, _ = normalize_data(test_data, scaler=scaler)
 
-    print("train set shape: ", train_data.shape)
-    print("test set shape: ", test_data.shape)
-    print("test set label shape: ", None if test_label is None else test_label.shape)
     return (train_data, None), (test_data, test_label)
 
 
@@ -80,7 +77,7 @@ class SlidingWindowDataset(Dataset):
 def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, test_dataset=None):
     train_loader, val_loader, test_loader = None, None, None
     if val_split == 0.0:
-        print(f"train_size: {len(train_dataset)}")
+        print(f"The size of the training dataset is: {len(train_dataset)} samples.")
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
 
     else:
@@ -91,18 +88,22 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
             np.random.shuffle(indices)
         train_indices, val_indices = indices[split:], indices[:split]
 
-        train_sampler = SubsetRandomSampler(train_indices)
-        valid_sampler = SubsetRandomSampler(val_indices)
+        if shuffle:
+            train_sampler = SubsetRandomSampler(train_indices)
+            valid_sampler = SubsetRandomSampler(val_indices)
+        else:
+            train_sampler = SequentialSampler(train_indices)
+            valid_sampler = SequentialSampler(val_indices)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, sampler=train_sampler)
         val_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, sampler=valid_sampler)
 
-        print(f"train_size: {len(train_indices)}")
-        print(f"validation_size: {len(val_indices)}")
+        print(f"The size of the training dataset is: {len(train_indices)} samples.")
+        print(f"The size of the validation dataset is: {len(val_indices)} samples.")
 
     if test_dataset is not None:
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-        print(f"test_size: {len(test_dataset)}")
+        print(f"The size of the validation dataset is: {len(test_dataset)} samples.")
 
     return train_loader, val_loader, test_loader
 
@@ -146,6 +147,7 @@ def load(model, PATH, device="cpu"):
     model.load_state_dict(torch.load(PATH, map_location=device))
 
 
+# The last two functions are for the plotting.py file and the Plotter class
 def get_series_color(y):
     if np.average(y) >= 0.95:
         return "black"
@@ -162,51 +164,3 @@ def get_y_height(y):
         return 0.1
     else:
         return max(y) + 0.1
-
-
-def adjust_anomaly_scores(scores, dataset, is_train, lookback):
-    """
-    Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
-    :param scores: anomaly_scores
-    :param dataset: name of dataset
-    :param is_train: if scores is from train set
-    :param lookback: lookback (window size) used in model
-    """
-
-    # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
-    if dataset.upper() not in ['SMAP', 'MSL']:
-        return scores
-
-    adjusted_scores = scores.copy()
-    if is_train:
-        md = pd.read_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
-    else:
-        md = pd.read_csv('./datasets/data/labeled_anomalies.csv')
-        md = md[md['spacecraft'] == dataset.upper()]
-
-    md = md[md['chan_id'] != 'P-2']
-
-    # Sort values by channel
-    md = md.sort_values(by=['chan_id'])
-
-    # Getting the cumulative start index for each channel
-    sep_cuma = np.cumsum(md['num_values'].values) - lookback
-    sep_cuma = sep_cuma[:-1]
-    buffer = np.arange(1, 20)
-    i_remov = np.sort(np.concatenate((sep_cuma, np.array([i+buffer for i in sep_cuma]).flatten(),
-                                      np.array([i-buffer for i in sep_cuma]).flatten())))
-    i_remov = i_remov[(i_remov < len(adjusted_scores)) & (i_remov >= 0)]
-    i_remov = np.sort(np.unique(i_remov))
-    if len(i_remov) != 0:
-        adjusted_scores[i_remov] = 0
-
-    # Normalize each concatenated part individually
-    sep_cuma = np.cumsum(md['num_values'].values) - lookback
-    s = [0] + sep_cuma.tolist()
-    for c_start, c_end in [(s[i], s[i+1]) for i in range(len(s)-1)]:
-        e_s = adjusted_scores[c_start: c_end+1]
-
-        e_s = (e_s - np.min(e_s))/(np.max(e_s) - np.min(e_s))
-        adjusted_scores[c_start: c_end+1] = e_s
-
-    return adjusted_scores
