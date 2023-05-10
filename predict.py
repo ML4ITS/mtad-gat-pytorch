@@ -63,8 +63,6 @@ if __name__ == "__main__":
     shuffle_dataset = model_args.shuffle_dataset
     use_cuda = model_args.use_cuda
     print_every = model_args.print_every
-    group_index = model_args.group[0]
-    index = model_args.group[2:]
     args_summary = str(model_args.__dict__)
 
     # --------------------------- START EVALUATION -----------------------------

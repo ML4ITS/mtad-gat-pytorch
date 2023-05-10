@@ -24,8 +24,6 @@ if __name__ == "__main__":
     use_cuda = args.use_cuda
     print_every = args.print_every
     log_tensorboard = args.log_tensorboard
-    group_index = args.group[0]
-    index = args.group[2:]
     args_summary = str(args.__dict__)
     print(args_summary)
 
