@@ -1,6 +1,6 @@
 import numpy as np
 import more_itertools as mit
-from spot import SPOT, dSPOT
+from spot import SPOT
 
 
 def adjust_predicts(score, label, threshold, pred=None, calc_latency=False):
@@ -73,6 +73,9 @@ def calc_point2point(predict, actual):
     return f1, precision, recall, TP, TN, FP, FN
 
 
+# #############################################
+# TODO: Add variants of POT as option as well #
+# #############################################
 def pot_eval(init_score, score, label, q=1e-3, level=0.99, dynamic=False):
     """
     Run POT method on given score.

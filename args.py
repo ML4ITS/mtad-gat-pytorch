@@ -17,8 +17,7 @@ def get_parser():
 
     # -- Data params ---
     parser.add_argument("--dataset", type=str, default="system_1")
-    parser.add_argument("--lookback", type=int, default=100)
-    parser.add_argument("--normalize", type=str2bool, default=True)
+    parser.add_argument("--window_size", type=int, default=100)
 
     # -- Model params ---
     # 1D conv layer

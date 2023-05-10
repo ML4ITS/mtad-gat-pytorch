@@ -1,4 +1,4 @@
-from utils import get_data_dim, get_series_color, get_y_height
+from utils import get_series_color, get_y_height
 import pandas as pd
 import numpy as np
 import os

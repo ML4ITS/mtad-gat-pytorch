@@ -2,26 +2,10 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler, SequentialSampler
 
-# TODO: REMOVE DATA NORMALIZATION AND ANY OTHER TYPE OF DATA PRE-PROCESSING
-# ONLY THE MODEL FILES SHOULD BE HERE, NOT OTHER TASKS
-def normalize_data(data, scaler=None):
-    data = np.asarray(data, dtype=np.float32)
-    if np.any(sum(np.isnan(data))):
-        data = np.nan_to_num(data)
 
-    if scaler is None:
-        scaler = MinMaxScaler()
-        scaler.fit(data)
-    data = scaler.transform(data)
-    print("Data normalized")
-
-    return data, scaler
-
-
-def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, train_start=0, test_start=0):
+def get_data(dataset, max_train_size=None, max_test_size=None, train_start=0, test_start=0):
     
     dataset_folder = os.path.join("datasets", dataset)
 
@@ -48,12 +32,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, 
                                 delimiter=",", dtype=np.float32)[test_start:test_end]
     except (KeyError, FileNotFoundError):
         test_label = None
-
-    # TODO: REMOVE DATA NORMALIZATION AND ANY OTHER TYPE OF DATA PRE-PROCESSING
-    # ONLY THE MODEL FILES SHOULD BE HERE, NOT OTHER TASKS
-    if normalize:
-        train_data, scaler = normalize_data(train_data, scaler=None)
-        test_data, _ = normalize_data(test_data, scaler=scaler)
 
     return (train_data, None), (test_data, test_label)
 

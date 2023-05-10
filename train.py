@@ -16,7 +16,6 @@ if __name__ == "__main__":
 
     dataset = args.dataset
     window_size = args.window_size
-    normalize = args.normalize
     n_epochs = args.epochs
     batch_size = args.bs
     init_lr = args.init_lr
@@ -50,7 +49,7 @@ if __name__ == "__main__":
 
     # --------------------------- START TRAINING -----------------------------
     # Get data from the dataset
-    (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
+    (x_train, _), (x_test, y_test) = get_data(dataset)
 
     # Cast data into tensor objects
     x_train = torch.from_numpy(x_train).float()
