@@ -53,9 +53,10 @@ def get_parser():
     # --- Predictor params ---
     parser.add_argument("--scale_scores", type=str2bool, default=False)
     parser.add_argument("--use_mov_av", type=str2bool, default=False)
-    parser.add_argument("--gamma", type=float, default=1)
-    parser.add_argument("--level", type=float, default=None)
-    parser.add_argument("--q", type=float, default=None)
+    parser.add_argument("--gamma", type=float, default=1.0)
+    parser.add_argument("--level", type=float, default=0.99)
+    parser.add_argument("--q", type=float, default=1e-3)
+    parser.add_argument("--reg_level", type=int, default=1)
     parser.add_argument("--dynamic_pot", type=str2bool, default=False)
 
     # --- Other ---

@@ -2,6 +2,7 @@ import json
 from tqdm import tqdm
 from eval_methods import *
 from utils import *
+import pandas as pd
 
 
 class Predictor:
@@ -116,9 +117,6 @@ class Predictor:
 
             train_anomaly_scores = train_pred_df['A_Score_Global'].values
             test_anomaly_scores = test_pred_df['A_Score_Global'].values
-
-            train_anomaly_scores = adjust_anomaly_scores(train_anomaly_scores, self.dataset, True, self.window_size)
-            test_anomaly_scores = adjust_anomaly_scores(test_anomaly_scores, self.dataset, False, self.window_size)
 
             # Update df
             train_pred_df['A_Score_Global'] = train_anomaly_scores

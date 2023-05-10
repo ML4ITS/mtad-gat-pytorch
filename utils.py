@@ -1,6 +1,5 @@
 import os
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
 import torch
 from sklearn.preprocessing import MinMaxScaler
@@ -59,6 +58,8 @@ def get_data(dataset, max_train_size=None, max_test_size=None, normalize=False, 
     return (train_data, None), (test_data, test_label)
 
 
+# TODO: Incorporate possibility of strides != 1 between neighbouring windows
+# See ChatGPT discussions
 class SlidingWindowDataset(Dataset):
     def __init__(self, data, window, horizon=1):
         self.data = data

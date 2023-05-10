@@ -33,12 +33,10 @@ class Plotter:
 
         config_path = f"{self.result_path}/config.txt"
         with open(config_path) as f:
-            self.lookback = json.load(f)["lookback"]
+            self.window_size = json.load(f)["window_size"]
+            n_features = json.load(f)["n_features"]
 
-        if "SMD" in self.result_path:
-            self.pred_cols = [f"feat_{i}" for i in range(get_data_dim("machine"))]
-        elif "SMAP" in self.result_path or "MSL" in self.result_path:
-            self.pred_cols = ["feat_1"]
+        self.pred_cols = [f"feat_{i}" for i in range(n_features)]
 
     def _load_results(self):
         if self.model_id.startswith('-'):
@@ -55,23 +53,13 @@ class Plotter:
         train_output["A_True_Global"] = 0
         test_output = pd.read_pickle(f"{self.result_path}/test_output.pkl")
 
-        # Because for SMAP and MSL only one feature is predicted
-        if 'SMAP' in self.result_path or 'MSL' in self.result_path:
-            train_output[f'A_Pred_0'] = train_output['A_Pred_Global']
-            train_output[f'A_Score_0'] = train_output['A_Score_Global']
-            train_output[f'Thresh_0'] = train_output['Thresh_Global']
-
-            test_output[f'A_Pred_0'] = test_output['A_Pred_Global']
-            test_output[f'A_Score_0'] = test_output['A_Score_Global']
-            test_output[f'Thresh_0'] = test_output['Thresh_Global']
-
         self.train_output = train_output
         self.test_output = test_output
 
     def result_summary(self):
         path = f"{self.result_path}/summary.txt"
         if not os.path.exists(path):
-            print(f"Folder {self.result_path} do not have a summary.txt file")
+            print(f"Folder {self.result_path} does not have a summary.txt file.")
             return
         try:
             print("Result summary:")
@@ -204,9 +192,6 @@ class Plotter:
 
             y_shapes = self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
             e_shapes = self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
-            if self.labels_available and ('SMAP' in self.result_path or 'MSL' in self.result_path):
-                y_shapes += self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
-                e_shapes += self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
 
             y_df = pd.DataFrame(
                 {
