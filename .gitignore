@@ -2,10 +2,6 @@
 __pycache__/
 .idea/
 .DS_Store
-datasets/data/processed/
-datasets/data/train/
-datasets/data/test/
-datasets/ServerMachineDataset/processed/
 .ipynb_checkpoints/
 output/
 **.pkl
