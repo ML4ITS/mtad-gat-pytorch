@@ -70,11 +70,11 @@ class Predictor:
             actual = actual[:, self.target_dims]
 
         anomaly_scores = np.zeros_like(actual)
-        df = pd.DataFrame()
+        df_dict = {}
         for i in range(preds.shape[1]):
-            df[f"Forecast_{i}"] = preds[:, i]
-            df[f"Recon_{i}"] = recons[:, i]
-            df[f"True_{i}"] = actual[:, i]
+            df_dict[f"Forecast_{i}"] = preds[:, i]
+            df_dict[f"Recon_{i}"] = recons[:, i]
+            df_dict[f"True_{i}"] = actual[:, i]
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
                 (recons[:, i] - actual[:, i]) ** 2)
 
@@ -85,8 +85,9 @@ class Predictor:
                 a_score = (a_score - median) / (1+iqr)
 
             anomaly_scores[:, i] = a_score
-            df[f"A_Score_{i}"] = a_score
+            df_dict[f"A_Score_{i}"] = a_score
 
+        df = pd.DataFrame(df_dict)
         anomaly_scores = np.mean(anomaly_scores, 1)
         df['A_Score_Global'] = anomaly_scores
 
