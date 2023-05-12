@@ -105,18 +105,18 @@ if __name__ == "__main__":
         n_features,
         window_size,
         out_dim,
-        kernel_size=args.kernel_size,
-        use_gatv2=args.use_gatv2,
-        feat_gat_embed_dim=args.feat_gat_embed_dim,
-        time_gat_embed_dim=args.time_gat_embed_dim,
-        gru_n_layers=args.gru_n_layers,
-        gru_hid_dim=args.gru_hid_dim,
-        forecast_n_layers=args.fc_n_layers,
-        forecast_hid_dim=args.fc_hid_dim,
-        recon_n_layers=args.recon_n_layers,
-        recon_hid_dim=args.recon_hid_dim,
-        dropout=args.dropout,
-        alpha=args.alpha
+        kernel_size=model_args.kernel_size,
+        use_gatv2=model_args.use_gatv2,
+        feat_gat_embed_dim=model_args.feat_gat_embed_dim,
+        time_gat_embed_dim=model_args.time_gat_embed_dim,
+        gru_n_layers=model_args.gru_n_layers,
+        gru_hid_dim=model_args.gru_hid_dim,
+        forecast_n_layers=model_args.fc_n_layers,
+        forecast_hid_dim=model_args.fc_hid_dim,
+        recon_n_layers=model_args.recon_n_layers,
+        recon_hid_dim=model_args.recon_hid_dim,
+        dropout=model_args.dropout,
+        alpha=model_args.alpha
     )
 
     device = "cuda" if args.use_cuda and torch.cuda.is_available() else "cpu"
