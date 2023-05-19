@@ -1,6 +1,7 @@
-> :information_source: This repo is not under active maintenance. PRs are however very welcome! 
-> Thanks to our contributors: [Spyros Rigas](https://github.com/srigas) 
-
+> :information_source: This repo is not under active maintenance. PRs are however very welcome!<br>
+> Thanks to our contributors: 
+>  - [Spyros Rigas](https://github.com/srigas) 
+-----
 
 Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD) via Graph Attention Networks (GAT) by [Zhao et al. (2020)](https://arxiv.org/pdf/2009.02040.pdf).
 
