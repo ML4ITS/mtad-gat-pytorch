@@ -57,7 +57,7 @@ class FeatureAttentionLayer(nn.Module):
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
         if self.use_bias:
-            self.bias = nn.Parameter(torch.empty(n_features, n_features))
+            self.bias = nn.Parameter(torch.zeros(n_features, n_features))
 
         self.leakyrelu = nn.LeakyReLU(alpha)
         self.sigmoid = nn.Sigmoid()
@@ -158,7 +158,7 @@ class TemporalAttentionLayer(nn.Module):
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
         if self.use_bias:
-            self.bias = nn.Parameter(torch.empty(window_size, window_size))
+            self.bias = nn.Parameter(torch.zeros(window_size, window_size))
 
         self.leakyrelu = nn.LeakyReLU(alpha)
         self.sigmoid = nn.Sigmoid()
