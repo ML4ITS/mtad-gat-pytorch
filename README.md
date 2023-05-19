@@ -1,10 +1,14 @@
+> :information_source: This repo is not under active maintenance. PRs are however very welcome! 
+> Thanks to our contributors: [Spyros Rigas](https://github.com/srigas) 
+
+
 Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD) via Graph Attention Networks (GAT) by [Zhao et al. (2020)](https://arxiv.org/pdf/2009.02040.pdf).
 
 - This repo includes a complete framework for multivariate anomaly detection, using a model that is heavily inspired by MTAD-GAT.
 - Our work does not serve to reproduce the original results in the paper.
 - :email: For contact, feel free to use axel.harstad@gmail.com
 
-## :exclamation: Key Notes
+### :exclamation: Key Notes
 - By default we use the recently proposed [*GATv2*](https://arxiv.org/abs/2105.14491), but include the option to use the standard GAT
 - Instead of using a Variational Auto-Encoder (VAE) as the Reconstruction Model, we use a GRU-based decoder. 
 - We provide implementations of the following thresholding methods, but their parameters should be customized to different datasets:
