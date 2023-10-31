@@ -95,6 +95,9 @@ def load_data(dataset):
         if sample_rate<=0 or sample_rate>1:
             print('Incorrect resample rate, defaulting to 1\n')
             sample_rate = 1
+        else:
+            print('resampling to one observation every '+ str(int(1/sample_rate)))
+        
 
         swat = swat.iloc[::int(1/sample_rate)]#resampling
         labels = (swat['Normal/Attack'].values=='Attack')
@@ -106,6 +109,11 @@ def load_data(dataset):
         values = scaler.fit_transform(values) 
 
         train_values = values[:int(train_test_split*len(labels)),:]
+        train_labels = labels[:int(train_test_split*len(labels)),:]
+
+        if args.no_anomaly_train:
+            print('removing anomalies from training data')
+            train_values = train_values[train_labels==False]
 
         test_values = values[int(train_test_split*len(labels)):,:]
         test_labels = labels[int(train_test_split*len(labels)):]
