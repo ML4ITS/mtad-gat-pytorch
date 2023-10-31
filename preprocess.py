@@ -101,21 +101,21 @@ def load_data(dataset):
         test_labels = labels[int(train_test_split*len(labels)):]
 
         #dump train values into file
-        path = 'datasets/data/processed/SWAT_train.pkl'
-        with open(path, 'wb') as file:
+        path_pkl = 'datasets/data/processed/SWAT_train.pkl'
+        with open(path_pkl, 'wb') as file:
             dump(train_values, file)
 
 
 
         #dump test values into file
-        path = 'datasets/data/processed/SWAT_test.pkl'
-        with open(path, 'wb') as file:
+        path_pkl = 'datasets/data/processed/SWAT_test.pkl'
+        with open(path_pkl, 'wb') as file:
             dump(test_values, file)
 
 
         #dump test labels into file
-        path = 'datasets/data/processed/SWAT_test_label.pkl'
-        with open(path, 'wb') as file:
+        path_pkl = 'datasets/data/processed/SWAT_test_label.pkl'
+        with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
 
 
