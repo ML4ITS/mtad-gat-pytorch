@@ -95,6 +95,10 @@ def load_data(dataset):
         values = swat.drop('Normal/Attack', axis=1).values
         train_test_split=0.7
 
+        from sklearn.preprocessing  import MinMaxScaler
+        scaler = MinMaxScaler()
+        values = scaler.fit_transform(values) 
+
         train_values = values[:int(train_test_split*len(labels)),:]
 
         test_values = values[int(train_test_split*len(labels)):,:]
