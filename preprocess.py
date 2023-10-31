@@ -89,7 +89,7 @@ def load_data(dataset):
         for c in ["train", "test"]:
             concatenate_and_save(c)
     elif dataset =="SWAT":
-        swat = pd.read_csv('datasets\data\SWaT_Dataset_Attack_v0.csv')
+        swat = pd.read_csv(path.join('datasets/data', 'SWaT_Dataset_Attack_v0.csv'))
         swat = swat.drop(' Timestamp', axis=1)
         labels = (swat['Normal/Attack'].values=='Attack')
         values = swat.drop('Normal/Attack', axis=1).values
