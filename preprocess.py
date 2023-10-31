@@ -91,6 +91,12 @@ def load_data(dataset):
     elif dataset =="SWAT":
         swat = pd.read_csv(path.join('datasets/data', 'SWaT_Dataset_Attack_v0.csv'))
         swat = swat.drop(' Timestamp', axis=1)
+        sample_rate = args.sample_rate
+        if sample_rate<=0 or sample_rate>1:
+            print('Incorrect resample rate, defaulting to 1\n')
+            sample_rate = 1
+
+        swat = swat.iloc[::int(1/sample_rate)]#resampling
         labels = (swat['Normal/Attack'].values=='Attack')
         values = swat.drop('Normal/Attack', axis=1).values
         train_test_split=0.7
