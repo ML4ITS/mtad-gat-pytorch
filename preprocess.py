@@ -101,6 +101,7 @@ def load_data(dataset):
         test_labels = labels[int(train_test_split*len(labels)):]
 
         #dump train values into file
+        makedirs('datasets/data/processed', exist_ok=True)
         path_pkl = path.join('datasets/data/processed', 'SWAT_train.pkl')
         with open(path_pkl, 'wb') as file:
             dump(train_values, file)
