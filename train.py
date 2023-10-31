@@ -17,14 +17,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     dataset = args.dataset
-    window_size = args.lookback
-    spec_res = args.spec_res
-    normalize = args.normalize
-    n_epochs = args.epochs
-    batch_size = args.bs
+    window_size = args.lookback # default 100
+    spec_res = args.spec_res 
+    normalize = args.normalize # default True
+    n_epochs = args.epochs #default 30
+    batch_size = args.bs # default 256
     init_lr = args.init_lr
     val_split = args.val_split
-    shuffle_dataset = args.shuffle_dataset
+    shuffle_dataset = args.shuffle_dataset #default true
     use_cuda = args.use_cuda
     print_every = args.print_every
     log_tensorboard = args.log_tensorboard
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if dataset == 'SMD':
         output_path = f'output/SMD/{args.group}'
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
-    elif dataset in ['MSL', 'SMAP']:
+    elif dataset in ['MSL', 'SMAP', 'SWAT']:
         output_path = f'output/{dataset}'
         (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
     else:

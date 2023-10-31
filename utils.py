@@ -31,6 +31,8 @@ def get_data_dim(dataset):
         return 25
     elif dataset == "MSL":
         return 55
+    elif dataset =="SWAT":
+        return 51
     elif str(dataset).startswith("machine"):
         return 38
     else:
@@ -49,6 +51,8 @@ def get_target_dims(dataset):
         return [0]
     elif dataset == "SMD":
         return None
+    elif dataset == "SWAT":
+        return None
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -64,7 +68,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     prefix = "datasets"
     if str(dataset).startswith("machine"):
         prefix += "/ServerMachineDataset/processed"
-    elif dataset in ["MSL", "SMAP"]:
+    elif dataset in ["MSL", "SMAP", "SWAT"]:
         prefix += "/data/processed"
     if max_train_size is None:
         train_end = None

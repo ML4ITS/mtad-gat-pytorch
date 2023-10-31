@@ -3,6 +3,7 @@ from csv import reader
 from os import listdir, makedirs, path
 from pickle import dump
 import numpy as np
+import pandas as pd
 
 from args import get_parser
 
@@ -87,6 +88,35 @@ def load_data(dataset):
 
         for c in ["train", "test"]:
             concatenate_and_save(c)
+    elif dataset =="SWAT":
+        swat = pd.read_csv('datasets\data\SWaT_Dataset_Attack_v0.csv')
+        swat = swat.drop(' Timestamp', axis=1)
+        labels = (swat['Normal/Attack'].values=='Attack')
+        values = swat.drop('Normal/Attack', axis=1).values
+        train_test_split=0.7
+
+        train_values = values[:int(train_test_split*len(labels)),:]
+
+        test_values = values[int(train_test_split*len(labels)):,:]
+        test_labels = labels[int(train_test_split*len(labels)):]
+
+        #dump train values into file
+        path = 'datasets/data/processed/SWAT_train.pkl'
+        with open(path, 'wb') as file:
+            dump(train_values, file)
+
+
+
+        #dump test values into file
+        path = 'datasets/data/processed/SWAT_test.pkl'
+        with open(path, 'wb') as file:
+            dump(test_values, file)
+
+
+        #dump test labels into file
+        path = 'datasets/data/processed/SWAT_test_label.pkl'
+        with open(path, 'wb') as file:
+           dump(test_labels, file)
 
 
 if __name__ == "__main__":
