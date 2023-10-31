@@ -91,7 +91,7 @@ def load_data(dataset):
     elif dataset =="SWAT":
         swat = pd.read_csv(path.join('datasets/data', 'SWaT_Dataset_Attack_v0.csv'))
         swat = swat.drop(' Timestamp', axis=1)
-        sample_rate = args.sample_rate
+        sample_rate = args.resample_rate
         if sample_rate<=0 or sample_rate>1:
             print('Incorrect resample rate, defaulting to 1\n')
             sample_rate = 1
