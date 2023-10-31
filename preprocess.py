@@ -109,7 +109,7 @@ def load_data(dataset):
         values = scaler.fit_transform(values) 
 
         train_values = values[:int(train_test_split*len(labels)),:]
-        train_labels = labels[:int(train_test_split*len(labels)),:]
+        train_labels = labels[:int(train_test_split*len(labels))]
 
         if args.no_anomaly_train:
             print('removing anomalies from training data')
