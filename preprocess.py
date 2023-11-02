@@ -107,7 +107,7 @@ def load_data(dataset):
         labels = (swat['Normal/Attack'].values=='Attack')
         values = swat.drop('Normal/Attack', axis=1).values
         
-        train_test_split=0.7
+        train_test_split=args.train_test_split
 
         from sklearn.preprocessing  import MinMaxScaler
         scaler = MinMaxScaler()

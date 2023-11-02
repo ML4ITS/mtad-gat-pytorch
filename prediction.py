@@ -184,7 +184,18 @@ class Predictor:
 
         # Save anomaly predictions made using epsilon method (could be changed to pot or bf-method)
         if save_output:
-            global_epsilon = e_eval["threshold"]
+            
+            #check what method gave best f1 score among epsilon pot and bf and set threshold based on the best f1
+            f1_scores = [summary['epsilon_result']['f1'], summary['pot_result']['f1'], summary['bf_result']['f1']]
+            best = np.argmax(f1_scores)
+            if best == 0:
+                global_epsilon = e_eval["threshold"]
+            elif best==1:
+                global_epsilon = p_eval["threshold"]
+            elif best == 2:
+                global_epsilon = bf_eval["threshold"]
+
+            
             test_pred_df["A_True_Global"] = true_anomalies
             train_pred_df["Thresh_Global"] = global_epsilon
             test_pred_df["Thresh_Global"] = global_epsilon
