@@ -91,6 +91,10 @@ def load_data(dataset):
     elif dataset =="SWAT":
         swat = pd.read_csv(path.join('datasets/data', 'SWaT_Dataset_Attack_v0.csv'))
         swat = swat.drop(' Timestamp', axis=1)
+        
+        if args.cut < 1:
+            print('Cutting the dataset at ' + str(args.cut) + ' length \n')
+            swat = swat.iloc[:int(len(swat)*args.cut)]
         sample_rate = args.resample_rate
         if sample_rate<=0 or sample_rate>1:
             print('Incorrect resample rate, defaulting to 1\n')
@@ -102,6 +106,7 @@ def load_data(dataset):
         swat = swat.iloc[::int(1/sample_rate)]#resampling
         labels = (swat['Normal/Attack'].values=='Attack')
         values = swat.drop('Normal/Attack', axis=1).values
+        
         train_test_split=0.7
 
         from sklearn.preprocessing  import MinMaxScaler
