@@ -8,6 +8,7 @@ from modules import (
     GRULayer,
     Forecasting_Model,
     ReconstructionModel,
+    TemporalConvNet
 )
 
 
@@ -53,7 +54,8 @@ class MTAD_GAT(nn.Module):
         alpha=0.2
     ):
         super(MTAD_GAT, self).__init__()
-
+        
+        self.tcn = TemporalConvNet(n_features, n_features, [150, 150, 150, 150])
         self.conv = ConvLayer(n_features, kernel_size)
         self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, feat_gat_embed_dim, use_gatv2)
         self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, time_gat_embed_dim, use_gatv2)
@@ -64,7 +66,8 @@ class MTAD_GAT(nn.Module):
     def forward(self, x):
         # x shape (b, n, k): b - batch size, n - window size, k - number of features
 
-        x = self.conv(x)
+        #x = self.conv(x)
+        x = self.tcn(x)
         h_feat = self.feature_gat(x)
         h_temp = self.temporal_gat(x)
 
