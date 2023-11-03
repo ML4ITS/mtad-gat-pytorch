@@ -177,8 +177,15 @@ class Predictor:
         for k, v in bf_eval.items():
             bf_eval[k] = float(v)
 
+
+        #compute the auc roc score
+        if true_anomalies is not None:
+            from sklearn.metrics import roc_auc_score
+            auc = roc_auc_score(true_anomalies, test_anomaly_scores)
+            print('auc score : '+str(auc)+'\n')
+
         # Save
-        summary = {"epsilon_result": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
+        summary = {"epsilon_result": e_eval, "pot_result": p_eval, "bf_result": bf_eval, 'auc_roc': auc}
         with open(f"{self.save_path}/{self.summary_file_name}", "w") as f:
             json.dump(summary, f, indent=2)
 
@@ -209,5 +216,7 @@ class Predictor:
             print(f"Saving output to {self.save_path}/<train/test>_output.pkl")
             train_pred_df.to_pickle(f"{self.save_path}/train_output.pkl")
             test_pred_df.to_pickle(f"{self.save_path}/test_output.pkl")
+
+
 
         print("-- Done.")
