@@ -370,6 +370,10 @@ class TemporalConvNet(nn.Module):
         self.linear = nn.Linear(num_channels[-1], output_size)
 
     def forward(self, x):
-        x = self.network(x.transpose(1,2)).transpose(1,2)
-        x = self.linear(x)
+        if len(x.shape)==3:
+            x = self.network(x.transpose(1,2)).transpose(1,2)
+            x = self.linear(x)
+        else:
+            x = self.network(x.unsqueeze(1)).transpose(1,2)
+            x = self.linear(x).squeeze(2)
         return x

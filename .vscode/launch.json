@@ -11,7 +11,15 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--dataset", "SWAT"],
+            "args": ["--dataset", "SWAT",
+             //"--cut", "0.7", 
+             "--resample_rate", "0.5",
+            //"--gru_hid_dim", "51",
+            //"--fc_hid_dim", "51",
+            //"--recon_hid_dim", "51",
+            "--lookback", "50",
+            "--epochs", "15",
+    ],
         }
     ]
 }

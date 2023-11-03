@@ -51,12 +51,18 @@ class MTAD_GAT(nn.Module):
         recon_n_layers=1,
         recon_hid_dim=150,
         dropout=0.2,
-        alpha=0.2
+        alpha=0.2,
+        use_tcn = True
     ):
         super(MTAD_GAT, self).__init__()
         
-        self.tcn = TemporalConvNet(n_features, n_features, [150, 150, 150, 150])
-        self.conv = ConvLayer(n_features, kernel_size)
+        self.use_tcn=use_tcn
+        if use_tcn:
+            self.tcn1 = TemporalConvNet(n_features, n_features, [n_features, n_features])
+            self.tcn2 = TemporalConvNet(1, 1, [10, 10])
+            self.tcn3 = TemporalConvNet(n_features, n_features, [n_features, n_features])
+        else:
+            self.conv = ConvLayer(n_features, kernel_size)
         self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, feat_gat_embed_dim, use_gatv2)
         self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, time_gat_embed_dim, use_gatv2)
         self.gru = GRULayer(3 * n_features, gru_hid_dim, gru_n_layers, dropout)
@@ -66,8 +72,12 @@ class MTAD_GAT(nn.Module):
     def forward(self, x):
         # x shape (b, n, k): b - batch size, n - window size, k - number of features
 
-        #x = self.conv(x)
-        x = self.tcn(x)
+        #
+        if self.use_tcn:
+            x = self.tcn1(x)
+        else:
+            x = self.conv(x)
+        
         h_feat = self.feature_gat(x)
         h_temp = self.temporal_gat(x)
 
@@ -76,7 +86,12 @@ class MTAD_GAT(nn.Module):
         _, h_end = self.gru(h_cat)
         h_end = h_end.view(x.shape[0], -1)   # Hidden state for last timestamp
 
+        if self.use_tcn:
+            h_end = self.tcn2(h_end)
+
         predictions = self.forecasting_model(h_end)
         recons = self.recon_model(h_end)
+        if self.use_tcn:
+            recons = self.tcn3(recons)
 
         return predictions, recons
