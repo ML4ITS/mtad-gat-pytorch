@@ -128,7 +128,7 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
     train_loader, val_loader, test_loader = None, None, None
     if val_split == 0.0:
         print(f"train_size: {len(train_dataset)}")
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers = 4)
 
     else:
         dataset_size = len(train_dataset)
