@@ -109,8 +109,14 @@ def load_data(dataset):
         
         train_test_split=args.train_test_split
 
-        from sklearn.preprocessing  import MinMaxScaler
-        scaler = MinMaxScaler()
+        
+        if args.scaler == 'quantile':
+            from sklearn.preprocessing  import QuantileTransformer
+            scaler = QuantileTransformer(output_distribution='normal')
+        else:
+            from sklearn.preprocessing  import MinMaxScaler
+            scaler = MinMaxScaler()
+        
         values = scaler.fit_transform(values) 
 
         train_values = values[:int(train_test_split*len(labels)),:]
