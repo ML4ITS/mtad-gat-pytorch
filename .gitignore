@@ -8,6 +8,8 @@ datasets/data/test/
 datasets/ServerMachineDataset/processed/
 .ipynb_checkpoints/
 output/
+result_visualizer.ipynb
+util_notebook.ipynb
 datasets/data/
 **.pkl
 **.npy

@@ -152,7 +152,7 @@ def load_data(dataset):
         with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
 
-#Spectral residual implementation for simple univariate outlier detection
+#Spectral residual implementation for simple univariate outlier detection https://arxiv.org/pdf/1906.03821.pdf
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 def spectral_residual_replace(x, tau=2, window_size=20):
