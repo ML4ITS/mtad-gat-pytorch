@@ -118,6 +118,10 @@ def load_data(dataset):
             scaler = MinMaxScaler()
         
         values = scaler.fit_transform(values) 
+        #spectral residual data cleaning
+        if args.spectral_residual:
+            for i in range(values.shape[1]):
+                values[:,i] = spectral_residual_replace(values[:,i])
 
         train_values = values[:int(train_test_split*len(labels)),:]
         train_labels = labels[:int(train_test_split*len(labels))]
@@ -147,6 +151,40 @@ def load_data(dataset):
         path_pkl = path.join('datasets/data/processed', 'SWAT_test_label.pkl')
         with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
+
+#Spectral residual implementation for simple univariate outlier detection
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+def spectral_residual_replace(x, tau=2, window_size=20):
+    #compute fourier transform
+    fft_result = np.fft.fft(x)
+
+    #compute phase and log amplitude of fft
+    log_amplitude = np.log(np.abs(fft_result)) 
+    phase = np.angle(fft_result)
+    
+    #smooth the amplitude and compute the residual
+    smoothed_log_amplitude = np.convolve(log_amplitude, np.ones(window_size)/window_size, mode = 'same')
+    residual_log_amplitude = smoothed_log_amplitude-log_amplitude
+    
+    #compute the spectral residual
+    im_unit = 1j
+    sr = np.abs(np.fft.ifft(np.exp(residual_log_amplitude + im_unit*phase)))
+    
+    #standardize the spectral residual
+    scaler = StandardScaler()
+    sr = scaler.fit_transform(sr.reshape(-1,1)).reshape(-1)
+    
+    #identify outliers (sr is now a 0-1 normal distribution)
+    outliers =  (sr > tau)
+    
+    #replace outliers
+    x_replaced = x.copy()
+    x_replaced[outliers] = np.mean(x) 
+
+    return x_replaced
+
+
 
 
 if __name__ == "__main__":
