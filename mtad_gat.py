@@ -8,7 +8,9 @@ from modules import (
     GRULayer,
     Forecasting_Model,
     ReconstructionModel,
-    TemporalConvNet
+    TemporalConvNet,
+    VanillaVAE,
+    VAE
 )
 
 
@@ -53,7 +55,8 @@ class MTAD_GAT(nn.Module):
         dropout=0.2,
         alpha=0.2,
         use_tcn = True,
-        reduce_dimensionality = False
+        reduce_dimensionality = False,
+        use_vae = True
     ):
         super(MTAD_GAT, self).__init__()
         self.reduce_dimensionality = reduce_dimensionality
@@ -81,7 +84,12 @@ class MTAD_GAT(nn.Module):
         self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, time_gat_embed_dim, use_gatv2)
         self.gru = GRULayer(3 * n_features, gru_hid_dim, gru_n_layers, dropout)
         self.forecasting_model = Forecasting_Model(gru_hid_dim, forecast_hid_dim, out_dim, forecast_n_layers, dropout)
-        self.recon_model = ReconstructionModel(window_size, gru_hid_dim, recon_hid_dim, out_dim, recon_n_layers, dropout)
+        
+        self.use_vae = use_vae
+        if self.use_vae:
+            self.recon_model = VanillaVAE(in_channels=n_features, latent_dim = recon_hid_dim)
+        else:
+            self.recon_model = ReconstructionModel(window_size, gru_hid_dim, recon_hid_dim, out_dim, recon_n_layers, dropout)
 
     def forward(self, x):
         # x shape (b, n, k): b - batch size, n - window size, k - number of features
@@ -107,7 +115,10 @@ class MTAD_GAT(nn.Module):
             h_end = self.tcn2(h_end)
 
         predictions = self.forecasting_model(h_end)
-        recons = self.recon_model(h_end)
+        if self.use_vae:
+            recons = self.recon_model(h_end)
+        else:
+            recons = self.recon_model.decode(h_end)
         if self.use_tcn:
             recons = self.tcn3(recons)
 

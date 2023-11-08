@@ -377,3 +377,251 @@ class TemporalConvNet(nn.Module):
             x = self.network(x.unsqueeze(1)).transpose(1,2)
             x = self.linear(x).squeeze(2)
         return x
+    
+from torch.nn import functional as F
+from abc import abstractmethod
+
+class BaseVAE(nn.Module):
+    
+    def __init__(self) -> None:
+        super(BaseVAE, self).__init__()
+
+    def encode(self, input: torch.Tensor):
+        raise NotImplementedError
+
+    def decode(self, input: torch.Tensor):
+        raise NotImplementedError
+
+    def sample(self, batch_size:int, current_device: int, **kwargs) -> torch.Tensor:
+        raise NotImplementedError
+
+    def generate(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
+        raise NotImplementedError
+
+    @abstractmethod
+    def forward(self, *inputs: torch.Tensor) -> torch.Tensor:
+        pass
+
+    @abstractmethod
+    def loss_function(self, *inputs, **kwargs) -> torch.Tensor:
+        pass
+
+class VanillaVAE(BaseVAE):
+
+
+    def __init__(self,
+                 in_channels: int,
+                 latent_dim: int,
+                 hidden_dims = None,
+                 **kwargs) -> None:
+        super(VanillaVAE, self).__init__()
+
+        self.latent_dim = latent_dim
+
+        modules = []
+        if hidden_dims is None:
+            hidden_dims = [32, 64, 128, 256, 512]
+
+        # Build Encoder
+        for h_dim in hidden_dims:
+            modules.append(
+                nn.Sequential(
+                    nn.Conv2d(in_channels, out_channels=h_dim,
+                              kernel_size= 3, stride= 2, padding  = 1),
+                    nn.BatchNorm2d(h_dim),
+                    nn.LeakyReLU())
+            )
+            in_channels = h_dim
+
+        self.encoder = nn.Sequential(*modules)
+        self.fc_mu = nn.Linear(hidden_dims[-1]*4, latent_dim)
+        self.fc_var = nn.Linear(hidden_dims[-1]*4, latent_dim)
+
+
+        # Build Decoder
+        modules = []
+
+        self.decoder_input = nn.Linear(latent_dim, hidden_dims[-1] * 4)
+
+        hidden_dims.reverse()
+
+        for i in range(len(hidden_dims) - 1):
+            modules.append(
+                nn.Sequential(
+                    nn.ConvTranspose2d(hidden_dims[i],
+                                       hidden_dims[i + 1],
+                                       kernel_size=3,
+                                       stride = 2,
+                                       padding=1,
+                                       output_padding=1),
+                    nn.BatchNorm2d(hidden_dims[i + 1]),
+                    nn.LeakyReLU())
+            )
+
+
+
+        self.decoder = nn.Sequential(*modules)
+
+        self.final_layer = nn.Sequential(
+                            nn.ConvTranspose2d(hidden_dims[-1],
+                                               hidden_dims[-1],
+                                               kernel_size=3,
+                                               stride=2,
+                                               padding=1,
+                                               output_padding=1),
+                            nn.BatchNorm2d(hidden_dims[-1]),
+                            nn.LeakyReLU(),
+                            nn.Conv2d(hidden_dims[-1], out_channels= 3,
+                                      kernel_size= 3, padding= 1),
+                            nn.Tanh())
+
+    def encode(self, input: torch.Tensor):
+        """
+        Encodes the input by passing through the encoder network
+        and returns the latent codes.
+        :param input: (torch.Tensor) Input torch.Tensor to encoder [N x C x H x W]
+        :return: (torch.Tensor) List of latent codes
+        """
+        result = self.encoder(input)
+        result = torch.flatten(result, start_dim=1)
+
+        # Split the result into mu and var components
+        # of the latent Gaussian distribution
+        mu = self.fc_mu(result)
+        log_var = self.fc_var(result)
+
+        return [mu, log_var]
+
+    def decode(self, z: torch.Tensor) -> torch.Tensor:
+        """
+        Maps the given latent codes
+        onto the image space.
+        :param z: (torch.Tensor) [B x D]
+        :return: (torch.Tensor) [B x C x H x W]
+        """
+        result = self.decoder_input(z)
+        result = result.view(-1, 512, 2, 2)
+        result = self.decoder(result)
+        result = self.final_layer(result)
+        return result
+
+    def reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
+        """
+        Reparameterization trick to sample from N(mu, var) from
+        N(0,1).
+        :param mu: (torch.Tensor) Mean of the latent Gaussian [B x D]
+        :param logvar: (torch.Tensor) Standard deviation of the latent Gaussian [B x D]
+        :return: (torch.Tensor) [B x D]
+        """
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu
+
+    def forward(self, input: torch.Tensor, **kwargs):
+        mu, log_var = self.encode(input)
+        z = self.reparameterize(mu, log_var)
+        return  [self.decode(z), input, mu, log_var]
+
+    def loss_function(self,
+                      *args,
+                      **kwargs) -> dict:
+        """
+        Computes the VAE loss function.
+        KL(N(\mu, \sigma), N(0, 1)) = \log \frac{1}{\sigma} + \frac{\sigma^2 + \mu^2}{2} - \frac{1}{2}
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        recons = args[0]
+        input = args[1]
+        mu = args[2]
+        log_var = args[3]
+
+        kld_weight = kwargs['M_N'] # Account for the minibatch samples from the dataset
+        recons_loss =F.mse_loss(recons, input)
+
+
+        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
+
+        loss = recons_loss + kld_weight * kld_loss
+        return {'loss': loss, 'Reconstruction_Loss':recons_loss.detach(), 'KLD':-kld_loss.detach()}
+
+    def sample(self,
+               num_samples:int,
+               current_device: int, **kwargs) -> torch.Tensor:
+        """
+        Samples from the latent space and return the corresponding
+        image space map.
+        :param num_samples: (Int) Number of samples
+        :param current_device: (Int) Device to run the model
+        :return: (torch.Tensor)
+        """
+        z = torch.randn(num_samples,
+                        self.latent_dim)
+
+        z = z.to(current_device)
+
+        samples = self.decode(z)
+        return samples
+
+    def generate(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
+        """
+        Given an input image x, returns the reconstructed image
+        :param x: (torch.Tensor) [B x C x H x W]
+        :return: (torch.Tensor) [B x C x H x W]
+        """
+
+        return self.forward(x)[0]
+
+
+class VAE(nn.Module):
+
+    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=200, device=device):
+        super(VAE, self).__init__()
+
+        # encoder
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.LeakyReLU(0.2),
+            nn.Linear(hidden_dim, latent_dim),
+            nn.LeakyReLU(0.2)
+            )
+        
+        # latent mean and variance 
+        self.mean_layer = nn.Linear(latent_dim, 2)
+        self.logvar_layer = nn.Linear(latent_dim, 2)
+        
+        # decoder
+        self.decoder = nn.Sequential(
+            nn.Linear(2, latent_dim),
+            nn.LeakyReLU(0.2),
+            nn.Linear(latent_dim, hidden_dim),
+            nn.LeakyReLU(0.2),
+            nn.Linear(hidden_dim, input_dim),
+            nn.Sigmoid()
+            )
+     
+    def encode(self, x):
+        x = self.encoder(x)
+        mean, logvar = self.mean_layer(x), self.logvar_layer(x)
+        return mean, logvar
+
+    def reparameterization(self, mean, var):
+        epsilon = torch.randn_like(var)   
+        z = mean + var*epsilon
+        return z
+
+    def decode(self, x):
+        return self.decoder(x)
+
+    def forward(self, x):
+        mean, logvar = self.encode(x)
+        z = self.reparameterization(mean, logvar)
+        x_hat = self.decode(z)
+        return x_hat, mean, logvar
+        
+    def forward(self, x):
+        mean, log_var = self.encode(x)
+        z = self.reparameterization(mean, torch.exp(0.5 * log_var)) 
+        x_hat = self.decode(z)  
+        return x_hat, mean, log_var
