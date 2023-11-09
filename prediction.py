@@ -52,11 +52,11 @@ class Predictor:
                 x = x.to(device)
                 y = y.to(device)
 
-                y_hat, _ = self.model(x)
+                y_hat, _, _, _= self.model(x)
 
                 # Shifting input to include the observed value (y) when doing the reconstruction
                 recon_x = torch.cat((x[:, 1:, :], y), dim=1)
-                _, window_recon = self.model(recon_x)
+                _, window_recon, _, _ = self.model(recon_x)
 
                 preds.append(y_hat.detach().cpu().numpy())
                 # Extract last reconstruction only
