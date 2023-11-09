@@ -35,6 +35,8 @@ def get_data_dim(dataset):
         return 51
     elif dataset =="SKAB":
         return 8
+    elif dataset =="WADI":
+        return 124
     elif str(dataset).startswith("machine"):
         return 38
     else:

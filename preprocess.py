@@ -205,6 +205,76 @@ def load_data(dataset):
         path_pkl = path.join('datasets/data/processed', 'SKAB_test_label.pkl')
         with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
+    elif dataset=='WADI':
+        
+        wadi = pd.read_csv(path.join('datasets/data', 'WADI_attackdataLABLE.csv'), delimiter=',', skiprows=1 )
+        wadi = wadi.drop('Row ', axis=1)
+        wadi = wadi.drop('Date ', axis=1)
+        wadi = wadi.drop('Time', axis=1)
+        wadi = wadi.drop('2_LS_001_AL', axis=1) #nan column
+        wadi = wadi.drop('2_LS_002_AL', axis=1) #nan column
+        wadi = wadi.drop('2_P_001_STATUS', axis=1) #nan column
+        wadi = wadi.drop('2_P_002_STATUS', axis=1) #nan column
+        wadi = wadi.dropna(axis=0)
+
+        if args.cut < 1:
+            print('Cutting the dataset at ' + str(args.cut) + ' length \n')
+            wadi = wadi.iloc[:int(len(swat)*args.cut)]
+        sample_rate = args.resample_rate
+        if sample_rate<=0 or sample_rate>1:
+            print('Incorrect resample rate, defaulting to 1\n')
+            sample_rate = 1
+        else:
+            print('resampling to one observation every '+ str(int(1/sample_rate)))
+
+        wadi = wadi.iloc[::int(1/sample_rate)]#resampling
+        labels = (wadi['Attack LABLE (1:No Attack, -1:Attack)'].values==-1)
+        values = wadi.drop('Attack LABLE (1:No Attack, -1:Attack)', axis=1).values
+        
+        train_test_split=args.train_test_split
+
+        if args.scaler == 'quantile':
+            from sklearn.preprocessing  import QuantileTransformer
+            scaler = QuantileTransformer(output_distribution='normal')
+        else:
+            from sklearn.preprocessing  import MinMaxScaler
+            scaler = MinMaxScaler()
+        
+        values = scaler.fit_transform(values) 
+        #spectral residual data cleaning
+        if args.spectral_residual:
+            for i in range(values.shape[1]):
+                values[:,i] = spectral_residual_replace(values[:,i])
+
+        train_values = values[:int(train_test_split*len(labels)),:]
+        train_labels = labels[:int(train_test_split*len(labels))]
+
+        if args.no_anomaly_train:
+            print('removing anomalies from training data')
+            train_values = train_values[train_labels==False]
+
+        test_values = values[int(train_test_split*len(labels)):,:]
+        test_labels = labels[int(train_test_split*len(labels)):]
+
+        #dump train values into file
+        makedirs('datasets/data/processed', exist_ok=True)
+        path_pkl = path.join('datasets/data/processed', 'WADI_train.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(train_values, file)
+
+
+
+        #dump test values into file
+        path_pkl = path.join('datasets/data/processed', 'WADI_test.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(test_values, file)
+
+
+        #dump test labels into file
+        path_pkl = path.join('datasets/data/processed', 'WADI_test_label.pkl')
+        with open(path_pkl, 'wb') as file:
+           dump(test_labels, file)
+
 
 
 
