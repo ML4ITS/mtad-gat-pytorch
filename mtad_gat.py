@@ -57,7 +57,7 @@ class MTAD_GAT(nn.Module):
         use_tcn = True,
         reduce_dimensionality = False,
         use_vae = True,
-        use_KLD = True
+        use_KLD = False
     ):
         super(MTAD_GAT, self).__init__()
         self.reduce_dimensionality = reduce_dimensionality
