@@ -573,7 +573,7 @@ class VanillaVAE(BaseVAE):
 
         return self.forward(x)[0]
 
-
+#https://medium.com/@rekalantar/variational-auto-encoder-vae-pytorch-tutorial-dce2d2fe0f5f
 class VAE(nn.Module):
 
     def __init__(self, input_dim=784, hidden_dim=400, latent_dim=200):

@@ -56,7 +56,8 @@ class MTAD_GAT(nn.Module):
         alpha=0.2,
         use_tcn = True,
         reduce_dimensionality = False,
-        use_vae = True
+        use_vae = True,
+        use_KLD = True
     ):
         super(MTAD_GAT, self).__init__()
         self.reduce_dimensionality = reduce_dimensionality
@@ -86,6 +87,7 @@ class MTAD_GAT(nn.Module):
         self.forecasting_model = Forecasting_Model(gru_hid_dim, forecast_hid_dim, out_dim, forecast_n_layers, dropout)
         
         self.use_vae = use_vae
+        self.use_KLD = use_KLD
         if self.use_vae:
             self.recon_model = VAE(input_dim=window_size, hidden_dim = 200, latent_dim=gru_hid_dim)
         else:
@@ -118,10 +120,14 @@ class MTAD_GAT(nn.Module):
         
         if self.use_vae:
             #if using vae the graph convolutional layer is ignored and the input is passed straight to the vae
-            recons, _, _ = self.recon_model(x.transpose(1,2))
+            recons, mean, log_var = self.recon_model(x.transpose(1,2))
             recons = recons.transpose(1,2)
+            if not self.use_KLD:
+                mean = 0
+                log_var = 0 
         else:
-            recons = self.recon_model.decode(h_end)
+            recons = self.recon_model(h_end)
+            mean, log_var = 0
         if self.use_tcn:
             recons = self.tcn3(recons)
 
@@ -129,4 +135,4 @@ class MTAD_GAT(nn.Module):
         #    predictions = self.dim_up(predictions)
         #    recons = self.dim_up(recons)
 
-        return predictions, recons
+        return predictions, recons, mean, log_var

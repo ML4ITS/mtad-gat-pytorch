@@ -108,7 +108,7 @@ class Trainer:
                 y = y.to(self.device)
                 self.optimizer.zero_grad()
 
-                preds, recons = self.model(x)
+                preds, recons, mean, log_var = self.model(x)
 
                 if self.target_dims is not None:
                     x = x[:, :, self.target_dims]
@@ -121,6 +121,8 @@ class Trainer:
 
                 forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
+                KLD = torch.sqrt(- 0.5 * torch.sum(log_var - mean.pow(2) - log_var.exp())) #KL divergence (0 if vae is not in use)
+                recon_loss = recon_loss +KLD 
                 loss = forecast_loss + recon_loss
 
                 loss.backward()
@@ -201,7 +203,7 @@ class Trainer:
                 x = x.to(self.device)
                 y = y.to(self.device)
 
-                preds, recons = self.model(x)
+                preds, recons, mean, log_var = self.model(x)
 
                 if self.target_dims is not None:
                     x = x[:, :, self.target_dims]
@@ -214,6 +216,8 @@ class Trainer:
 
                 forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
+                KLD = torch.sqrt(- 0.5 * torch.sum(log_var - mean.pow(2) - log_var.exp())) #KL divergence (0 if vae is not in use)
+                recon_loss = recon_loss + KLD
 
                 forecast_losses.append(forecast_loss.item())
                 recon_losses.append(recon_loss.item())
