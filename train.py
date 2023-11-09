@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if dataset == 'SMD':
         output_path = f'output/SMD/{args.group}'
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
-    elif dataset in ['MSL', 'SMAP', 'SWAT']:
+    elif dataset in ['MSL', 'SMAP', 'SWAT', 'SKAB']:
         output_path = f'output/{dataset}'
         (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
     else:
@@ -127,6 +127,7 @@ if __name__ == "__main__":
         "SMAP": (0.90, 0.005),
         "MSL": (0.90, 0.001),
         "SWAT": (0.90, 0.001),
+        "SKAB": (0.90, 0.001),
         "SMD-1": (0.9950, 0.001),
         "SMD-2": (0.9925, 0.001),
         "SMD-3": (0.9999, 0.001)
@@ -139,7 +140,7 @@ if __name__ == "__main__":
         q = args.q
 
     # Some suggestions for Epsilon args
-    reg_level_dict = {"SMAP": 0,"SWAT": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
+    reg_level_dict = {"SMAP": 0,"SWAT": 0,"SKAB":0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
 

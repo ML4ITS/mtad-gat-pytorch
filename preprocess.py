@@ -151,6 +151,66 @@ def load_data(dataset):
         path_pkl = path.join('datasets/data/processed', 'SWAT_test_label.pkl')
         with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
+    elif dataset =="SKAB":
+        ## import ##
+        skab_no_attack = pd.read_csv(path.join('datasets/data/SKAB', 'anomaly-free.csv'), delimiter=';')
+        skab_no_attack = skab_no_attack.drop('datetime', axis=1)
+
+        skab_attack = pd.read_csv(path.join('datasets/data/SKAB/attacks', '0.csv'),  delimiter=';')
+        skab_attack = skab_attack.drop('datetime', axis=1)
+        skab_attack = skab_attack.drop('changepoint', axis=1)
+        
+        ## cutting ##
+        if args.cut<1:
+            print('Cutting the dataset at ' + str(args.cut) + ' length \n')
+            skab_no_attack = skab_no_attack.iloc[:int(len(skab_no_attack)*args.cut)]
+        
+        ## resampling ##
+        sample_rate = args.resample_rate
+        if sample_rate<=0 or sample_rate>1:
+            print('Incorrect resample rate, defaulting to 1\n')
+            sample_rate = 1
+        else:
+            print('resampling to one observation every '+ str(int(1/sample_rate)))
+        skab_no_attack = skab_no_attack.iloc[::int(1/sample_rate)]#resampling
+        skab_attack = skab_attack.iloc[::int(1/sample_rate)]#resampling
+        
+        train_values = skab_no_attack.values
+        test_values = skab_attack.drop('anomaly', axis=1).values
+        test_labels = (skab_attack['anomaly'].values==1)
+
+        ## scaling ##
+        if args.scaler == 'quantile':
+            from sklearn.preprocessing  import QuantileTransformer
+            scaler = QuantileTransformer(output_distribution='normal')
+        else:
+            from sklearn.preprocessing  import MinMaxScaler
+            scaler = MinMaxScaler()
+        
+        train_values = scaler.fit_transform(train_values)
+        test_values = scaler.transform(test_values)
+
+        #dump train values into file
+        makedirs('datasets/data/processed', exist_ok=True)
+        path_pkl = path.join('datasets/data/processed', 'SKAB_train.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(train_values, file)
+
+        #dump test values into file
+        path_pkl = path.join('datasets/data/processed', 'SKAB_test.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(test_values, file)
+
+        #dump test labels into file
+        path_pkl = path.join('datasets/data/processed', 'SKAB_test_label.pkl')
+        with open(path_pkl, 'wb') as file:
+           dump(test_labels, file)
+
+
+
+
+
+    
 
 #Spectral residual implementation for simple univariate outlier detection https://arxiv.org/pdf/1906.03821.pdf
 import numpy as np
