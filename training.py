@@ -121,8 +121,8 @@ class Trainer:
 
                 forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
-                KLD = torch.sqrt(- 0.5 * torch.sum(log_var - mean.pow(2) - log_var.exp())) #KL divergence (0 if vae is not in use)
-                recon_loss = recon_loss +KLD 
+                #KLD = torch.sqrt(- 0.5 * torch.sum(log_var - mean.pow(2) - log_var.exp())) #KL divergence (0 if vae is not in use)
+                recon_loss = recon_loss #+KLD 
                 loss = forecast_loss + recon_loss
 
                 loss.backward()
@@ -216,8 +216,8 @@ class Trainer:
 
                 forecast_loss = torch.sqrt(self.forecast_criterion(y, preds))
                 recon_loss = torch.sqrt(self.recon_criterion(x, recons))
-                KLD = torch.sqrt(- 0.005 * torch.sum(log_var - mean.pow(2) - log_var.exp())) #KL divergence (0 if vae is not in use)
-                recon_loss = recon_loss + KLD
+                #KLD = torch.sqrt(- 0.005 * torch.sum(log_var - mean.pow(2) - log_var.exp())) #KL divergence (0 if vae is not in use)
+                recon_loss = recon_loss #+ KLD
 
                 forecast_losses.append(forecast_loss.item())
                 recon_losses.append(recon_loss.item())
