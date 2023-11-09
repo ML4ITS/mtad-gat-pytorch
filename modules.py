@@ -576,7 +576,7 @@ class VanillaVAE(BaseVAE):
 
 class VAE(nn.Module):
 
-    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=200, device=device):
+    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=200):
         super(VAE, self).__init__()
 
         # encoder

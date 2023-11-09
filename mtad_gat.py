@@ -87,7 +87,7 @@ class MTAD_GAT(nn.Module):
         
         self.use_vae = use_vae
         if self.use_vae:
-            self.recon_model = VanillaVAE(in_channels=n_features, latent_dim = recon_hid_dim)
+            self.recon_model = VAE(input_dim=window_size, hidden_dim = 200, latent_dim=gru_hid_dim)
         else:
             self.recon_model = ReconstructionModel(window_size, gru_hid_dim, recon_hid_dim, out_dim, recon_n_layers, dropout)
 
@@ -115,8 +115,11 @@ class MTAD_GAT(nn.Module):
             h_end = self.tcn2(h_end)
 
         predictions = self.forecasting_model(h_end)
+        
         if self.use_vae:
-            recons = self.recon_model(h_end)
+            #if using vae the graph convolutional layer is ignored and the input is passed straight to the vae
+            recons, _, _ = self.recon_model(x.transpose(1,2))
+            recons = recons.transpose(1,2)
         else:
             recons = self.recon_model.decode(h_end)
         if self.use_tcn:
