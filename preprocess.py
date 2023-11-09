@@ -219,7 +219,7 @@ def load_data(dataset):
 
         if args.cut < 1:
             print('Cutting the dataset at ' + str(args.cut) + ' length \n')
-            wadi = wadi.iloc[:int(len(swat)*args.cut)]
+            wadi = wadi.iloc[:int(len(wadi)*args.cut)]
         sample_rate = args.resample_rate
         if sample_rate<=0 or sample_rate>1:
             print('Incorrect resample rate, defaulting to 1\n')
