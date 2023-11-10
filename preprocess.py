@@ -156,7 +156,7 @@ def load_data(dataset):
         skab_no_attack = pd.read_csv(path.join('datasets/data/SKAB', 'anomaly-free.csv'), delimiter=';')
         skab_no_attack = skab_no_attack.drop('datetime', axis=1)
 
-        skab_attack = pd.read_csv(path.join('datasets/data/SKAB/attacks', '0.csv'),  delimiter=';')
+        skab_attack = pd.read_csv(path.join('datasets/data/SKAB/attacks', '1.csv'),  delimiter=';')
         skab_attack = skab_attack.drop('datetime', axis=1)
         skab_attack = skab_attack.drop('changepoint', axis=1)
         
@@ -235,7 +235,10 @@ def load_data(dataset):
 
         if args.scaler == 'quantile':
             from sklearn.preprocessing  import QuantileTransformer
-            scaler = QuantileTransformer(output_distribution='normal')
+            scaler = QuantileTransformer(output_distribution='uniform')
+        if args.scaler =='standard':
+            from sklearn.preprocessing  import StandardScaler
+            scaler = StandardScaler()
         else:
             from sklearn.preprocessing  import MinMaxScaler
             scaler = MinMaxScaler()

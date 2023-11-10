@@ -55,7 +55,7 @@ class MTAD_GAT(nn.Module):
         dropout=0.2,
         alpha=0.2,
         use_tcn = True,
-        reduce_dimensionality = False,
+        reduce_dimensionality = True,
         use_vae = True,
         use_KLD = False
     ):
@@ -64,21 +64,21 @@ class MTAD_GAT(nn.Module):
 
         if self.reduce_dimensionality:
             self.dim_red = nn.Sequential(
-                nn.Linear(n_features, 30),
+                nn.Linear(n_features, 50),
                 nn.LeakyReLU()
             )
             self.dim_up = nn.Sequential(
-                nn.Linear(30, n_features),
+                nn.Linear(50, n_features),
                 nn.LeakyReLU()
             )
-            n_features = 30
+            n_features = 50
         
 
         self.use_tcn=use_tcn
         if use_tcn:
             self.tcn1 = TemporalConvNet(n_features, n_features, [n_features, n_features])
             self.tcn2 = TemporalConvNet(1, 1, [10, 10])
-            self.tcn3 = TemporalConvNet(out_dim, out_dim, [out_dim, out_dim])
+            self.tcn3 = TemporalConvNet(n_features, n_features, [n_features, n_features])
         else:
             self.conv = ConvLayer(n_features, kernel_size)
         self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, feat_gat_embed_dim, use_gatv2)
@@ -131,8 +131,8 @@ class MTAD_GAT(nn.Module):
         if self.use_tcn:
             recons = self.tcn3(recons)
 
-        #if self.reduce_dimensionality:
-        #    predictions = self.dim_up(predictions)
-        #    recons = self.dim_up(recons)
+        if self.reduce_dimensionality:
+          #  predictions = self.dim_up(predictions)
+            recons = self.dim_up(recons)
 
         return predictions, recons, mean, log_var
