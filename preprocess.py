@@ -277,7 +277,149 @@ def load_data(dataset):
         path_pkl = path.join('datasets/data/processed', 'WADI_test_label.pkl')
         with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
+    elif dataset =="ACT":
+        X_1 = pd.read_csv(path.join('datasets/data/ACT/Train', 'X_train.txt'), delimiter=' ', header=None)
+        X_2 = pd.read_csv(path.join('datasets/data/ACT/Test', 'X_test.txt'), delimiter=' ', header=None)
+        values = pd.concat([X_1, X_2], axis=0, ignore_index=True)
 
+        y_1 = pd.read_csv(path.join('datasets/data/ACT/Train', 'Y_train.txt'), delimiter=' ', header=None)
+        y_2 = pd.read_csv(path.join('datasets/data/ACT/Test', 'Y_test.txt'), delimiter=' ', header=None)
+        y = pd.concat([y_1, y_2], axis=0, ignore_index=True)
+        labels = np.array([x in range(7,13) for x in y.values])
+
+        if args.cut < 1:
+            print('Cutting the dataset at ' + str(args.cut) + ' length \n')
+            values = values.iloc[:int(len(values)*args.cut)]
+            labels = labels[:int(len(labels)*args.cut)]
+        sample_rate = args.resample_rate
+        if sample_rate<=0 or sample_rate>1:
+            print('Incorrect resample rate, defaulting to 1\n')
+            sample_rate = 1
+        else:
+            print('resampling to one observation every '+ str(int(1/sample_rate)))
+
+        values = values.iloc[::int(1/sample_rate)].values#resampling
+        labels = labels[::int(1/sample_rate)]#resampling
+
+        train_test_split=args.train_test_split
+
+        if args.scaler == 'quantile':
+            from sklearn.preprocessing  import QuantileTransformer
+            scaler = QuantileTransformer(output_distribution='uniform')
+        if args.scaler =='standard':
+            from sklearn.preprocessing  import StandardScaler
+            scaler = StandardScaler()
+        else:
+            from sklearn.preprocessing  import MinMaxScaler
+            scaler = MinMaxScaler()
+        
+        values = scaler.fit_transform(values) 
+        #spectral residual data cleaning
+        if args.spectral_residual:
+            for i in range(values.shape[1]):
+                values[:,i] = spectral_residual_replace(values[:,i])
+
+        train_values = values[:int(train_test_split*len(labels)),:]
+        train_labels = labels[:int(train_test_split*len(labels))]
+
+        if args.no_anomaly_train:
+            print('removing anomalies from training data')
+            train_values = train_values[train_labels==False]
+
+        test_values = values[int(train_test_split*len(labels)):,:]
+        test_labels = labels[int(train_test_split*len(labels)):]
+
+        #dump train values into file
+        makedirs('datasets/data/processed', exist_ok=True)
+        path_pkl = path.join('datasets/data/processed', 'ACT_train.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(train_values, file)
+
+
+
+        #dump test values into file
+        path_pkl = path.join('datasets/data/processed', 'ACT_test.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(test_values, file)
+
+
+        #dump test labels into file
+        path_pkl = path.join('datasets/data/processed', 'ACT_test_label.pkl')
+        with open(path_pkl, 'wb') as file:
+           dump(test_labels, file)
+    
+    
+    elif dataset=='METRO':
+        
+        metro = pd.read_csv(path.join('datasets/data', 'MetroPT3.csv'))
+        metro.timestamp = pd.to_datetime(metro.timestamp)
+
+        start_attack = ['2020-04-18 00:00:00', '2020-05-29 23:30:00', '2020-06-05 10:00:00', '2020-07-15 14:30:00']
+        end_attack = ['2020-04-18 23:59:00', '2020-05-30 06:00:00', '2020-06-07 14:30:00', '2020-07-15 19:00:00']
+        label = np.zeros(metro.shape[0])
+        for i in range(4):
+            label += ((metro.timestamp>=start_attack[i] ) & (metro.timestamp<=end_attack[i])).values
+        label = label==1
+
+        test_mask = (metro.timestamp >= '2020-04-17 00:00:00') & (metro.timestamp <= '2020-07-16 00:00:00')
+        train_mask = np.logical_not(test_mask)
+        metro_test = metro[test_mask]
+        test_label = label[test_mask]
+        metro_train = metro[train_mask]
+        train_label = label[train_mask]
+
+        if args.cut < 1:
+            print('Cutting the dataset at ' + str(args.cut) + ' length \n')
+            metro_train = metro_train.iloc[:int(len(metro_train)*args.cut)]
+            metro_test = metro_test.iloc[:int(len(metro_test)*args.cut)]
+            train_label = train_label[:int(len(train_label)*args.cut)]
+            test_label = test_label[:int(len(test_label)*args.cut)]
+        sample_rate = args.resample_rate
+        if sample_rate<=0 or sample_rate>1:
+            print('Incorrect resample rate, defaulting to 1\n')
+            sample_rate = 1
+        else:
+            print('resampling to one observation every '+ str(int(1/sample_rate)))
+
+        metro_train = metro_train.iloc[::int(1/sample_rate)]#resampling
+        metro_test = metro_test.iloc[::int(1/sample_rate)]#resampling    
+        train_label = train_label[::int(1/sample_rate)]#resampling
+        test_label = test_label[::int(1/sample_rate)]#resampling
+
+        train_values = metro_train.iloc[:,2:].values
+        test_values = metro_test.iloc[:,2:].values
+
+        if args.scaler == 'quantile':
+            from sklearn.preprocessing  import QuantileTransformer
+            scaler = QuantileTransformer(output_distribution='uniform')
+        if args.scaler =='standard':
+            from sklearn.preprocessing  import StandardScaler
+            scaler = StandardScaler()
+        else:
+            from sklearn.preprocessing  import MinMaxScaler
+            scaler = MinMaxScaler()
+        
+        train_values = scaler.fit_transform(train_values)
+        test_values = scaler.transform(test_values) 
+
+
+        #dump train values into file
+        makedirs('datasets/data/processed', exist_ok=True)
+        path_pkl = path.join('datasets/data/processed', 'METRO_train.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(train_values, file)
+
+
+        #dump test values into file
+        path_pkl = path.join('datasets/data/processed', 'METRO_test.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(test_values, file)
+
+
+        #dump test labels into file
+        path_pkl = path.join('datasets/data/processed', 'METRO_test_label.pkl')
+        with open(path_pkl, 'wb') as file:
+           dump(test_label, file)
 
 
 

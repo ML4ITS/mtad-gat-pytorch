@@ -37,6 +37,10 @@ def get_data_dim(dataset):
         return 8
     elif dataset =="WADI":
         return 123
+    elif dataset =="METRO":
+        return 15
+    elif dataset =="ACT":
+        return 561
     elif str(dataset).startswith("machine"):
         return 38
     else:
@@ -59,6 +63,10 @@ def get_target_dims(dataset):
         return None
     elif dataset == "WADI":
         return None
+    elif dataset == "METRO":
+        return None
+    elif dataset == "ACT":
+        return None
     elif dataset == "SKAB":
         return None
     else:
@@ -76,7 +84,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     prefix = "datasets"
     if str(dataset).startswith("machine"):
         prefix += "/ServerMachineDataset/processed"
-    elif dataset in ["MSL", "SMAP", "SWAT", "SKAB", "WADI"]:
+    elif dataset in ["MSL", "SMAP", "SWAT", "SKAB", "WADI","METRO", 'ACT']:
         prefix += "/data/processed"
     if max_train_size is None:
         train_end = None
