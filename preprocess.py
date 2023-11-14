@@ -282,8 +282,8 @@ def load_data(dataset):
         X_2 = pd.read_csv(path.join('datasets/data/ACT/Test', 'X_test.txt'), delimiter=' ', header=None)
         values = pd.concat([X_1, X_2], axis=0, ignore_index=True)
 
-        y_1 = pd.read_csv(path.join('datasets/data/ACT/Train', 'Y_train.txt'), delimiter=' ', header=None)
-        y_2 = pd.read_csv(path.join('datasets/data/ACT/Test', 'Y_test.txt'), delimiter=' ', header=None)
+        y_1 = pd.read_csv(path.join('datasets/data/ACT/Train', 'y_train.txt'), delimiter=' ', header=None)
+        y_2 = pd.read_csv(path.join('datasets/data/ACT/Test', 'y_test.txt'), delimiter=' ', header=None)
         y = pd.concat([y_1, y_2], axis=0, ignore_index=True)
         labels = np.array([x in range(7,13) for x in y.values])
 
