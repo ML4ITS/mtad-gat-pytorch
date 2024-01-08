@@ -498,6 +498,12 @@ def load_data(dataset):
         with open(path_pkl, 'wb') as file:
             dump(test_values, file)
 
+        #dump test labels into file (NB ALL FALSE FOR UNSUPERVISED DATA)
+        path_pkl = path.join('datasets/data/processed', 'IVECO_test_label.pkl')
+        test_labels = np.full(len(test_values), False, dtype=bool) #ALL FALSE VALUES FOR UNSUPERVISED DATA
+        with open(path_pkl, 'wb') as file:
+           dump(test_labels, file)
+
 
 
 
