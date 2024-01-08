@@ -421,6 +421,83 @@ def load_data(dataset):
         with open(path_pkl, 'wb') as file:
            dump(test_label, file)
 
+    elif dataset == 'IVECO':
+        import os
+        dfs = []
+        for filename in os.listdir('datasets/data/IVECO'):
+            if filename.endswith('.csv'):
+                file_path = path.join('datasets/data/IVECO', filename)
+
+            df = pd.read_csv(file_path)
+            dfs.append(df)
+
+        iveco_all = pd.concat(dfs)
+        iveco_all.reset_index(drop = True, inplace = True)
+
+        iveco_all = iveco_all.iloc[:,5:] #esclusione colonne non informative
+
+        if args.cut < 1:
+            print('Cutting the dataset at ' + str(args.cut) + ' length \n')
+            iveco_all = iveco_all.iloc[:int(len(swat)*args.cut)]
+        sample_rate = args.resample_rate
+        if sample_rate<=0 or sample_rate>1:
+            print('Incorrect resample rate, defaulting to 1\n')
+            sample_rate = 1
+        else:
+            print('resampling to one observation every '+ str(int(1/sample_rate)))
+
+        iveco_all = iveco_all.iloc[::int(1/sample_rate)]#resampling
+        #labels = (swat['Normal/Attack'].values=='Attack')
+
+        #na handling
+        thresh = 0.75
+        na = []
+        for i in range(len(iveco_all.columns)):
+            na.append(sum(iveco_all.iloc[:,i].isna()))
+        where = (np.array(na) < iveco_all.shape[0]*thresh)
+
+        iveco_all = iveco_all.iloc[:, where]
+
+        values = iveco_all.values
+        
+        
+        train_test_split=args.train_test_split
+
+        if args.scaler == 'quantile':
+            from sklearn.preprocessing  import QuantileTransformer
+            scaler = QuantileTransformer(output_distribution='normal')
+        else:
+            from sklearn.preprocessing  import MinMaxScaler
+            scaler = MinMaxScaler()
+        
+        values = scaler.fit_transform(values) 
+        #spectral residual data cleaning
+        if args.spectral_residual:
+            for i in range(values.shape[1]):
+                values[:,i] = spectral_residual_replace(values[:,i])
+
+        train_values = values[:int(train_test_split*len(values)),:]
+        #train_labels = labels[:int(train_test_split*len(labels))]
+
+        # if args.no_anomaly_train:
+        #     print('removing anomalies from training data')
+        #     train_values = train_values[train_labels==False]
+
+        test_values = values[int(train_test_split*len(values)):,:]
+        #test_labels = labels[int(train_test_split*len(labels)):]
+
+        #dump train values into file
+        makedirs('datasets/data/processed', exist_ok=True)
+        path_pkl = path.join('datasets/data/processed', 'IVECO_train.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(train_values, file)
+
+
+        #dump test values into file
+        path_pkl = path.join('datasets/data/processed', 'IVECO_test.pkl')
+        with open(path_pkl, 'wb') as file:
+            dump(test_values, file)
+
 
 
 
