@@ -501,6 +501,7 @@ def load_data(dataset):
         #dump test labels into file (NB ALL FALSE FOR UNSUPERVISED DATA)
         path_pkl = path.join('datasets/data/processed', 'IVECO_test_label.pkl')
         test_labels = np.full(len(test_values), False, dtype=bool) #ALL FALSE VALUES FOR UNSUPERVISED DATA
+        test_labels[-1]=True #for calculating-auc-roc
         with open(path_pkl, 'wb') as file:
            dump(test_labels, file)
 
