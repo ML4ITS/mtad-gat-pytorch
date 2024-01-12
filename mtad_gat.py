@@ -56,6 +56,7 @@ class MTAD_GAT(nn.Module):
         alpha=0.2,
         use_tcn = True,
         reduce_dimensionality = True,
+        n_features_reduced = 50,
         use_vae = True,
         use_KLD = False
     ):
@@ -64,14 +65,14 @@ class MTAD_GAT(nn.Module):
 
         if self.reduce_dimensionality:
             self.dim_red = nn.Sequential(
-                nn.Linear(n_features, 50),
+                nn.Linear(n_features, n_features_reduced),
                 nn.LeakyReLU()
             )
             self.dim_up = nn.Sequential(
-                nn.Linear(50, n_features),
+                nn.Linear(n_features_reduced, n_features),
                 nn.LeakyReLU()
             )
-            n_features = 50
+            n_features = n_features_reduced
         
 
         self.use_tcn=use_tcn
