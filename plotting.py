@@ -29,6 +29,7 @@ class Plotter:
         self.test_output = None
         self.labels_available = True
         self.pred_cols = None
+        self.util_index = None
         self._load_results()
         self.train_output["timestamp"] = self.train_output.index
         self.test_output["timestamp"] = self.test_output.index
@@ -436,7 +437,7 @@ class Plotter:
         fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         py.offline.iplot(fig)
 
-    def plot_global_predictions(self, type="test", pca = False, pca_n_features = 3):
+    def plot_global_predictions(self, type="test", pca = False, pca_n_features = 3, plot_util_index = False):
         if type == "test":
             data_copy = self.test_output.copy()
         else:
