@@ -444,7 +444,7 @@ class Plotter:
 
         fig, axs = plt.subplots(
             3+ pca*pca_n_features,
-            figsize=(30 + pca*pca_n_features*10, 10),
+            figsize=(30 , 10 + pca*pca_n_features*10),
             sharex=True,
         )
         axs[0].plot(data_copy[f"A_Score_Global"], c="r", label="anomaly scores")
@@ -472,6 +472,8 @@ class Plotter:
 
             for i in range(pca_n_features):
                 axs[2+i].plot(df_pca[f'PC{i+1}'], c = 'g', label = f'PC{i+1}')
+                ma = df_pca[f'PC{i+1}'].rolling(window=10).mean()
+                axs[2+i].plot(ma, c='b', label = 'moving average' )
         
         fig.legend(prop={"size": 20})
         plt.show()
