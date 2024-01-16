@@ -48,7 +48,7 @@ class Predictor:
         preds = []
         recons = []
         with torch.no_grad():
-                for x, y in tqdm(loader):
+            for x, y in tqdm(loader):
                 x = x.to(device)
                 y = y.to(device)
 
