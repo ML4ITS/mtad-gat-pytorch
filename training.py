@@ -188,6 +188,7 @@ class Trainer:
 
     def evaluate(self, data_loader):
         """Evaluate model
+        Takes all the test sliding windows, forwards them into the models and compute the loss
 
         :param data_loader: data loader of input data
         :return forecasting loss, reconstruction loss, total loss
