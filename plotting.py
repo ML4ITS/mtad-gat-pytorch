@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import cufflinks as cf
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 cf.go_offline()
 
 
@@ -434,15 +436,15 @@ class Plotter:
         fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         py.offline.iplot(fig)
 
-    def plot_global_predictions(self, type="test"):
+    def plot_global_predictions(self, type="test", pca = False, pca_n_features = 3):
         if type == "test":
             data_copy = self.test_output.copy()
         else:
             data_copy = self.train_output.copy()
 
         fig, axs = plt.subplots(
-            3,
-            figsize=(30, 10),
+            3+ pca*pca_n_features,
+            figsize=(30 + pca*pca_n_features*10, 10),
             sharex=True,
         )
         axs[0].plot(data_copy[f"A_Score_Global"], c="r", label="anomaly scores")
@@ -454,6 +456,23 @@ class Plotter:
                 label="actual anomalies",
             )
         axs[0].set_ylim([0, 5 * np.mean(data_copy["Thresh_Global"].values)])
+        if pca:
+
+            anomaly_columns = [c for c in data_copy.columns if c.startswith('A_Score')]
+            anomalies = data_copy[anomaly_columns]
+
+            scaler = StandardScaler()
+            scaled_anomalies = scaler.fit_transform(anomalies)
+
+            pca = PCA(pca_n_features)
+            pca_anomalies = pca.fit_transform(scaled_anomalies)
+
+            columns = [f'PC{i+1}' for i in range(pca_n_features)]
+            df_pca = pd.DataFrame(data=pca_anomalies, columns=columns)
+
+            for i in range(pca_n_features):
+                axs[2+i].plot(df_pca[f'PC{i+1}'], c = 'g', label = f'PC{i+1}')
+        
         fig.legend(prop={"size": 20})
         plt.show()
 

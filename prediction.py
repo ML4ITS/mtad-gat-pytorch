@@ -48,11 +48,11 @@ class Predictor:
         preds = []
         recons = []
         with torch.no_grad():
-            for x, y in tqdm(loader):
+                for x, y in tqdm(loader):
                 x = x.to(device)
                 y = y.to(device)
 
-                y_hat, _, _, _= self.model(x)
+                y_hat, _, mean, log_var= self.model(x)
 
                 # Shifting input to include the observed value (y) when doing the reconstruction
                 recon_x = torch.cat((x[:, 1:, :], y), dim=1)
@@ -71,12 +71,12 @@ class Predictor:
 
         anomaly_scores = np.zeros_like(actual)
         df_dict = {}
-        for i in range(preds.shape[1]):
+        for i in range(preds.shape[1]): #for each predicted (reconstructed) feature
             df_dict[f"Forecast_{i}"] = preds[:, i]
             df_dict[f"Recon_{i}"] = recons[:, i]
             df_dict[f"True_{i}"] = actual[:, i]
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
-                (recons[:, i] - actual[:, i]) ** 2)
+                (recons[:, i] - actual[:, i]) ** 2)# anomaly score of the ith column
 
             if self.scale_scores:
                 q75, q25 = np.percentile(a_score, [75, 25])
@@ -220,3 +220,4 @@ class Predictor:
 
 
         print("-- Done.")
+        return test_pred_df
