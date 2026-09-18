@@ -21,12 +21,19 @@ def get_series_color(y):
 
 
 def get_y_height(y):
+    """
+    Upper limit of the y axis for a series.
+
+    The test data is scaled with the limits of the train data. Thus a few test values can be
+    very much larger than 1. The limit uses a high percentile and not the maximum. If it used
+    the maximum, one outlier would compress the full series into a flat line.
+    """
     if np.average(y) >= 0.95:
         return 1.5
     elif np.average(y) == 0.0:
         return 0.1
     else:
-        return max(y) + 0.1
+        return max(np.percentile(y, 99.5), 1.0) + 0.1
 
 
 class Plotter:
@@ -425,14 +432,16 @@ class Plotter:
 
             annotations.append(
                 dict(
-                    # xref="paper",
+                    # The label is placed in paper coordinates. A shift in pixels would widen the x axis.
+                    xref="paper",
+                    x=0,
                     xanchor="left",
-                    yref=yref,
+                    yref=f"{yref} domain",
+                    y=1,
+                    yanchor="bottom",
                     text=f"<b>{non_constant_pred_cols[i].upper()}</b>",
                     font=dict(size=10),
                     showarrow=False,
-                    yshift=35,
-                    xshift=(-523),
                 )
             )
 
@@ -470,8 +479,14 @@ class Plotter:
             shapes = np.array(shapes)
             shapes = shapes[keep_segments_i].tolist()
 
+        # The height is a function of the number of rows. A constant height gives one very
+        # tall row when the dataset has one feature only, as with MSL and SMAP.
         fig.update_layout(
-            height=1800, width=1200, shapes=shapes, template="simple_white", annotations=annotations, showlegend=False
+            height=max(400, 47 * len(non_constant_pred_cols)),
+            shapes=shapes,
+            template="simple_white",
+            annotations=annotations,
+            showlegend=False,
         )
 
         fig.update_yaxes(ticks="", showticklabels=False, showline=True, mirror=True)
