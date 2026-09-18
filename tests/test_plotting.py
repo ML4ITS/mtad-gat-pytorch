@@ -48,8 +48,8 @@ class TestPlotAnomalySegments:
     def test_the_height_follows_the_number_of_rows(self, smd_result, msl_result):
         """Defect of the past: the height was always 1800 pixels. MSL has one feature only,
         thus its one row was 1800 pixels high."""
-        smd = Plotter(str(smd_result), model_id="").plot_anomaly_segments(type="test")
-        msl = Plotter(str(msl_result), model_id="").plot_anomaly_segments(type="test")
+        smd = Plotter(str(smd_result), model_id="").plot_anomaly_segments(split="test")
+        msl = Plotter(str(msl_result), model_id="").plot_anomaly_segments(split="test")
 
         assert len(smd.data) == 32
         assert len(msl.data) == 1
@@ -57,14 +57,14 @@ class TestPlotAnomalySegments:
         assert msl.layout.height == 400
 
     def test_every_row_has_a_label(self, smd_result):
-        fig = Plotter(str(smd_result), model_id="").plot_anomaly_segments(type="test")
+        fig = Plotter(str(smd_result), model_id="").plot_anomaly_segments(split="test")
 
         assert len(fig.layout.annotations) == len(fig.data)
 
     def test_the_labels_use_paper_coordinates(self, smd_result):
         """Defect of the past: a label moved 523 pixels to the left with the property xshift.
         Plotly then made the x axis two times as wide as the data."""
-        fig = Plotter(str(smd_result), model_id="").plot_anomaly_segments(type="test")
+        fig = Plotter(str(smd_result), model_id="").plot_anomaly_segments(split="test")
 
         for annotation in fig.layout.annotations:
             assert annotation.xref == "paper"
@@ -80,8 +80,8 @@ class TestFigureWidth:
 
         figures = [
             *plotter.plot_feature(feature=0, plot_train=True, start=0, end=500),
-            plotter.plotly_global_predictions(type=split),
-            plotter.plot_anomaly_segments(type=split),
+            plotter.plotly_global_predictions(split=split),
+            plotter.plot_anomaly_segments(split=split),
         ]
 
         for fig in figures:

@@ -332,7 +332,7 @@ class Plotter:
 
         return figures
 
-    def plot_all_features(self, start=None, end=None, type="test"):
+    def plot_all_features(self, start=None, end=None, split: str = "test"):
         """
         Plotting all features, using the following order:
             - forecasting for feature i
@@ -340,7 +340,7 @@ class Plotter:
             - true value for feature i
             - anomaly score (error) for feature i
         """
-        if type == "train":
+        if split == "train":
             data_copy = self.train_output
         else:
             data_copy = self.test_output
@@ -368,12 +368,12 @@ class Plotter:
         fig.tight_layout()
         return fig
 
-    def plot_anomaly_segments(self, type="test", num_aligned_segments=None, show_boring_series=False):
+    def plot_anomaly_segments(self, split: str = "test", num_aligned_segments=None, show_boring_series=False):
         """
         Finds collective anomalies, i.e. feature-wise anomalies that occur at the same time, and visualize them
         """
         is_test = True
-        if type == "train":
+        if split == "train":
             data_copy = self.train_output
             is_test = False
         else:
@@ -492,8 +492,8 @@ class Plotter:
         fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         return fig
 
-    def plot_global_predictions(self, type="test"):
-        if type == "test":
+    def plot_global_predictions(self, split: str = "test"):
+        if split == "test":
             data_copy = self.test_output
         else:
             data_copy = self.train_output
@@ -508,7 +508,7 @@ class Plotter:
         axs[0].plot(data_copy["A_Score_Global"].to_numpy(), c="r", label="anomaly scores")
         axs[0].plot(threshold, linestyle="dashed", c="black", label="threshold")
         axs[1].plot(data_copy["A_Pred_Global"].to_numpy(), label="predicted anomalies", c="orange")
-        if self.labels_available and type == "test":
+        if self.labels_available and split == "test":
             axs[2].plot(
                 data_copy["A_True_Global"].to_numpy(),
                 label="actual anomalies",
@@ -517,9 +517,9 @@ class Plotter:
         fig.legend(prop={"size": 20})
         return fig
 
-    def plotly_global_predictions(self, type="test"):
+    def plotly_global_predictions(self, split: str = "test"):
         is_test = True
-        if type == "train":
+        if split == "train":
             data_copy = self.train_output
             is_test = False
         else:
@@ -537,7 +537,7 @@ class Plotter:
             shapes.extend(shapes2)
 
         layout: dict[str, object] = {
-            "title": f"{type} set | Total error, predicted anomalies in blue, true anomalies in red if available "
+            "title": f"{split} set | Total error, predicted anomalies in blue, true anomalies in red if available "
             f"(making correctly predicted in purple)",
             "shapes": shapes,
             "yaxis": dict(range=[0, y_max]),

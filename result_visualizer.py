@@ -163,13 +163,13 @@ def _(mo):
 
 @app.cell
 def _(mo, plotter, split):
-    mo.ui.plotly(plotter.plotly_global_predictions(type=split.value))
+    mo.ui.plotly(plotter.plotly_global_predictions(split=split.value))
     return
 
 
 @app.cell
 def _(plotter, split):
-    plotter.plot_global_predictions(type=split.value)
+    plotter.plot_global_predictions(split=split.value)
     return
 
 
@@ -195,7 +195,7 @@ def _(mo):
 def _(mo, plotter, show_segments, split):
     mo.stop(not show_segments.value, mo.md("*Enable the checkbox above to render the segment plot.*"))
 
-    mo.ui.plotly(plotter.plot_anomaly_segments(type=split.value, num_aligned_segments=None))
+    mo.ui.plotly(plotter.plot_anomaly_segments(split=split.value, num_aligned_segments=None))
     return
 
 
