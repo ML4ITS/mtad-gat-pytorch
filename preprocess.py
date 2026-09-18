@@ -1,7 +1,6 @@
 from ast import literal_eval
 from csv import reader
 from os import listdir, makedirs, path
-from pickle import dump
 
 import numpy as np
 
@@ -15,8 +14,7 @@ def load_and_save(category, filename, dataset, dataset_folder, output_folder):
         delimiter=",",
     )
     print(dataset, category, filename, temp.shape)
-    with open(path.join(output_folder, dataset + "_" + category + ".pkl"), "wb") as file:
-        dump(temp, file)
+    np.save(path.join(output_folder, dataset + "_" + category + ".npy"), temp)
 
 
 def load_data(dataset):
@@ -72,8 +70,7 @@ def load_data(dataset):
         labels = np.asarray(labels)
         print(dataset, "test_label", labels.shape)
 
-        with open(path.join(output_folder, dataset + "_" + "test_label" + ".pkl"), "wb") as file:
-            dump(labels, file)
+        np.save(path.join(output_folder, dataset + "_" + "test_label" + ".npy"), labels)
 
         def concatenate_and_save(category):
             data = []
@@ -83,8 +80,7 @@ def load_data(dataset):
                 data.extend(temp)
             data = np.asarray(data)
             print(dataset, category, data.shape)
-            with open(path.join(output_folder, dataset + "_" + category + ".pkl"), "wb") as file:
-                dump(data, file)
+            np.save(path.join(output_folder, dataset + "_" + category + ".npy"), data)
 
         for c in ["train", "test"]:
             concatenate_and_save(c)
