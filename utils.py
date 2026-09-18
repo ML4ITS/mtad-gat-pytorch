@@ -1,11 +1,14 @@
 import os
 import pickle
+
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import polars as pl
 import torch
-from sklearn.preprocessing import MinMaxScaler, RobustScaler
+from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
+
+from dataset_info import get_data_dim, get_target_dims  # noqa: F401  re-exported for `from utils import *`
 
 
 def normalize_data(data, scaler=None):
@@ -20,37 +23,6 @@ def normalize_data(data, scaler=None):
     print("Data normalized")
 
     return data, scaler
-
-
-def get_data_dim(dataset):
-    """
-    :param dataset: Name of dataset
-    :return: Number of dimensions in data
-    """
-    if dataset == "SMAP":
-        return 25
-    elif dataset == "MSL":
-        return 55
-    elif str(dataset).startswith("machine"):
-        return 38
-    else:
-        raise ValueError("unknown dataset " + str(dataset))
-
-
-def get_target_dims(dataset):
-    """
-    :param dataset: Name of dataset
-    :return: index of data dimension that should be modeled (forecasted and reconstructed),
-                     returns None if all input dimensions should be modeled
-    """
-    if dataset == "SMAP":
-        return [0]
-    elif dataset == "MSL":
-        return [0]
-    elif dataset == "SMD":
-        return None
-    else:
-        raise ValueError("unknown dataset " + str(dataset))
 
 
 def get_data(dataset, max_train_size=None, max_test_size=None,
@@ -89,7 +61,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
         test_data = None
     try:
         f = open(os.path.join(prefix, dataset + "_test_label.pkl"), "rb")
-        test_label = pickle.load(f).reshape((-1))[test_start:test_end]
+        test_label = pickle.load(f).reshape(-1)[test_start:test_end]
         f.close()
     except (KeyError, FileNotFoundError):
         test_label = None
@@ -189,24 +161,6 @@ def load(model, PATH, device="cpu"):
     model.load_state_dict(torch.load(PATH, map_location=device))
 
 
-def get_series_color(y):
-    if np.average(y) >= 0.95:
-        return "black"
-    elif np.average(y) == 0.0:
-        return "black"
-    else:
-        return "black"
-
-
-def get_y_height(y):
-    if np.average(y) >= 0.95:
-        return 1.5
-    elif np.average(y) == 0.0:
-        return 0.1
-    else:
-        return max(y) + 0.1
-
-
 def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     """
     Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
@@ -222,18 +176,22 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
 
     adjusted_scores = scores.copy()
     if is_train:
-        md = pd.read_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
+        md = pl.scan_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
     else:
-        md = pd.read_csv('./datasets/data/labeled_anomalies.csv')
-        md = md[md['spacecraft'] == dataset.upper()]
+        md = pl.scan_csv('./datasets/data/labeled_anomalies.csv').filter(pl.col('spacecraft') == dataset.upper())
 
-    md = md[md['chan_id'] != 'P-2']
-
-    # Sort values by channel
-    md = md.sort_values(by=['chan_id'])
+    # Drop channel P-2 and sort values by channel
+    num_values = (
+        md.filter(pl.col('chan_id') != 'P-2')
+        .sort('chan_id')
+        .select('num_values')
+        .collect()
+        .to_series()
+        .to_numpy()
+    )
 
     # Getting the cumulative start index for each channel
-    sep_cuma = np.cumsum(md['num_values'].values) - lookback
+    sep_cuma = np.cumsum(num_values) - lookback
     sep_cuma = sep_cuma[:-1]
     buffer = np.arange(1, 20)
     i_remov = np.sort(np.concatenate((sep_cuma, np.array([i+buffer for i in sep_cuma]).flatten(),
@@ -244,7 +202,7 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
         adjusted_scores[i_remov] = 0
 
     # Normalize each concatenated part individually
-    sep_cuma = np.cumsum(md['num_values'].values) - lookback
+    sep_cuma = np.cumsum(num_values) - lookback
     s = [0] + sep_cuma.tolist()
     for c_start, c_end in [(s[i], s[i+1]) for i in range(len(s)-1)]:
         e_s = adjusted_scores[c_start: c_end+1]
