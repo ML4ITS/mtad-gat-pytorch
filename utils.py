@@ -9,10 +9,10 @@ import torch
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
-from dataset_info import get_data_dim, get_target_dims  # noqa: F401  re-exported for `from utils import *`
+from dataset_info import get_data_dim
 
 
-def normalize_data(data, scaler=None):
+def normalize_data(data: np.ndarray, scaler=None) -> tuple[np.ndarray, MinMaxScaler]:
     data = np.asarray(data, dtype=np.float32)
     if np.any(sum(np.isnan(data))):
         data = np.nan_to_num(data)
@@ -70,10 +70,12 @@ def get_data(
 
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
-        test_data, _ = normalize_data(test_data, scaler=scaler)
+        # The test data is absent if the pickle file of the test data is absent.
+        if test_data is not None:
+            test_data, _ = normalize_data(test_data, scaler=scaler)
 
     print("train set shape: ", train_data.shape)
-    print("test set shape: ", test_data.shape)
+    print("test set shape: ", None if test_data is None else test_data.shape)
     print("test set label shape: ", None if test_label is None else test_label.shape)
     return (train_data, None), (test_data, test_label)
 
@@ -124,7 +126,7 @@ def create_data_loaders(train_dataset, batch_size, val_split=0.1, shuffle=True, 
     return train_loader, val_loader, test_loader
 
 
-def plot_losses(losses, save_path="", plot=True):
+def plot_losses(losses: dict, save_path: str = "", plot: bool = True) -> None:
     """
     :param losses: dict with losses
     :param save_path: path where plots get saved
@@ -155,7 +157,7 @@ def plot_losses(losses, save_path="", plot=True):
     plt.close()
 
 
-def set_seed(seed):
+def set_seed(seed: int | None) -> None:
     """
     Set the seed of the random number generators of python, numpy and torch.
 
@@ -172,7 +174,7 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
 
 
-def get_device(use_gpu=True):
+def get_device(use_gpu: bool = True) -> str:
     """
     Select the device to run on: CUDA, Apple Silicon (MPS), or the CPU.
 
@@ -188,7 +190,7 @@ def get_device(use_gpu=True):
     return "cpu"
 
 
-def load(model, PATH, device="cpu"):
+def load(model: torch.nn.Module, PATH: str, device: str = "cpu") -> None:
     """
     Loads the model's parameters from the path mentioned
     :param PATH: Should contain pickle file
@@ -196,7 +198,7 @@ def load(model, PATH, device="cpu"):
     model.load_state_dict(torch.load(PATH, map_location=device))
 
 
-def adjust_anomaly_scores(scores, dataset, is_train, lookback):
+def adjust_anomaly_scores(scores: np.ndarray, dataset: str, is_train: bool, lookback: int) -> np.ndarray:
     """
     Method for MSL and SMAP where channels have been concatenated as part of the preprocessing
     :param scores: anomaly_scores

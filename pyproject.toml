@@ -45,10 +45,6 @@ extend-exclude = ["spot.py"]  # vendored from OmniAnomaly, kept close to upstrea
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I", "UP"]
-ignore = [
-    "F403",  # the training scripts rely on `from utils import *`
-    "F405",
-]
 
 [tool.pyrefly]
 # The tests hold the loose types of plotly, such as Figure.data. Those give errors that

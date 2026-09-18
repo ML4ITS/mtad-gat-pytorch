@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 from dataset_info import get_data_dim
 
 
-def get_series_color(y):
+def get_series_color(y: np.ndarray) -> str:
     if np.average(y) >= 0.95:
         return "black"
     elif np.average(y) == 0.0:
@@ -20,7 +20,7 @@ def get_series_color(y):
         return "black"
 
 
-def get_y_height(y):
+def get_y_height(y: np.ndarray) -> float:
     """
     Upper limit of the y axis for a series.
 
@@ -46,11 +46,12 @@ class Plotter:
     so the caller decides how to render it.
     """
 
-    def __init__(self, result_path, model_id="-1"):
+    def __init__(self, result_path: str, model_id: str = "-1"):
         self.result_path = result_path
         self.model_id = model_id
         self.labels_available = True
-        self.pred_cols = None
+        # An empty list means that the name of the dataset gives no features.
+        self.pred_cols: list[str] = []
         self.train_output, self.test_output = self._load_results()
         # Polars has no index, so the row number is materialized as an explicit column
         self.train_output = self.train_output.with_columns(timestamp=pl.int_range(pl.len(), dtype=pl.Int64))
@@ -65,7 +66,7 @@ class Plotter:
         elif "SMAP" in self.result_path or "MSL" in self.result_path:
             self.pred_cols = ["feat_1"]
 
-    def _load_results(self):
+    def _load_results(self) -> tuple[pl.DataFrame, pl.DataFrame]:
         if self.model_id.startswith("-"):
             dir_content = os.listdir(self.result_path)
             datetimes = [
@@ -97,7 +98,7 @@ class Plotter:
 
         return train_output, test_output
 
-    def result_summary(self):
+    def result_summary(self) -> None:
         path = f"{self.result_path}/summary.txt"
         if not os.path.exists(path):
             print(f"Folder {self.result_path} do not have a summary.txt file")
@@ -172,7 +173,7 @@ class Plotter:
         return shapes
 
     @staticmethod
-    def get_anomaly_sequences(values):
+    def get_anomaly_sequences(values: np.ndarray) -> list[list[int]]:
         splits = np.where(values[1:] != values[:-1])[0] + 1
         if values[0] == 1:
             splits = np.insert(splits, 0, 0)
@@ -258,14 +259,14 @@ class Plotter:
             )
 
             data_type = "Test data" if is_test else "Train data"
-            y_layout = {
-                "title": f"{data_type} | Forecast & reconstruction vs true value for {self.pred_cols[i] if self.pred_cols is not None else ''} ",
+            y_layout: dict[str, object] = {
+                "title": f"{data_type} | Forecast & reconstruction vs true value for {self.pred_cols[i] if self.pred_cols else ''} ",
                 "showlegend": True,
                 "height": 400,
             }
 
-            e_layout = {
-                "title": f"{data_type} | Error for {self.pred_cols[i] if self.pred_cols is not None else ''}",
+            e_layout: dict[str, object] = {
+                "title": f"{data_type} | Error for {self.pred_cols[i] if self.pred_cols else ''}",
                 # "yaxis": dict(range=[0, e_max]),
                 "height": 400,
             }
@@ -535,7 +536,7 @@ class Plotter:
             shapes2 = self.create_shapes(true_anomaly_sequences, "true", y_min, y_max, None, is_test=is_test)
             shapes.extend(shapes2)
 
-        layout = {
+        layout: dict[str, object] = {
             "title": f"{type} set | Total error, predicted anomalies in blue, true anomalies in red if available "
             f"(making correctly predicted in purple)",
             "shapes": shapes,

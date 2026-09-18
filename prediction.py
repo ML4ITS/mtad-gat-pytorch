@@ -1,9 +1,12 @@
 import json
 
+import numpy as np
+import polars as pl
+import torch
 from tqdm import tqdm
 
-from eval_methods import *
-from utils import *
+from eval_methods import adjust_predicts, bf_search, epsilon_eval, find_epsilon, pot_eval
+from utils import SlidingWindowDataset, adjust_anomaly_scores, get_device
 
 
 class Predictor:
@@ -179,14 +182,11 @@ class Predictor:
         print(f"Results using peak-over-threshold method:\n {p_eval}")
         print(f"Results using best f1 score search:\n {bf_eval}")
 
-        for k, v in e_eval.items():
-            if not isinstance(e_eval[k], list):
-                e_eval[k] = float(v)
-        for k, v in p_eval.items():
-            if not isinstance(p_eval[k], list):
-                p_eval[k] = float(v)
-        for k, v in bf_eval.items():
-            bf_eval[k] = float(v)
+        # The summary file holds numbers, thus each value that is not a list becomes a float.
+        for result in [e_eval, p_eval, bf_eval]:
+            for k, v in result.items():
+                if v is not None and not isinstance(v, list):
+                    result[k] = float(v)
 
         # Save
         summary = {"epsilon_result": e_eval, "pot_result": p_eval, "bf_result": bf_eval}
