@@ -248,7 +248,7 @@ class Trainer:
         Loads the model's parameters from the path mentioned
         :param PATH: Should contain pickle file
         """
-        self.model.load_state_dict(torch.load(PATH, map_location=self.device))
+        self.model.load_state_dict(torch.load(PATH, map_location=self.device, weights_only=True))
 
     def write_loss(self, epoch):
         for key, value in self.losses.items():

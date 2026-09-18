@@ -215,7 +215,8 @@ def load(model: torch.nn.Module, PATH: str, device: str = "cpu") -> None:
     Loads the model's parameters from the path mentioned
     :param PATH: Should contain pickle file
     """
-    model.load_state_dict(torch.load(PATH, map_location=device))
+    # weights_only=True stops the reading of any object that is not a tensor.
+    model.load_state_dict(torch.load(PATH, map_location=device, weights_only=True))
 
 
 def adjust_anomaly_scores(scores: np.ndarray, dataset: str, is_train: bool, lookback: int) -> np.ndarray:
