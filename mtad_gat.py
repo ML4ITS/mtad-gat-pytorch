@@ -4,10 +4,10 @@ import torch.nn as nn
 from modules import (
     ConvLayer,
     FeatureAttentionLayer,
-    TemporalAttentionLayer,
-    GRULayer,
     Forecasting_Model,
+    GRULayer,
     ReconstructionModel,
+    TemporalAttentionLayer,
 )
 
 
@@ -52,7 +52,7 @@ class MTAD_GAT(nn.Module):
         dropout=0.2,
         alpha=0.2
     ):
-        super(MTAD_GAT, self).__init__()
+        super().__init__()
 
         self.conv = ConvLayer(n_features, kernel_size)
         self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, feat_gat_embed_dim, use_gatv2)

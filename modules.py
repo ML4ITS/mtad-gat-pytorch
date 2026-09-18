@@ -10,7 +10,7 @@ class ConvLayer(nn.Module):
     """
 
     def __init__(self, n_features, kernel_size=7):
-        super(ConvLayer, self).__init__()
+        super().__init__()
         self.padding = nn.ConstantPad1d((kernel_size - 1) // 2, 0.0)
         self.conv = nn.Conv1d(in_channels=n_features, out_channels=n_features, kernel_size=kernel_size)
         self.relu = nn.ReLU()
@@ -34,7 +34,7 @@ class FeatureAttentionLayer(nn.Module):
     """
 
     def __init__(self, n_features, window_size, dropout, alpha, embed_dim=None, use_gatv2=True, use_bias=True):
-        super(FeatureAttentionLayer, self).__init__()
+        super().__init__()
         self.n_features = n_features
         self.window_size = window_size
         self.dropout = dropout
@@ -135,7 +135,7 @@ class TemporalAttentionLayer(nn.Module):
     """
 
     def __init__(self, n_features, window_size, dropout, alpha, embed_dim=None, use_gatv2=True, use_bias=True):
-        super(TemporalAttentionLayer, self).__init__()
+        super().__init__()
         self.n_features = n_features
         self.window_size = window_size
         self.dropout = dropout
@@ -226,7 +226,7 @@ class GRULayer(nn.Module):
     """
 
     def __init__(self, in_dim, hid_dim, n_layers, dropout):
-        super(GRULayer, self).__init__()
+        super().__init__()
         self.hid_dim = hid_dim
         self.n_layers = n_layers
         self.dropout = 0.0 if n_layers == 1 else dropout
@@ -247,7 +247,7 @@ class RNNDecoder(nn.Module):
     """
 
     def __init__(self, in_dim, hid_dim, n_layers, dropout):
-        super(RNNDecoder, self).__init__()
+        super().__init__()
         self.in_dim = in_dim
         self.dropout = 0.0 if n_layers == 1 else dropout
         self.rnn = nn.GRU(in_dim, hid_dim, n_layers, batch_first=True, dropout=self.dropout)
@@ -268,7 +268,7 @@ class ReconstructionModel(nn.Module):
     """
 
     def __init__(self, window_size, in_dim, hid_dim, out_dim, n_layers, dropout):
-        super(ReconstructionModel, self).__init__()
+        super().__init__()
         self.window_size = window_size
         self.decoder = RNNDecoder(in_dim, hid_dim, n_layers, dropout)
         self.fc = nn.Linear(hid_dim, out_dim)
@@ -293,7 +293,7 @@ class Forecasting_Model(nn.Module):
     """
 
     def __init__(self, in_dim, hid_dim, out_dim, n_layers, dropout):
-        super(Forecasting_Model, self).__init__()
+        super().__init__()
         layers = [nn.Linear(in_dim, hid_dim)]
         for _ in range(n_layers - 1):
             layers.append(nn.Linear(hid_dim, hid_dim))

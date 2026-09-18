@@ -1,13 +1,13 @@
 import json
 from datetime import datetime
+
 import torch.nn as nn
 
 from args import get_parser
-from utils import *
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
 from training import Trainer
-
+from utils import *
 
 if __name__ == "__main__":
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     if target_dims is None:
         out_dim = n_features
         print(f"Will forecast and reconstruct all {n_features} input features")
-    elif type(target_dims) == int:
+    elif isinstance(target_dims, int):
         print(f"Will forecast and reconstruct input feature: {target_dims}")
         out_dim = 1
     else:

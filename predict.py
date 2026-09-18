@@ -1,11 +1,11 @@
 import argparse
-import json
 import datetime
+import json
 
 from args import get_parser, str2bool
-from utils import *
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
+from utils import *
 
 if __name__ == "__main__":
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     model_args, unknown = model_parser.parse_known_args()
     model_args_path = f"{model_path}/config.txt"
 
-    with open(model_args_path, "r") as f:
+    with open(model_args_path) as f:
         model_args.__dict__ = json.load(f)
     window_size = model_args.lookback
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     target_dims = get_target_dims(args.dataset)
     if target_dims is None:
         out_dim = n_features
-    elif type(target_dims) == int:
+    elif isinstance(target_dims, int):
         out_dim = 1
     else:
         out_dim = len(target_dims)

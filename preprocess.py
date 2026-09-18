@@ -2,6 +2,7 @@ from ast import literal_eval
 from csv import reader
 from os import listdir, makedirs, path
 from pickle import dump
+
 import numpy as np
 
 from args import get_parser
@@ -54,7 +55,7 @@ def load_data(dataset):
         dataset_folder = "datasets/data"
         output_folder = "datasets/data/processed"
         makedirs(output_folder, exist_ok=True)
-        with open(path.join(dataset_folder, "labeled_anomalies.csv"), "r") as file:
+        with open(path.join(dataset_folder, "labeled_anomalies.csv")) as file:
             csv_reader = reader(file, delimiter=",")
             res = [row for row in csv_reader][1:]
         res = sorted(res, key=lambda k: k[0])

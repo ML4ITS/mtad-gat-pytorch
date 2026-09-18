@@ -1,5 +1,6 @@
 import os
 import time
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -150,7 +151,7 @@ class Trainer:
                 self.losses["val_total"].append(total_val_loss)
 
                 if total_val_loss <= self.losses["val_total"][-1]:
-                    self.save(f"model.pt")
+                    self.save("model.pt")
 
             if self.log_tensorboard:
                 self.write_loss(epoch)
@@ -177,7 +178,7 @@ class Trainer:
                 print(s)
 
         if val_loader is None:
-            self.save(f"model.pt")
+            self.save("model.pt")
 
         train_time = int(time.time() - train_start)
         if self.log_tensorboard:

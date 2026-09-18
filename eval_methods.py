@@ -1,6 +1,7 @@
-import numpy as np
 import more_itertools as mit
-from spot import SPOT, dSPOT
+import numpy as np
+
+from spot import SPOT
 
 
 def adjust_predicts(score, label, threshold, pred=None, calc_latency=False):
@@ -123,7 +124,7 @@ def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose
     Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
     """
 
-    print(f"Finding best f1-score by searching for threshold..")
+    print("Finding best f1-score by searching for threshold..")
     if step_num is None or end is None:
         end = start
         step_num = 1
@@ -213,7 +214,7 @@ def find_epsilon(errors, reg_level=1):
         i_anom = np.sort(np.unique(i_anom))
 
         if len(i_anom) > 0:
-            groups = [list(group) for group in mit.consecutive_groups(i_anom)]
+            groups = [list(group) for group in mit.consecutive_groups(i_anom)]  # noqa: F841  kept from upstream
             # E_seq = [(g[0], g[-1]) for g in groups if not g[0] == g[-1]]
 
             mean_perc_decrease = (mean_e_s - np.mean(pruned_e_s)) / mean_e_s
