@@ -5,7 +5,7 @@ code can be imported on its own.
 """
 
 
-def get_data_dim(dataset):
+def get_data_dim(dataset: str) -> int:
     """
     :param dataset: Name of dataset
     :return: Number of dimensions in data
@@ -20,7 +20,7 @@ def get_data_dim(dataset):
         raise ValueError("unknown dataset " + str(dataset))
 
 
-def get_target_dims(dataset):
+def get_target_dims(dataset: str) -> list[int] | None:
     """
     :param dataset: Name of dataset
     :return: index of data dimension that should be modeled (forecasted and reconstructed),

@@ -97,7 +97,7 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99, dynamic=False):
     print(len(ret["alarms"]))
     print(len(ret["thresholds"]))
 
-    pot_th = np.mean(ret["thresholds"])
+    pot_th = float(np.mean(np.asarray(ret["thresholds"], dtype=float)))
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
     if label is not None:
         p_t = calc_point2point(pred, label)
@@ -229,6 +229,8 @@ def find_epsilon(errors, reg_level=1):
                 denom = len(i_anom)
             elif reg_level == 2:
                 denom = len(i_anom) ** 2
+            else:
+                raise ValueError(f"unknown reg_level {reg_level}")
 
             score = (mean_perc_decrease + sd_perc_decrease) / denom
 
