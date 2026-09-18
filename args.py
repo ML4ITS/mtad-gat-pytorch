@@ -48,6 +48,7 @@ def get_parser():
     parser.add_argument("--init_lr", type=float, default=1e-3)
     parser.add_argument("--shuffle_dataset", type=str2bool, default=True)
     parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--seed", type=int, default=42, help="Seed of the random number generators")
     parser.add_argument(
         "--use_gpu",
         "--use_cuda",

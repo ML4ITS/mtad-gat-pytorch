@@ -29,6 +29,16 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+# CI runs on linux, where the default wheel of torch carries the CUDA libraries.
+# The CPU wheel is much smaller. macOS keeps the default wheel, which has MPS.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
 [tool.ruff]
 line-length = 120
 extend-exclude = ["spot.py"]  # vendored from OmniAnomaly, kept close to upstream
@@ -41,4 +51,6 @@ ignore = [
 ]
 
 [tool.pyrefly]
-project-excludes = ["spot.py", ".venv/**"]
+# The tests hold the loose types of plotly, such as Figure.data. Those give errors that
+# no annotation in this project can correct.
+project-excludes = ["spot.py", "tests/**", ".venv/**"]

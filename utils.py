@@ -1,5 +1,6 @@
 import os
 import pickle
+import random
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -152,6 +153,23 @@ def plot_losses(losses, save_path="", plot=True):
     if plot:
         plt.show()
     plt.close()
+
+
+def set_seed(seed):
+    """
+    Set the seed of the random number generators of python, numpy and torch.
+
+    The data loaders select the windows for the train set and the validation set at random.
+    A seed makes two runs of the same command give the same model.
+
+    :param seed: the seed, or None to keep the random behaviour
+    """
+    if seed is None:
+        return
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
 def get_device(use_gpu=True):
