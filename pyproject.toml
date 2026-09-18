@@ -51,4 +51,6 @@ ignore = [
 ]
 
 [tool.pyrefly]
-project-excludes = ["spot.py", ".venv/**"]
+# The tests hold the loose types of plotly, such as Figure.data. Those give errors that
+# no annotation in this project can correct.
+project-excludes = ["spot.py", "tests/**", ".venv/**"]

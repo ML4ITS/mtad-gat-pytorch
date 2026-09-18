@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      # --locked fails if uv.lock does not match pyproject.toml.
+      - name: Install the dependencies
+        run: uv sync --locked
+
+      - name: Check the code with ruff
+        run: uv run ruff check --output-format=github
+
+      - name: Check the format with ruff
+        run: uv run ruff format --check
+
+      - name: Run the tests
+        run: uv run pytest
+
+      - name: Check the marimo notebook
+        run: uv run marimo check result_visualizer.py
+
+      # pyrefly still reports errors in the code of the original repository.
+      # This step becomes a condition after the branch that adds the type annotations.
+      - name: Check the types with pyrefly
+        run: uv run pyrefly check
+        continue-on-error: true
