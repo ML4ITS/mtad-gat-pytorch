@@ -64,6 +64,24 @@ class TestAdjustAnomalyScores:
         assert result.min() == pytest.approx(0.0)
         assert result.max() == pytest.approx(1.0)
 
+    @pytest.mark.parametrize("length", [1000, 58_216])
+    def test_it_accepts_scores_that_stop_before_the_last_channel(self, length):
+        """The user can limit the size of the data with max_test_size. The scores then stop
+        in the middle of the channels, and the last parts are empty."""
+        scores = np.random.default_rng(2).uniform(1.0, 2.0, length)
+
+        result = adjust_anomaly_scores(scores.copy(), "MSL", is_train=True, lookback=100)
+
+        assert result.shape == scores.shape
+        assert np.isfinite(result).all()
+
+    def test_it_accepts_a_constant_series(self):
+        scores = np.ones(self.LENGTHS[("MSL", True)])
+
+        result = adjust_anomaly_scores(scores.copy(), "MSL", is_train=True, lookback=100)
+
+        assert np.isfinite(result).all()
+
     def test_it_does_not_change_the_input(self):
         scores = np.random.default_rng(1).uniform(1.0, 2.0, self.LENGTHS[("MSL", True)])
         before = scores.copy()
