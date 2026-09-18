@@ -37,7 +37,15 @@ cd data && wget https://raw.githubusercontent.com/khundman/telemanom/master/labe
 rm -rf 2018-05-19_15.00.10 && cd .. && cd ..
 
 ```
-This downloads the MSL and SMAP datasets. The SMD dataset is already in repo. 
+> :warning: **The download of the MSL and SMAP data does not work.** The address
+> `s3-us-west-2.amazonaws.com/telemanom/data.zip` gives the answer HTTP 403, because the
+> bucket is not public now. Get the data from
+> [TelemAnom](https://github.com/khundman/telemanom) or
+> [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly), and put the files in
+> `datasets/data`. The file `labeled_anomalies.csv` and the two files with the metadata are
+> already in this repository.
+
+The SMD dataset is in this repository, thus SMD works without a download.
 We refer to [TelemAnom](https://github.com/khundman/telemanom) and [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for detailed information regarding these three datasets. 
 
 This project uses [uv](https://docs.astral.sh/uv/). Install dependencies:
