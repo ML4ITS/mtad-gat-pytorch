@@ -45,9 +45,7 @@ def _(mo):
 
 @app.cell
 def _(Path, mo):
-    result_dirs = sorted(
-        {str(p.parent) for p in Path("output").rglob("test_output.parquet")}
-    )
+    result_dirs = sorted({str(p.parent) for p in Path("output").rglob("test_output.parquet")})
 
     result_dir = mo.ui.dropdown(
         options=result_dirs,

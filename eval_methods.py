@@ -199,7 +199,9 @@ def find_epsilon(errors, reg_level=1):
         epsilon = mean_e_s + sd_e_s * z
         pruned_e_s = e_s[e_s < epsilon]
 
-        i_anom = np.argwhere(e_s >= epsilon).reshape(-1,)
+        i_anom = np.argwhere(e_s >= epsilon).reshape(
+            -1,
+        )
         buffer = np.arange(1, 50)
         i_anom = np.sort(
             np.concatenate(

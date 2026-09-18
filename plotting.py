@@ -30,7 +30,6 @@ def get_y_height(y):
 
 
 class Plotter:
-
     """
     Class for visualizing results of anomaly detection.
     Includes visualization of forecasts, reconstructions, anomaly scores, predicted and actual anomalies
@@ -40,7 +39,7 @@ class Plotter:
     so the caller decides how to render it.
     """
 
-    def __init__(self, result_path, model_id='-1'):
+    def __init__(self, result_path, model_id="-1"):
         self.result_path = result_path
         self.model_id = model_id
         self.labels_available = True
@@ -60,13 +59,16 @@ class Plotter:
             self.pred_cols = ["feat_1"]
 
     def _load_results(self):
-        if self.model_id.startswith('-'):
+        if self.model_id.startswith("-"):
             dir_content = os.listdir(self.result_path)
-            datetimes = [datetime.strptime(subf, '%d%m%Y_%H%M%S') for subf in dir_content if os.path.isdir(f"{self.result_path}/{subf}")
-                          and subf not in ['logs']]
+            datetimes = [
+                datetime.strptime(subf, "%d%m%Y_%H%M%S")
+                for subf in dir_content
+                if os.path.isdir(f"{self.result_path}/{subf}") and subf not in ["logs"]
+            ]
             datetimes.sort()
-            model_id = datetimes[int(self.model_id)].strftime('%d%m%Y_%H%M%S')
-            self.result_path = f'{self.result_path}/{model_id}'
+            model_id = datetimes[int(self.model_id)].strftime("%d%m%Y_%H%M%S")
+            self.result_path = f"{self.result_path}/{model_id}"
 
         print(f"Loading results of {self.result_path}")
         train_output = pl.read_parquet(f"{self.result_path}/train_output.parquet")
@@ -74,16 +76,16 @@ class Plotter:
         test_output = pl.read_parquet(f"{self.result_path}/test_output.parquet")
 
         # Because for SMAP and MSL only one feature is predicted
-        if 'SMAP' in self.result_path or 'MSL' in self.result_path:
+        if "SMAP" in self.result_path or "MSL" in self.result_path:
             train_output = train_output.with_columns(
-                A_Pred_0=pl.col('A_Pred_Global'),
-                A_Score_0=pl.col('A_Score_Global'),
-                Thresh_0=pl.col('Thresh_Global'),
+                A_Pred_0=pl.col("A_Pred_Global"),
+                A_Score_0=pl.col("A_Score_Global"),
+                Thresh_0=pl.col("Thresh_Global"),
             )
             test_output = test_output.with_columns(
-                A_Pred_0=pl.col('A_Pred_Global'),
-                A_Score_0=pl.col('A_Score_Global'),
-                Thresh_0=pl.col('Thresh_Global'),
+                A_Pred_0=pl.col("A_Pred_Global"),
+                A_Score_0=pl.col("A_Score_Global"),
+                Thresh_0=pl.col("Thresh_Global"),
             )
 
         return train_output, test_output
@@ -100,12 +102,18 @@ class Plotter:
                 epsilon_result = result_dict["epsilon_result"]
                 pot_result = result_dict["pot_result"]
                 bf_results = result_dict["bf_result"]
-                print('Epsilon:')
-                print(f'\t\tprecision: {epsilon_result["precision"]:.2f}, recall: {epsilon_result["recall"]:.2f}, F1: {epsilon_result["f1"]:.2f}')
-                print('POT:')
-                print(f'\t\tprecision: {pot_result["precision"]:.2f}, recall: {pot_result["recall"]:.2f}, F1: {pot_result["f1"]:.2f}')
-                print('Brute-Force:')
-                print(f'\t\tprecision: {bf_results["precision"]:.2f}, recall: {bf_results["recall"]:.2f}, F1: {bf_results["f1"]:.2f}')
+                print("Epsilon:")
+                print(
+                    f"\t\tprecision: {epsilon_result['precision']:.2f}, recall: {epsilon_result['recall']:.2f}, F1: {epsilon_result['f1']:.2f}"
+                )
+                print("POT:")
+                print(
+                    f"\t\tprecision: {pot_result['precision']:.2f}, recall: {pot_result['recall']:.2f}, F1: {pot_result['f1']:.2f}"
+                )
+                print("Brute-Force:")
+                print(
+                    f"\t\tprecision: {bf_results['precision']:.2f}, recall: {bf_results['recall']:.2f}, F1: {bf_results['f1']:.2f}"
+                )
 
         except FileNotFoundError as e:
             print(e)
@@ -217,20 +225,30 @@ class Plotter:
             }
 
             if is_test and start is not None:
-                anomaly_sequences['pred'] = [[s+start, e+start] for [s, e] in anomaly_sequences['pred']]
-                anomaly_sequences['true'] = [[s+start, e+start] for [s, e] in anomaly_sequences['true']]
+                anomaly_sequences["pred"] = [[s + start, e + start] for [s, e] in anomaly_sequences["pred"]]
+                anomaly_sequences["true"] = [[s + start, e + start] for [s, e] in anomaly_sequences["true"]]
 
             y_min = 1.1 * plot_values["y_true"].min()
             y_max = 1.1 * plot_values["y_true"].max()
             e_max = 1.5 * plot_values["errors"].max()
 
-            y_shapes = self.create_shapes(anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test)
-            e_shapes = self.create_shapes(anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test)
-            if self.labels_available and ('SMAP' in self.result_path or 'MSL' in self.result_path):
-                y_shapes += self.create_shapes(anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test)
-                e_shapes += self.create_shapes(anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test)
+            y_shapes = self.create_shapes(
+                anomaly_sequences["pred"], "predicted", y_min, y_max, plot_values, is_test=is_test
+            )
+            e_shapes = self.create_shapes(
+                anomaly_sequences["pred"], "predicted", 0, e_max, plot_values, is_test=is_test
+            )
+            if self.labels_available and ("SMAP" in self.result_path or "MSL" in self.result_path):
+                y_shapes += self.create_shapes(
+                    anomaly_sequences["true"], "true", y_min, y_max, plot_values, is_test=is_test
+                )
+                e_shapes += self.create_shapes(
+                    anomaly_sequences["true"], "true", 0, e_max, plot_values, is_test=is_test
+                )
 
-            timestamps = plot_values["timestamp"].reshape(-1,)
+            timestamps = plot_values["timestamp"].reshape(
+                -1,
+            )
 
             data_type = "Test data" if is_test else "Train data"
             y_layout = {
@@ -242,7 +260,7 @@ class Plotter:
 
             e_layout = {
                 "title": f"{data_type} | Error for {self.pred_cols[i] if self.pred_cols is not None else ''}",
-                #"yaxis": dict(range=[0, e_max]),
+                # "yaxis": dict(range=[0, e_max]),
                 "height": 400,
                 "width": 1100,
             }
@@ -254,22 +272,31 @@ class Plotter:
             lines = [
                 go.Scatter(
                     x=timestamps,
-                    y=plot_values["y_true"].reshape(-1,),
+                    y=plot_values["y_true"].reshape(
+                        -1,
+                    ),
                     line_color="rgb(0, 204, 150, 0.5)",
                     name="y_true",
-                    line=dict(width=2)),
+                    line=dict(width=2),
+                ),
                 go.Scatter(
                     x=timestamps,
-                    y=plot_values["y_forecast"].reshape(-1,),
+                    y=plot_values["y_forecast"].reshape(
+                        -1,
+                    ),
                     line_color="rgb(255, 127, 14, 1)",
                     name="y_forecast",
-                    line=dict(width=2)),
+                    line=dict(width=2),
+                ),
                 go.Scatter(
                     x=timestamps,
-                    y=plot_values["y_recon"].reshape(-1,),
+                    y=plot_values["y_recon"].reshape(
+                        -1,
+                    ),
                     line_color="rgb(31, 119, 180, 1)",
                     name="y_recon",
-                    line=dict(width=2)),
+                    line=dict(width=2),
+                ),
             ]
 
             figures.append(go.Figure(data=lines, layout=y_layout))
@@ -277,16 +304,22 @@ class Plotter:
             e_lines = [
                 go.Scatter(
                     x=timestamps,
-                    y=plot_values["errors"].reshape(-1,),
+                    y=plot_values["errors"].reshape(
+                        -1,
+                    ),
                     name="Error",
-                    line=dict(color="red", width=1))]
+                    line=dict(color="red", width=1),
+                )
+            ]
             if plot_feature_anom:
                 e_lines.append(
                     go.Scatter(
                         x=timestamps,
                         y=plot_values["threshold"],
                         name="Threshold",
-                        line=dict(color="black", width=1, dash="dash")))
+                        line=dict(color="black", width=1, dash="dash"),
+                    )
+                )
 
             if plot_errors:
                 figures.append(go.Figure(data=e_lines, layout=e_layout))
@@ -306,8 +339,8 @@ class Plotter:
         else:
             data_copy = self.test_output
 
-        data_copy = data_copy.drop('timestamp', 'A_Score_Global', 'Thresh_Global')
-        cols = [c for c in data_copy.columns if not (c.startswith('Thresh_') or c.startswith('A_Pred_'))]
+        data_copy = data_copy.drop("timestamp", "A_Score_Global", "Thresh_Global")
+        cols = [c for c in data_copy.columns if not (c.startswith("Thresh_") or c.startswith("A_Pred_"))]
         data_copy = data_copy.select(cols)
 
         if start is not None and end is not None:
@@ -438,12 +471,8 @@ class Plotter:
             shapes = shapes[keep_segments_i].tolist()
 
         fig.update_layout(
-            height=1800,
-            width=1200,
-            shapes=shapes,
-            template="simple_white",
-            annotations=annotations,
-            showlegend=False)
+            height=1800, width=1200, shapes=shapes, template="simple_white", annotations=annotations, showlegend=False
+        )
 
         fig.update_yaxes(ticks="", showticklabels=False, showline=True, mirror=True)
         fig.update_xaxes(ticks="", showticklabels=False, showline=True, mirror=True)
@@ -483,9 +512,9 @@ class Plotter:
 
         tot_anomaly_scores = data_copy["A_Score_Global"].to_numpy()
         pred_anomaly_sequences = self.get_anomaly_sequences(data_copy["A_Pred_Global"].to_numpy())
-        threshold = data_copy['Thresh_Global'].to_numpy()
+        threshold = data_copy["Thresh_Global"].to_numpy()
         y_min = -0.1
-        y_max = 5 * np.mean(threshold) # np.max(tot_anomaly_scores)
+        y_max = 5 * np.mean(threshold)  # np.max(tot_anomaly_scores)
         shapes = self.create_shapes(pred_anomaly_sequences, "pred", y_min, y_max, None, is_test=is_test)
         if self.labels_available and is_test:
             true_anomaly_sequences = self.get_anomaly_sequences(data_copy["A_True_Global"].to_numpy())
@@ -494,16 +523,28 @@ class Plotter:
 
         layout = {
             "title": f"{type} set | Total error, predicted anomalies in blue, true anomalies in red if available "
-                     f"(making correctly predicted in purple)",
+            f"(making correctly predicted in purple)",
             "shapes": shapes,
             "yaxis": dict(range=[0, y_max]),
             "height": 400,
-            "width": 1500
+            "width": 1500,
         }
 
         fig = go.Figure(
-            data=[go.Scatter(x=data_copy["timestamp"].to_numpy(), y=tot_anomaly_scores, name='Error', line=dict(width=1, color="red")),
-                  go.Scatter(x=data_copy["timestamp"].to_numpy(), y=threshold, name='Threshold', line=dict(color="black", width=1, dash="dash"))],
+            data=[
+                go.Scatter(
+                    x=data_copy["timestamp"].to_numpy(),
+                    y=tot_anomaly_scores,
+                    name="Error",
+                    line=dict(width=1, color="red"),
+                ),
+                go.Scatter(
+                    x=data_copy["timestamp"].to_numpy(),
+                    y=threshold,
+                    name="Threshold",
+                    line=dict(color="black", width=1, dash="dash"),
+                ),
+            ],
             layout=layout,
         )
         return fig

@@ -10,7 +10,6 @@ from training import Trainer
 from utils import *
 
 if __name__ == "__main__":
-
     id = datetime.now().strftime("%d%m%Y_%H%M%S")
 
     parser = get_parser()
@@ -33,16 +32,16 @@ if __name__ == "__main__":
     args_summary = str(args.__dict__)
     print(args_summary)
 
-    if dataset == 'SMD':
-        output_path = f'output/SMD/{args.group}'
+    if dataset == "SMD":
+        output_path = f"output/SMD/{args.group}"
         (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
-    elif dataset in ['MSL', 'SMAP']:
-        output_path = f'output/{dataset}'
+    elif dataset in ["MSL", "SMAP"]:
+        output_path = f"output/{dataset}"
         (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
     else:
         raise Exception(f'Dataset "{dataset}" not available.')
 
-    log_dir = f'{output_path}/logs'
+    log_dir = f"{output_path}/logs"
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     if not os.path.exists(log_dir):
@@ -86,7 +85,7 @@ if __name__ == "__main__":
         recon_n_layers=args.recon_n_layers,
         recon_hid_dim=args.recon_hid_dim,
         dropout=args.dropout,
-        alpha=args.alpha
+        alpha=args.alpha,
     )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.init_lr)
@@ -109,7 +108,7 @@ if __name__ == "__main__":
         log_dir,
         print_every,
         log_tensorboard,
-        args_summary
+        args_summary,
     )
 
     trainer.fit(train_loader, val_loader)
@@ -128,7 +127,7 @@ if __name__ == "__main__":
         "MSL": (0.90, 0.001),
         "SMD-1": (0.9950, 0.001),
         "SMD-2": (0.9925, 0.001),
-        "SMD-3": (0.9999, 0.001)
+        "SMD-3": (0.9999, 0.001),
     }
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level, q = level_q_dict[key]
@@ -144,12 +143,12 @@ if __name__ == "__main__":
 
     trainer.load(f"{save_path}/model.pt")
     prediction_args = {
-        'dataset': dataset,
+        "dataset": dataset,
         "target_dims": target_dims,
-        'scale_scores': args.scale_scores,
+        "scale_scores": args.scale_scores,
         "level": level,
         "q": q,
-        'dynamic_pot': args.dynamic_pot,
+        "dynamic_pot": args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
         "reg_level": reg_level,

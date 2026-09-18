@@ -133,8 +133,8 @@ class Trainer:
             forecast_b_losses = np.array(forecast_b_losses)
             recon_b_losses = np.array(recon_b_losses)
 
-            forecast_epoch_loss = np.sqrt((forecast_b_losses ** 2).mean())
-            recon_epoch_loss = np.sqrt((recon_b_losses ** 2).mean())
+            forecast_epoch_loss = np.sqrt((forecast_b_losses**2).mean())
+            recon_epoch_loss = np.sqrt((recon_b_losses**2).mean())
 
             total_epoch_loss = forecast_epoch_loss + recon_epoch_loss
 
@@ -222,8 +222,8 @@ class Trainer:
         forecast_losses = np.array(forecast_losses)
         recon_losses = np.array(recon_losses)
 
-        forecast_loss = np.sqrt((forecast_losses ** 2).mean())
-        recon_loss = np.sqrt((recon_losses ** 2).mean())
+        forecast_loss = np.sqrt((forecast_losses**2).mean())
+        recon_loss = np.sqrt((recon_losses**2).mean())
 
         total_loss = forecast_loss + recon_loss
 

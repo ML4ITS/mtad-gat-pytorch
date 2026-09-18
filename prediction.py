@@ -66,7 +66,7 @@ class Predictor:
 
         preds = np.concatenate(preds, axis=0)
         recons = np.concatenate(recons, axis=0)
-        actual = values.detach().cpu().numpy()[self.window_size:]
+        actual = values.detach().cpu().numpy()[self.window_size :]
 
         if self.target_dims is not None:
             actual = actual[:, self.target_dims]
@@ -78,13 +78,14 @@ class Predictor:
             df_dict[f"Recon_{i}"] = recons[:, i]
             df_dict[f"True_{i}"] = actual[:, i]
             a_score = np.sqrt((preds[:, i] - actual[:, i]) ** 2) + self.gamma * np.sqrt(
-                (recons[:, i] - actual[:, i]) ** 2)
+                (recons[:, i] - actual[:, i]) ** 2
+            )
 
             if self.scale_scores:
                 q75, q25 = np.percentile(a_score, [75, 25])
                 iqr = q75 - q25
                 median = np.median(a_score)
-                a_score = (a_score - median) / (1+iqr)
+                a_score = (a_score - median) / (1 + iqr)
 
             anomaly_scores[:, i] = a_score
             df_dict[f"A_Score_{i}"] = a_score
@@ -94,9 +95,8 @@ class Predictor:
 
         return pl.DataFrame(df_dict)
 
-    def predict_anomalies(self, train, test, true_anomalies, load_scores=False, save_output=True,
-                          scale_scores=False):
-        """ Predicts anomalies
+    def predict_anomalies(self, train, test, true_anomalies, load_scores=False, save_output=True, scale_scores=False):
+        """Predicts anomalies
 
         :param train: 2D array of train multivariate time series data
         :param test: 2D array of test multivariate time series data
@@ -162,8 +162,14 @@ class Predictor:
         # These predictions are used to evaluate performance, as true anomalies are labeled at entity-level
         # Evaluate using different threshold methods: brute-force, epsilon and peaks-over-treshold
         e_eval = epsilon_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies, reg_level=self.reg_level)
-        p_eval = pot_eval(train_anomaly_scores, test_anomaly_scores, true_anomalies,
-                          q=self.q, level=self.level, dynamic=self.dynamic_pot)
+        p_eval = pot_eval(
+            train_anomaly_scores,
+            test_anomaly_scores,
+            true_anomalies,
+            q=self.q,
+            level=self.level,
+            dynamic=self.dynamic_pot,
+        )
         if true_anomalies is not None:
             bf_eval = bf_search(test_anomaly_scores, true_anomalies, start=0.01, end=2, step_num=100, verbose=False)
         else:

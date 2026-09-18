@@ -25,8 +25,9 @@ def normalize_data(data, scaler=None):
     return data, scaler
 
 
-def get_data(dataset, max_train_size=None, max_test_size=None,
-             normalize=False, spec_res=False, train_start=0, test_start=0):
+def get_data(
+    dataset, max_train_size=None, max_test_size=None, normalize=False, spec_res=False, train_start=0, test_start=0
+):
     """
     Get data from pkl files
 
@@ -171,31 +172,33 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     """
 
     # Remove errors for time steps when transition to new channel (as this will be impossible for model to predict)
-    if dataset.upper() not in ['SMAP', 'MSL']:
+    if dataset.upper() not in ["SMAP", "MSL"]:
         return scores
 
     adjusted_scores = scores.copy()
     if is_train:
-        md = pl.scan_csv(f'./datasets/data/{dataset.lower()}_train_md.csv')
+        md = pl.scan_csv(f"./datasets/data/{dataset.lower()}_train_md.csv")
     else:
-        md = pl.scan_csv('./datasets/data/labeled_anomalies.csv').filter(pl.col('spacecraft') == dataset.upper())
+        md = pl.scan_csv("./datasets/data/labeled_anomalies.csv").filter(pl.col("spacecraft") == dataset.upper())
 
     # Drop channel P-2 and sort values by channel
     num_values = (
-        md.filter(pl.col('chan_id') != 'P-2')
-        .sort('chan_id')
-        .select('num_values')
-        .collect()
-        .to_series()
-        .to_numpy()
+        md.filter(pl.col("chan_id") != "P-2").sort("chan_id").select("num_values").collect().to_series().to_numpy()
     )
 
     # Getting the cumulative start index for each channel
     sep_cuma = np.cumsum(num_values) - lookback
     sep_cuma = sep_cuma[:-1]
     buffer = np.arange(1, 20)
-    i_remov = np.sort(np.concatenate((sep_cuma, np.array([i+buffer for i in sep_cuma]).flatten(),
-                                      np.array([i-buffer for i in sep_cuma]).flatten())))
+    i_remov = np.sort(
+        np.concatenate(
+            (
+                sep_cuma,
+                np.array([i + buffer for i in sep_cuma]).flatten(),
+                np.array([i - buffer for i in sep_cuma]).flatten(),
+            )
+        )
+    )
     i_remov = i_remov[(i_remov < len(adjusted_scores)) & (i_remov >= 0)]
     i_remov = np.sort(np.unique(i_remov))
     if len(i_remov) != 0:
@@ -204,10 +207,10 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     # Normalize each concatenated part individually
     sep_cuma = np.cumsum(num_values) - lookback
     s = [0] + sep_cuma.tolist()
-    for c_start, c_end in [(s[i], s[i+1]) for i in range(len(s)-1)]:
-        e_s = adjusted_scores[c_start: c_end+1]
+    for c_start, c_end in [(s[i], s[i + 1]) for i in range(len(s) - 1)]:
+        e_s = adjusted_scores[c_start : c_end + 1]
 
-        e_s = (e_s - np.min(e_s))/(np.max(e_s) - np.min(e_s))
-        adjusted_scores[c_start: c_end+1] = e_s
+        e_s = (e_s - np.min(e_s)) / (np.max(e_s) - np.min(e_s))
+        adjusted_scores[c_start : c_end + 1] = e_s
 
     return adjusted_scores

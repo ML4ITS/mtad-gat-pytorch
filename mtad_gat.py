@@ -12,7 +12,7 @@ from modules import (
 
 
 class MTAD_GAT(nn.Module):
-    """ MTAD-GAT model class.
+    """MTAD-GAT model class.
 
     :param n_features: Number of input features
     :param window_size: Length of the input sequence
@@ -50,16 +50,20 @@ class MTAD_GAT(nn.Module):
         recon_n_layers=1,
         recon_hid_dim=150,
         dropout=0.2,
-        alpha=0.2
+        alpha=0.2,
     ):
         super().__init__()
 
         self.conv = ConvLayer(n_features, kernel_size)
         self.feature_gat = FeatureAttentionLayer(n_features, window_size, dropout, alpha, feat_gat_embed_dim, use_gatv2)
-        self.temporal_gat = TemporalAttentionLayer(n_features, window_size, dropout, alpha, time_gat_embed_dim, use_gatv2)
+        self.temporal_gat = TemporalAttentionLayer(
+            n_features, window_size, dropout, alpha, time_gat_embed_dim, use_gatv2
+        )
         self.gru = GRULayer(3 * n_features, gru_hid_dim, gru_n_layers, dropout)
         self.forecasting_model = Forecasting_Model(gru_hid_dim, forecast_hid_dim, out_dim, forecast_n_layers, dropout)
-        self.recon_model = ReconstructionModel(window_size, gru_hid_dim, recon_hid_dim, out_dim, recon_n_layers, dropout)
+        self.recon_model = ReconstructionModel(
+            window_size, gru_hid_dim, recon_hid_dim, out_dim, recon_n_layers, dropout
+        )
 
     def forward(self, x):
         # x shape (b, n, k): b - batch size, n - window size, k - number of features
@@ -71,7 +75,7 @@ class MTAD_GAT(nn.Module):
         h_cat = torch.cat([x, h_feat, h_temp], dim=2)  # (b, n, 3k)
 
         _, h_end = self.gru(h_cat)
-        h_end = h_end.view(x.shape[0], -1)   # Hidden state for last timestamp
+        h_end = h_end.view(x.shape[0], -1)  # Hidden state for last timestamp
 
         predictions = self.forecasting_model(h_end)
         recons = self.recon_model(h_end)

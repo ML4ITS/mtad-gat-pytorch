@@ -72,15 +72,15 @@ class FeatureAttentionLayer(nn.Module):
         # Proposed by Brody et. al., 2021 (https://arxiv.org/pdf/2105.14491.pdf)
         # Linear transformation applied after concatenation and attention layer applied after leakyrelu
         if self.use_gatv2:
-            a_input = self._make_attention_input(x)                 # (b, k, k, 2*window_size)
-            a_input = self.leakyrelu(self.lin(a_input))             # (b, k, k, embed_dim)
-            e = torch.matmul(a_input, self.a).squeeze(3)            # (b, k, k, 1)
+            a_input = self._make_attention_input(x)  # (b, k, k, 2*window_size)
+            a_input = self.leakyrelu(self.lin(a_input))  # (b, k, k, embed_dim)
+            e = torch.matmul(a_input, self.a).squeeze(3)  # (b, k, k, 1)
 
         # Original GAT attention
         else:
-            Wx = self.lin(x)                                                  # (b, k, k, embed_dim)
-            a_input = self._make_attention_input(Wx)                          # (b, k, k, 2*embed_dim)
-            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)      # (b, k, k, 1)
+            Wx = self.lin(x)  # (b, k, k, embed_dim)
+            a_input = self._make_attention_input(Wx)  # (b, k, k, 2*embed_dim)
+            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)  # (b, k, k, 1)
 
         if self.use_bias:
             e += self.bias
@@ -171,15 +171,15 @@ class TemporalAttentionLayer(nn.Module):
         # Proposed by Brody et. al., 2021 (https://arxiv.org/pdf/2105.14491.pdf)
         # Linear transformation applied after concatenation and attention layer applied after leakyrelu
         if self.use_gatv2:
-            a_input = self._make_attention_input(x)              # (b, n, n, 2*n_features)
-            a_input = self.leakyrelu(self.lin(a_input))          # (b, n, n, embed_dim)
-            e = torch.matmul(a_input, self.a).squeeze(3)         # (b, n, n, 1)
+            a_input = self._make_attention_input(x)  # (b, n, n, 2*n_features)
+            a_input = self.leakyrelu(self.lin(a_input))  # (b, n, n, embed_dim)
+            e = torch.matmul(a_input, self.a).squeeze(3)  # (b, n, n, 1)
 
         # Original GAT attention
         else:
-            Wx = self.lin(x)                                                  # (b, n, n, embed_dim)
-            a_input = self._make_attention_input(Wx)                          # (b, n, n, 2*embed_dim)
-            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)      # (b, n, n, 1)
+            Wx = self.lin(x)  # (b, n, n, embed_dim)
+            a_input = self._make_attention_input(Wx)  # (b, n, n, 2*embed_dim)
+            e = self.leakyrelu(torch.matmul(a_input, self.a)).squeeze(3)  # (b, n, n, 1)
 
         if self.use_bias:
             e += self.bias  # (b, n, n, 1)
@@ -188,7 +188,7 @@ class TemporalAttentionLayer(nn.Module):
         attention = torch.softmax(e, dim=2)
         attention = torch.dropout(attention, self.dropout, train=self.training)
 
-        h = self.sigmoid(torch.matmul(attention, x))    # (b, n, k)
+        h = self.sigmoid(torch.matmul(attention, x))  # (b, n, k)
 
         return h
 

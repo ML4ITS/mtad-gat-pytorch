@@ -20,7 +20,7 @@ def load_and_save(category, filename, dataset, dataset_folder, output_folder):
 
 
 def load_data(dataset):
-    """ Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly) """
+    """Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)"""
 
     if dataset == "SMD":
         dataset_folder = "datasets/ServerMachineDataset"
