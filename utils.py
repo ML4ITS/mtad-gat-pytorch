@@ -226,7 +226,16 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     for c_start, c_end in [(s[i], s[i + 1]) for i in range(len(s) - 1)]:
         e_s = adjusted_scores[c_start : c_end + 1]
 
-        e_s = (e_s - np.min(e_s)) / (np.max(e_s) - np.min(e_s))
+        # The scores stop before the last channel when the user limits the size of the data.
+        # Such a part is empty, and numpy gives an error for the minimum of an empty array.
+        if e_s.size == 0:
+            continue
+
+        span = np.max(e_s) - np.min(e_s)
+        if span == 0:
+            continue
+
+        e_s = (e_s - np.min(e_s)) / span
         adjusted_scores[c_start : c_end + 1] = e_s
 
     return adjusted_scores

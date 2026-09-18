@@ -22,8 +22,12 @@ dev = [
     "marimo",
     "prek",
     "pyrefly",
+    "pytest",
     "ruff",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 120
