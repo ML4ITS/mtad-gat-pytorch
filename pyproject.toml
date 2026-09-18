@@ -1,0 +1,26 @@
+[project]
+name = "mtad-gat-pytorch"
+version = "0.1.0"
+description = "PyTorch implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection via Graph Attention Networks"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "more-itertools",
+    "matplotlib",
+    "numpy",
+    "plotly",
+    "polars",
+    "scikit-learn",
+    "scipy",
+    "tensorboard",
+    "torch",
+    "tqdm",
+]
+
+[dependency-groups]
+dev = [
+    "marimo",
+    "prek",
+    "pyrefly",
+    "ruff",
+]
