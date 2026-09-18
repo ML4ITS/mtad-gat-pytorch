@@ -1,9 +1,12 @@
 import os
 import time
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+
+from utils import get_device
 
 
 class Trainer:
@@ -57,7 +60,7 @@ class Trainer:
         self.init_lr = init_lr
         self.forecast_criterion = forecast_criterion
         self.recon_criterion = recon_criterion
-        self.device = "cuda" if use_cuda and torch.cuda.is_available() else "cpu"
+        self.device = get_device(use_cuda)
         self.dload = dload
         self.log_dir = log_dir
         self.print_every = print_every
@@ -73,8 +76,8 @@ class Trainer:
         }
         self.epoch_times = []
 
-        if self.device == "cuda":
-            self.model.cuda()
+        print(f"Training on {self.device}")
+        self.model.to(self.device)
 
         if self.log_tensorboard:
             self.writer = SummaryWriter(f"{log_dir}")
@@ -132,8 +135,8 @@ class Trainer:
             forecast_b_losses = np.array(forecast_b_losses)
             recon_b_losses = np.array(recon_b_losses)
 
-            forecast_epoch_loss = np.sqrt((forecast_b_losses ** 2).mean())
-            recon_epoch_loss = np.sqrt((recon_b_losses ** 2).mean())
+            forecast_epoch_loss = np.sqrt((forecast_b_losses**2).mean())
+            recon_epoch_loss = np.sqrt((recon_b_losses**2).mean())
 
             total_epoch_loss = forecast_epoch_loss + recon_epoch_loss
 
@@ -150,7 +153,7 @@ class Trainer:
                 self.losses["val_total"].append(total_val_loss)
 
                 if total_val_loss <= self.losses["val_total"][-1]:
-                    self.save(f"model.pt")
+                    self.save("model.pt")
 
             if self.log_tensorboard:
                 self.write_loss(epoch)
@@ -177,7 +180,7 @@ class Trainer:
                 print(s)
 
         if val_loader is None:
-            self.save(f"model.pt")
+            self.save("model.pt")
 
         train_time = int(time.time() - train_start)
         if self.log_tensorboard:
@@ -221,8 +224,8 @@ class Trainer:
         forecast_losses = np.array(forecast_losses)
         recon_losses = np.array(recon_losses)
 
-        forecast_loss = np.sqrt((forecast_losses ** 2).mean())
-        recon_loss = np.sqrt((recon_losses ** 2).mean())
+        forecast_loss = np.sqrt((forecast_losses**2).mean())
+        recon_loss = np.sqrt((recon_losses**2).mean())
 
         total_loss = forecast_loss + recon_loss
 

@@ -1,0 +1,20 @@
+# Run with prek (https://github.com/j178/prek), a drop-in pre-commit replacement:
+#   uv run prek install        # install the git hooks
+#   uv run prek run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pyrefly
+        name: pyrefly
+        entry: uv run pyrefly check
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-push]

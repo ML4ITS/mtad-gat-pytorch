@@ -1,0 +1,40 @@
+[project]
+name = "mtad-gat-pytorch"
+version = "0.1.0"
+description = "PyTorch implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection via Graph Attention Networks"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "more-itertools",
+    "matplotlib",
+    "numpy",
+    "plotly",
+    "polars",
+    "scikit-learn",
+    "scipy",
+    "tensorboard",
+    "torch",
+    "tqdm",
+]
+
+[dependency-groups]
+dev = [
+    "marimo",
+    "prek",
+    "pyrefly",
+    "ruff",
+]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["spot.py"]  # vendored from OmniAnomaly, kept close to upstream
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP"]
+ignore = [
+    "F403",  # the training scripts rely on `from utils import *`
+    "F405",
+]
+
+[tool.pyrefly]
+project-excludes = ["spot.py", ".venv/**"]

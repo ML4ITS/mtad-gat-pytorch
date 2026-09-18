@@ -40,20 +40,21 @@ rm -rf 2018-05-19_15.00.10 && cd .. && cd ..
 This downloads the MSL and SMAP datasets. The SMD dataset is already in repo. 
 We refer to [TelemAnom](https://github.com/khundman/telemanom) and [OmniAnomaly](https://github.com/NetManAIOps/OmniAnomaly) for detailed information regarding these three datasets. 
 
-Install dependencies (virtualenv is recommended):
+This project uses [uv](https://docs.astral.sh/uv/). Install dependencies:
 ```bash
-pip install -r requirements.txt 
+uv sync
 ```
+`uv run` creates and uses the environment automatically, so no manual activation is needed.
 
 Preprocess the data:
 ```bash
-python preprocess.py --dataset <dataset>
+uv run preprocess.py --dataset <dataset>
 ```
 where \<dataset> is one of MSL, SMAP or SMD.
 
 To train:
 ```bash
- python train.py --dataset <dataset>
+ uv run train.py --dataset <dataset>
 ```
 where \<dataset> is one of msl, smap or smd (upper-case also works). If training on SMD, one should specify which machine using the ``` --group``` argument.
 
@@ -61,12 +62,12 @@ You can change the default configuration by adding more arguments. All arguments
     
 - Training machine-1-1 of SMD for 10 epochs, using a lookback (window size) of 150:
 ```bash 
-python train.py --dataset smd --group 1-1 --lookback 150 --epochs 10 
+uv run train.py --dataset smd --group 1-1 --lookback 150 --epochs 10 
 ```
   
 - Training MSL for 10 epochs, using standard GAT instead of GATv2 (which is the default), and a validation split of 0.2:
 ```bash 
-python train.py --dataset msl --epochs 10 --use_gatv2 False --val_split 0.2
+uv run train.py --dataset msl --epochs 10 --use_gatv2 False --val_split 0.2
 ```
 
 ### ⚙️ Default configuration:
@@ -101,9 +102,11 @@ Train params:
 ```--init_lr=1e-3```
 ```--shuffle_dataset=True```
 ```--dropout=0.3```  <br />
-```--use_cuda=True```
+```--use_gpu=True```
 ```--print_every=1```
 ```--log_tensorboard=True```
+
+With ```--use_gpu=True``` (the default) the code runs on a CUDA GPU when one is available, and on the Apple Silicon GPU (MPS) on a Mac. It falls back to the CPU otherwise. ```--use_cuda``` still works as an alias.
 
 Anomaly Predictor params:
 
@@ -120,17 +123,22 @@ Anomaly Predictor params:
 Output are saved in ```output/<dataset>/<ID>``` (where the current datetime is used as ID) and include:
   - ```summary.txt```: performance on test set (precision, recall, F1, etc.)
   - ```config.txt```: the configuration used for model, training, etc. 
-  - ```train/test.pkl```: saved forecasts, reconstructions, actual, thresholds, etc.
+  - ```train/test_output.parquet```: saved forecasts, reconstructions, actual, thresholds, etc.
   - ```train/test_scores.npy```: anomaly scores
   - ```train/validation_losses.png```: plots of train and validation loss during training
   - ```model.pt``` model parameters of trained model 
   
 This repo includes example outputs for MSL, SMAP and SMD machine 1-1.  
 
-```result_visualizer.ipynb``` provides a jupyter notebook for visualizing results. 
-To launch notebook:
-```bash 
-jupyter notebook result_visualizer.ipynb
+```result_visualizer.py``` is a [marimo](https://marimo.io) notebook for visualizing results.
+To launch it:
+```bash
+uv run marimo edit result_visualizer.py
+```
+It declares its own dependencies inline, so it can also be shared and run standalone —
+no environment setup on the receiving end:
+```bash
+uvx marimo run result_visualizer.py --sandbox
 ```
 
 Predicted anomalies are visualized using a blue rectangle. <br />

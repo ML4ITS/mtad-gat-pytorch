@@ -48,7 +48,14 @@ def get_parser():
     parser.add_argument("--init_lr", type=float, default=1e-3)
     parser.add_argument("--shuffle_dataset", type=str2bool, default=True)
     parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--use_cuda", type=str2bool, default=True)
+    parser.add_argument(
+        "--use_gpu",
+        "--use_cuda",
+        dest="use_cuda",
+        type=str2bool,
+        default=True,
+        help="Use a GPU when one is available: CUDA, or MPS on Apple Silicon",
+    )
     parser.add_argument("--print_every", type=int, default=1)
     parser.add_argument("--log_tensorboard", type=str2bool, default=True)
 

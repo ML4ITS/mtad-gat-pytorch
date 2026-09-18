@@ -13,7 +13,7 @@ from math import floor, log
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+import polars as pl
 import tqdm
 from scipy.optimize import minimize
 
@@ -115,19 +115,19 @@ class SPOT:
 
         Parameters
         ----------
-        init_data : list, numpy.array or pandas.Series
+        init_data : list, numpy.array or polars.Series
                 initial batch to calibrate the algorithm
 
         data : numpy.array
-                data for the run (list, np.array or pd.series)
+                data for the run (list, np.array or pl.Series)
 
         """
         if isinstance(data, list):
             self.data = np.array(data)
         elif isinstance(data, np.ndarray):
             self.data = data
-        elif isinstance(data, pd.Series):
-            self.data = data.values
+        elif isinstance(data, pl.Series):
+            self.data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -136,8 +136,8 @@ class SPOT:
             self.init_data = np.array(init_data)
         elif isinstance(init_data, np.ndarray):
             self.init_data = init_data
-        elif isinstance(init_data, pd.Series):
-            self.init_data = init_data.values
+        elif isinstance(init_data, pl.Series):
+            self.init_data = init_data.to_numpy()
         elif isinstance(init_data, int):
             self.init_data = self.data[:init_data]
             self.data = self.data[init_data:]
@@ -155,15 +155,15 @@ class SPOT:
 
         Parameters
         ----------
-        data : list, numpy.array, pandas.Series
+        data : list, numpy.array, polars.Series
                 data to append
         """
         if isinstance(data, list):
             data = np.array(data)
         elif isinstance(data, np.ndarray):
             data = data
-        elif isinstance(data, pd.Series):
-            data = data.values
+        elif isinstance(data, pl.Series):
+            data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -612,19 +612,19 @@ class biSPOT:
 
         Parameters
         ----------
-        init_data : list, numpy.array or pandas.Series
+        init_data : list, numpy.array or polars.Series
                 initial batch to calibrate the algorithm ()
 
         data : numpy.array
-                data for the run (list, np.array or pd.series)
+                data for the run (list, np.array or pl.Series)
 
         """
         if isinstance(data, list):
             self.data = np.array(data)
         elif isinstance(data, np.ndarray):
             self.data = data
-        elif isinstance(data, pd.Series):
-            self.data = data.values
+        elif isinstance(data, pl.Series):
+            self.data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -633,8 +633,8 @@ class biSPOT:
             self.init_data = np.array(init_data)
         elif isinstance(init_data, np.ndarray):
             self.init_data = init_data
-        elif isinstance(init_data, pd.Series):
-            self.init_data = init_data.values
+        elif isinstance(init_data, pl.Series):
+            self.init_data = init_data.to_numpy()
         elif isinstance(init_data, int):
             self.init_data = self.data[:init_data]
             self.data = self.data[init_data:]
@@ -652,15 +652,15 @@ class biSPOT:
 
         Parameters
         ----------
-        data : list, numpy.array, pandas.Series
+        data : list, numpy.array, polars.Series
                 data to append
         """
         if isinstance(data, list):
             data = np.array(data)
         elif isinstance(data, np.ndarray):
             data = data
-        elif isinstance(data, pd.Series):
-            data = data.values
+        elif isinstance(data, pl.Series):
+            data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -1153,19 +1153,19 @@ class dSPOT:
 
         Parameters
         ----------
-        init_data : list, numpy.array or pandas.Series
+        init_data : list, numpy.array or polars.Series
                 initial batch to calibrate the algorithm
 
         data : numpy.array
-                data for the run (list, np.array or pd.series)
+                data for the run (list, np.array or pl.Series)
 
         """
         if isinstance(data, list):
             self.data = np.array(data)
         elif isinstance(data, np.ndarray):
             self.data = data
-        elif isinstance(data, pd.Series):
-            self.data = data.values
+        elif isinstance(data, pl.Series):
+            self.data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -1174,8 +1174,8 @@ class dSPOT:
             self.init_data = np.array(init_data)
         elif isinstance(init_data, np.ndarray):
             self.init_data = init_data
-        elif isinstance(init_data, pd.Series):
-            self.init_data = init_data.values
+        elif isinstance(init_data, pl.Series):
+            self.init_data = init_data.to_numpy()
         elif isinstance(init_data, int):
             self.init_data = self.data[:init_data]
             self.data = self.data[init_data:]
@@ -1193,15 +1193,15 @@ class dSPOT:
 
         Parameters
         ----------
-        data : list, numpy.array, pandas.Series
+        data : list, numpy.array, polars.Series
                 data to append
         """
         if isinstance(data, list):
             data = np.array(data)
         elif isinstance(data, np.ndarray):
             data = data
-        elif isinstance(data, pd.Series):
-            data = data.values
+        elif isinstance(data, pl.Series):
+            data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -1643,19 +1643,19 @@ class bidSPOT:
 
         Parameters
         ----------
-        init_data : list, numpy.array or pandas.Series
+        init_data : list, numpy.array or polars.Series
                 initial batch to calibrate the algorithm
 
         data : numpy.array
-                data for the run (list, np.array or pd.series)
+                data for the run (list, np.array or pl.Series)
 
         """
         if isinstance(data, list):
             self.data = np.array(data)
         elif isinstance(data, np.ndarray):
             self.data = data
-        elif isinstance(data, pd.Series):
-            self.data = data.values
+        elif isinstance(data, pl.Series):
+            self.data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return
@@ -1664,8 +1664,8 @@ class bidSPOT:
             self.init_data = np.array(init_data)
         elif isinstance(init_data, np.ndarray):
             self.init_data = init_data
-        elif isinstance(init_data, pd.Series):
-            self.init_data = init_data.values
+        elif isinstance(init_data, pl.Series):
+            self.init_data = init_data.to_numpy()
         elif isinstance(init_data, int):
             self.init_data = self.data[:init_data]
             self.data = self.data[init_data:]
@@ -1683,15 +1683,15 @@ class bidSPOT:
 
         Parameters
         ----------
-        data : list, numpy.array, pandas.Series
+        data : list, numpy.array, polars.Series
                 data to append
         """
         if isinstance(data, list):
             data = np.array(data)
         elif isinstance(data, np.ndarray):
             data = data
-        elif isinstance(data, pd.Series):
-            data = data.values
+        elif isinstance(data, pl.Series):
+            data = data.to_numpy()
         else:
             print("This data format (%s) is not supported" % type(data))
             return

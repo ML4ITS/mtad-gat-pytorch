@@ -1,12 +1,15 @@
 /venv/
+.venv/
 __pycache__/
 .idea/
+.marimo.db
 .DS_Store
 datasets/data/processed/
 datasets/data/train/
 datasets/data/test/
 datasets/ServerMachineDataset/processed/
 .ipynb_checkpoints/
+__marimo__/
 output/
 **.pkl
 **.npy

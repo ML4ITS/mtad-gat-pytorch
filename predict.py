@@ -1,17 +1,20 @@
 import argparse
-import json
 import datetime
+import json
 
 from args import get_parser, str2bool
-from utils import *
 from mtad_gat import MTAD_GAT
 from prediction import Predictor
+from utils import *
 
 if __name__ == "__main__":
-
     parser = get_parser()
-    parser.add_argument("--model_id", type=str, default=None,
-                        help="ID (datetime) of pretrained model to use, '-1' for latest, '-2' for second latest, etc")
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default=None,
+        help="ID (datetime) of pretrained model to use, '-1' for latest, '-2' for second latest, etc",
+    )
     parser.add_argument("--load_scores", type=str2bool, default=False, help="To use already computed anomaly scores")
     parser.add_argument("--save_output", type=str2bool, default=False)
     args = parser.parse_args()
@@ -19,23 +22,23 @@ if __name__ == "__main__":
 
     dataset = args.dataset
     if args.model_id is None:
-        if dataset == 'SMD':
+        if dataset == "SMD":
             dir_path = f"./output/{dataset}/{args.group}"
         else:
             dir_path = f"./output/{dataset}"
         dir_content = os.listdir(dir_path)
         subfolders = [subf for subf in dir_content if os.path.isdir(f"{dir_path}/{subf}") and subf != "logs"]
-        date_times = [datetime.datetime.strptime(subf, '%d%m%Y_%H%M%S') for subf in subfolders]
+        date_times = [datetime.datetime.strptime(subf, "%d%m%Y_%H%M%S") for subf in subfolders]
         date_times.sort()
         model_datetime = date_times[-1]
-        model_id = model_datetime.strftime('%d%m%Y_%H%M%S')
+        model_id = model_datetime.strftime("%d%m%Y_%H%M%S")
 
     else:
         model_id = args.model_id
 
     if dataset == "SMD":
         model_path = f"./output/{dataset}/{args.group}/{model_id}"
-    elif dataset in ['MSL', 'SMAP']:
+    elif dataset in ["MSL", "SMAP"]:
         model_path = f"./output/{dataset}/{model_id}"
     else:
         raise Exception(f'Dataset "{dataset}" not available.')
@@ -45,12 +48,12 @@ if __name__ == "__main__":
         raise Exception(f"<{model_path}/model.pt> does not exist.")
 
     # Get configs of model
-    print(f'Using model from {model_path}')
+    print(f"Using model from {model_path}")
     model_parser = argparse.ArgumentParser()
     model_args, unknown = model_parser.parse_known_args()
     model_args_path = f"{model_path}/config.txt"
 
-    with open(model_args_path, "r") as f:
+    with open(model_args_path) as f:
         model_args.__dict__ = json.load(f)
     window_size = model_args.lookback
 
@@ -86,7 +89,7 @@ if __name__ == "__main__":
     target_dims = get_target_dims(args.dataset)
     if target_dims is None:
         out_dim = n_features
-    elif type(target_dims) == int:
+    elif isinstance(target_dims, int):
         out_dim = 1
     else:
         out_dim = len(target_dims)
@@ -116,10 +119,11 @@ if __name__ == "__main__":
         recon_n_layers=model_args.recon_n_layers,
         recon_hid_dim=model_args.recon_hid_dim,
         dropout=model_args.dropout,
-        alpha=model_args.alpha
+        alpha=model_args.alpha,
     )
 
-    device = "cuda" if args.use_cuda and torch.cuda.is_available() else "cpu"
+    device = get_device(args.use_cuda)
+    print(f"Predicting on {device}")
     load(model, f"{model_path}/model.pt", device=device)
     model.to(device)
 
@@ -129,7 +133,7 @@ if __name__ == "__main__":
         "MSL": (0.90, 0.001),
         "SMD-1": (0.9950, 0.001),
         "SMD-2": (0.9925, 0.001),
-        "SMD-3": (0.9999, 0.001)
+        "SMD-3": (0.9999, 0.001),
     }
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level, q = level_q_dict[key]
@@ -144,16 +148,17 @@ if __name__ == "__main__":
     reg_level = reg_level_dict[key]
 
     prediction_args = {
-        'dataset': dataset,
+        "dataset": dataset,
         "target_dims": target_dims,
-        'scale_scores': args.scale_scores,
+        "scale_scores": args.scale_scores,
         "level": level,
         "q": q,
-        'dynamic_pot': args.dynamic_pot,
+        "dynamic_pot": args.dynamic_pot,
         "use_mov_av": args.use_mov_av,
         "gamma": args.gamma,
         "reg_level": reg_level,
         "save_path": f"{model_path}",
+        "use_cuda": args.use_cuda,
     }
 
     # Creating a new summary-file each time when new prediction are made with a pre-trained model
@@ -168,6 +173,4 @@ if __name__ == "__main__":
 
     label = y_test[window_size:] if y_test is not None else None
     predictor = Predictor(model, window_size, n_features, prediction_args, summary_file_name=summary_file_name)
-    predictor.predict_anomalies(x_train, x_test, label,
-                                load_scores=args.load_scores,
-                                save_output=args.save_output)
+    predictor.predict_anomalies(x_train, x_test, label, load_scores=args.load_scores, save_output=args.save_output)
