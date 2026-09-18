@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 import torch
 
-from utils import adjust_anomaly_scores, get_data_dim, get_device, get_target_dims
+from dataset_info import get_data_dim, get_target_dims
+from utils import adjust_anomaly_scores, get_device
 
 
 class TestGetDevice:

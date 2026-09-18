@@ -9,7 +9,7 @@ import torch
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 
-from dataset_info import get_data_dim, get_target_dims  # noqa: F401  re-exported for `from utils import *`
+from dataset_info import get_data_dim
 
 
 def normalize_data(data, scaler=None):
