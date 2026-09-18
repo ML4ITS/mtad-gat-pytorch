@@ -101,6 +101,7 @@ Train params:
 ```--bs=256```
 ```--init_lr=1e-3```
 ```--shuffle_dataset=True```
+```--seed=42```
 ```--dropout=0.3```  <br />
 ```--use_gpu=True```
 ```--print_every=1```
