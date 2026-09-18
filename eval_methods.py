@@ -132,7 +132,9 @@ def bf_search(score, label, start, end=None, step_num=1, display_freq=1, verbose
     if verbose:
         print("search range: ", search_lower_bound, search_lower_bound + search_range)
     threshold = search_lower_bound
-    m = (-1.0, -1.0, -1.0)
+    # The result holds f1, precision, recall, TP, TN, FP and FN. All seven elements must
+    # exist, because the function reads m[3] to m[6] at the end.
+    m = (-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0)
     m_t = 0.0
     m_l = 0
     for i in range(search_step):
