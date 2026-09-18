@@ -70,7 +70,9 @@ def get_data(
 
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
-        test_data, _ = normalize_data(test_data, scaler=scaler)
+        # The test data is absent if the pickle file of the test data is absent.
+        if test_data is not None:
+            test_data, _ = normalize_data(test_data, scaler=scaler)
 
     print("train set shape: ", train_data.shape)
     print("test set shape: ", None if test_data is None else test_data.shape)
