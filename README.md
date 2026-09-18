@@ -22,6 +22,7 @@ Our implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection (MTAD
   - [TelemAnom](https://github.com/khundman/telemanom) for plotting methods and thresholding method
   - [pyGAT](https://github.com/Diego999/pyGAT) by Diego Antognini for inspiration on GAT-related methods 
   - Their respective licences are included in ```licences```.
+  - :warning: ```spot.py``` comes from OmniAnomaly and carries a **GPLv3** header by Alban Siffer, although this project has the MIT licence. ```NOTICE``` describes this point.
 
 
 ## :zap: Getting Started 

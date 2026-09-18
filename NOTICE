@@ -1,0 +1,31 @@
+NOTICE
+======
+
+This project has the MIT licence. See LICENSE.
+
+The file spot.py comes from another author and holds another licence.
+
+  File:     spot.py
+  Author:   Alban Siffer, Amossys
+  Licence:  GNU GPLv3, as the header of the file says
+  Source:   https://github.com/NetManAIOps/OmniAnomaly/blob/master/omni_anomaly/spot.py
+  Paper:    "Anomaly Detection in Streams with Extreme Value Theory",
+            Siffer et al., KDD 2017
+
+The repository of OmniAnomaly has the MIT licence, and it holds this file with the header of
+GPLv3. The licence of a project does not change the licence of a file of another author.
+Therefore the licence of spot.py is not clear.
+
+The project uses this file for one number: the threshold of the peaks-over-threshold method.
+thresholding.py holds that call. benchmarks/bench_pot.py compares the method of the file with
+two other methods, and those two give much worse results for MSL.
+
+The reader of this notice must know:
+
+- A user of this project gets a file with the header of GPLv3.
+- The threshold method needs this file at this time. A new implementation must give the same
+  numbers as the method of Grimshaw, and the benchmark shows that the simple ways do not.
+
+The owner of the repository makes the decision on this point.
+
+The licences of the other sources are in the directory licences.
