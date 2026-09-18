@@ -34,8 +34,5 @@ jobs:
       - name: Check the marimo notebook
         run: uv run marimo check result_visualizer.py
 
-      # pyrefly still reports errors in the code of the original repository.
-      # This step becomes a condition after the branch that adds the type annotations.
       - name: Check the types with pyrefly
         run: uv run pyrefly check
-        continue-on-error: true
