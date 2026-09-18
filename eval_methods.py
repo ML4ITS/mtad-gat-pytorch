@@ -1,7 +1,7 @@
 import more_itertools as mit
 import numpy as np
 
-from spot import SPOT
+from thresholding import pot_threshold
 
 
 def adjust_predicts(score, label, threshold, pred=None, calc_latency=False):
@@ -89,15 +89,8 @@ def pot_eval(init_score, score, label, q=1e-3, level=0.99, dynamic=False):
     """
 
     print(f"Running POT with q={q}, level={level}..")
-    s = SPOT(q)  # SPOT object
-    s.fit(init_score, score)
-    s.initialize(level=level, min_extrema=False)  # Calibration step
-    ret = s.run(dynamic=dynamic, with_alarm=False)
-
-    print(len(ret["alarms"]))
-    print(len(ret["thresholds"]))
-
-    pot_th = float(np.mean(np.asarray(ret["thresholds"], dtype=float)))
+    pot_th = pot_threshold(init_score, score, q=q, level=level, dynamic=dynamic)
+    print(f"Threshold: {pot_th}")
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
     if label is not None:
         p_t = calc_point2point(pred, label)
