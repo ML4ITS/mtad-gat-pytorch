@@ -423,7 +423,7 @@ class Plotter:
             )
             shapes.extend(anomaly_shape)
 
-            fig.append_trace(
+            fig.add_trace(
                 go.Scatter(x=timestamps, y=values, line=dict(color=get_series_color(values), width=1)), row=i + 1, col=1
             )
             fig.update_yaxes(range=[-0.1, get_y_height(values)], row=i + 1, col=1)
