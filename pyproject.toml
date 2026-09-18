@@ -3,7 +3,7 @@ name = "mtad-gat-pytorch"
 version = "0.1.0"
 description = "PyTorch implementation of MTAD-GAT: Multivariate Time-series Anomaly Detection via Graph Attention Networks"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "more-itertools",
     "matplotlib",

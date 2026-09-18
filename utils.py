@@ -1,5 +1,4 @@
 import os
-import pickle
 import random
 
 import matplotlib.pyplot as plt
@@ -26,11 +25,42 @@ def normalize_data(data: np.ndarray, scaler=None) -> tuple[np.ndarray, MinMaxSca
     return data, scaler
 
 
+def _load_part(prefix: str, dataset: str, category: str) -> np.ndarray:
+    """
+    Read one part of a processed dataset.
+
+    preprocess.py writes .npy files. An older version of this project wrote pickle files.
+    The message then names the command that makes the new files.
+    """
+    npy_path = os.path.join(prefix, f"{dataset}_{category}.npy")
+    if os.path.exists(npy_path):
+        return np.load(npy_path)
+
+    # The command takes the name of the dataset. A machine is one group of SMD.
+    command = f"uv run preprocess.py --dataset {'SMD' if str(dataset).startswith('machine') else dataset}"
+
+    if os.path.exists(os.path.join(prefix, f"{dataset}_{category}.pkl")):
+        raise FileNotFoundError(
+            f"{npy_path} is absent, but a pickle file of an older version is present. "
+            f"Run '{command}' again to make the .npy files."
+        )
+
+    raise FileNotFoundError(f"{npy_path} is absent. Run '{command}' first.")
+
+
+def _load_optional_part(prefix: str, dataset: str, category: str) -> np.ndarray | None:
+    """Read one part of a processed dataset, or give None if the dataset has no such part."""
+    for extension in [".npy", ".pkl"]:
+        if os.path.exists(os.path.join(prefix, f"{dataset}_{category}{extension}")):
+            return _load_part(prefix, dataset, category)
+    return None
+
+
 def get_data(
     dataset, max_train_size=None, max_test_size=None, normalize=False, spec_res=False, train_start=0, test_start=0
 ):
     """
-    Get data from pkl files
+    Get data from the processed .npy files
 
     return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
     Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
@@ -52,25 +82,15 @@ def get_data(
     print("train: ", train_start, train_end)
     print("test: ", test_start, test_end)
     x_dim = get_data_dim(dataset)
-    f = open(os.path.join(prefix, dataset + "_train.pkl"), "rb")
-    train_data = pickle.load(f).reshape((-1, x_dim))[train_start:train_end, :]
-    f.close()
-    try:
-        f = open(os.path.join(prefix, dataset + "_test.pkl"), "rb")
-        test_data = pickle.load(f).reshape((-1, x_dim))[test_start:test_end, :]
-        f.close()
-    except (KeyError, FileNotFoundError):
-        test_data = None
-    try:
-        f = open(os.path.join(prefix, dataset + "_test_label.pkl"), "rb")
-        test_label = pickle.load(f).reshape(-1)[test_start:test_end]
-        f.close()
-    except (KeyError, FileNotFoundError):
-        test_label = None
+    train_data = _load_part(prefix, dataset, "train").reshape((-1, x_dim))[train_start:train_end, :]
+    test_part = _load_optional_part(prefix, dataset, "test")
+    test_data = None if test_part is None else test_part.reshape((-1, x_dim))[test_start:test_end, :]
+    label_part = _load_optional_part(prefix, dataset, "test_label")
+    test_label = None if label_part is None else label_part.reshape(-1)[test_start:test_end]
 
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
-        # The test data is absent if the pickle file of the test data is absent.
+        # The test data is absent if the dataset has no file with test data.
         if test_data is not None:
             test_data, _ = normalize_data(test_data, scaler=scaler)
 
@@ -195,7 +215,8 @@ def load(model: torch.nn.Module, PATH: str, device: str = "cpu") -> None:
     Loads the model's parameters from the path mentioned
     :param PATH: Should contain pickle file
     """
-    model.load_state_dict(torch.load(PATH, map_location=device))
+    # weights_only=True stops the reading of any object that is not a tensor.
+    model.load_state_dict(torch.load(PATH, map_location=device, weights_only=True))
 
 
 def adjust_anomaly_scores(scores: np.ndarray, dataset: str, is_train: bool, lookback: int) -> np.ndarray:
