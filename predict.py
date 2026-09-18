@@ -122,7 +122,8 @@ if __name__ == "__main__":
         alpha=model_args.alpha,
     )
 
-    device = "cuda" if args.use_cuda and torch.cuda.is_available() else "cpu"
+    device = get_device(args.use_cuda)
+    print(f"Predicting on {device}")
     load(model, f"{model_path}/model.pt", device=device)
     model.to(device)
 
@@ -157,6 +158,7 @@ if __name__ == "__main__":
         "gamma": args.gamma,
         "reg_level": reg_level,
         "save_path": f"{model_path}",
+        "use_cuda": args.use_cuda,
     }
 
     # Creating a new summary-file each time when new prediction are made with a pre-trained model

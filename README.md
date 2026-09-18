@@ -102,9 +102,11 @@ Train params:
 ```--init_lr=1e-3```
 ```--shuffle_dataset=True```
 ```--dropout=0.3```  <br />
-```--use_cuda=True```
+```--use_gpu=True```
 ```--print_every=1```
 ```--log_tensorboard=True```
+
+With ```--use_gpu=True``` (the default) the code runs on a CUDA GPU when one is available, and on the Apple Silicon GPU (MPS) on a Mac. It falls back to the CPU otherwise. ```--use_cuda``` still works as an alias.
 
 Anomaly Predictor params:
 

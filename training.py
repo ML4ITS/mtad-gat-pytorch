@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 
+from utils import get_device
+
 
 class Trainer:
     """Trainer class for MTAD-GAT model.
@@ -58,7 +60,7 @@ class Trainer:
         self.init_lr = init_lr
         self.forecast_criterion = forecast_criterion
         self.recon_criterion = recon_criterion
-        self.device = "cuda" if use_cuda and torch.cuda.is_available() else "cpu"
+        self.device = get_device(use_cuda)
         self.dload = dload
         self.log_dir = log_dir
         self.print_every = print_every
@@ -74,8 +76,8 @@ class Trainer:
         }
         self.epoch_times = []
 
-        if self.device == "cuda":
-            self.model.cuda()
+        print(f"Training on {self.device}")
+        self.model.to(self.device)
 
         if self.log_tensorboard:
             self.writer = SummaryWriter(f"{log_dir}")

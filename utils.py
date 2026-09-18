@@ -154,6 +154,22 @@ def plot_losses(losses, save_path="", plot=True):
     plt.close()
 
 
+def get_device(use_gpu=True):
+    """
+    Select the device to run on: CUDA, Apple Silicon (MPS), or the CPU.
+
+    :param use_gpu: if False, always return "cpu"
+    :return: name of the device, for use with tensor.to(device)
+    """
+    if not use_gpu:
+        return "cpu"
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def load(model, PATH, device="cpu"):
     """
     Loads the model's parameters from the path mentioned

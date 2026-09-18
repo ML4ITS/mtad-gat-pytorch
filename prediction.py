@@ -31,7 +31,7 @@ class Predictor:
         self.reg_level = pred_args["reg_level"]
         self.save_path = pred_args["save_path"]
         self.batch_size = 256
-        self.use_cuda = True
+        self.use_cuda = pred_args.get("use_cuda", True)
         self.pred_args = pred_args
         self.summary_file_name = summary_file_name
 
@@ -44,7 +44,7 @@ class Predictor:
         print("Predicting and calculating anomaly scores..")
         data = SlidingWindowDataset(values, self.window_size, self.target_dims)
         loader = torch.utils.data.DataLoader(data, batch_size=self.batch_size, shuffle=False)
-        device = "cuda" if self.use_cuda and torch.cuda.is_available() else "cpu"
+        device = get_device(self.use_cuda)
 
         self.model.eval()
         preds = []

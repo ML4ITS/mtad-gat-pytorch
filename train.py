@@ -153,6 +153,7 @@ if __name__ == "__main__":
         "gamma": args.gamma,
         "reg_level": reg_level,
         "save_path": save_path,
+        "use_cuda": args.use_cuda,
     }
     best_model = trainer.model
     predictor = Predictor(
