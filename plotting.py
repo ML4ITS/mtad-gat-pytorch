@@ -262,14 +262,12 @@ class Plotter:
                 "title": f"{data_type} | Forecast & reconstruction vs true value for {self.pred_cols[i] if self.pred_cols is not None else ''} ",
                 "showlegend": True,
                 "height": 400,
-                "width": 1100,
             }
 
             e_layout = {
                 "title": f"{data_type} | Error for {self.pred_cols[i] if self.pred_cols is not None else ''}",
                 # "yaxis": dict(range=[0, e_max]),
                 "height": 400,
-                "width": 1100,
             }
 
             if plot_feature_anom:
@@ -360,7 +358,7 @@ class Plotter:
 
         num_cols = data_copy.width
         colors = ["gray", "gray", "gray", "r"] * (num_cols // 4) + ["b", "g"]
-        fig, axs = plt.subplots(num_cols, figsize=(20, num_cols), sharex=True)
+        fig, axs = plt.subplots(num_cols, figsize=(14, 0.7 * num_cols), sharex=True)
         axs = np.atleast_1d(axs)
         for ax, col, color in zip(axs, data_copy.columns, colors):
             ax.plot(data_copy[col].to_numpy(), color=color, label=col)
@@ -499,9 +497,10 @@ class Plotter:
         else:
             data_copy = self.train_output
 
+        # A wide figure becomes small text when the notebook makes the image narrow.
         fig, axs = plt.subplots(
             3,
-            figsize=(30, 10),
+            figsize=(14, 7),
             sharex=True,
         )
         threshold = data_copy["Thresh_Global"].to_numpy()
@@ -542,7 +541,6 @@ class Plotter:
             "shapes": shapes,
             "yaxis": dict(range=[0, y_max]),
             "height": 400,
-            "width": 1500,
         }
 
         fig = go.Figure(
